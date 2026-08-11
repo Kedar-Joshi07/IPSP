@@ -1,3 +1,5 @@
 # Configuration
 
-Implementation should create typed configuration classes from `docs/35_CONFIGURATION_SPEC.md`. This folder will later hold non-secret defaults/templates only. Secrets are managed through SecretProvider references.
+Phase 1A settings are defined by `ipsp.config.Settings` and loaded from `IPSP_`-prefixed environment variables or a local `.env` file. `.env.example` contains non-secret examples only.
+
+This folder is reserved for validated, non-secret templates. Production-critical secrets have no generated defaults and future provider credentials will be resolved through SecretProvider references rather than ordinary configuration files.

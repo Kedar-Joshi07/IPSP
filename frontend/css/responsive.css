@@ -1,0 +1,22 @@
+@media (max-width: 48rem) {
+  .topbar {
+    padding-inline: var(--space-4);
+  }
+
+  .brand__qualifier,
+  .icon-button__label {
+    display: none;
+  }
+
+  .foundation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empty-state {
+    align-items: flex-start;
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+}

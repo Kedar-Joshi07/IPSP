@@ -1,0 +1,33 @@
+# Generated from a clean Python 3.12 Phase 1A virtual environment on 2026-08-11.
+# Install this snapshot, then install the local package with: pip install -e . --no-deps
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+ast_serialize==0.8.0
+click==8.4.2
+colorama==0.4.6
+fastapi==0.139.2
+h11==0.16.0
+httpcore2==2.7.0
+httpx2==2.7.0
+idna==3.18
+iniconfig==2.3.0
+librt==0.15.0
+mypy==2.3.0
+mypy_extensions==1.1.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+pydantic==2.13.4
+pydantic-settings==2.15.0
+pydantic_core==2.46.4
+Pygments==2.20.0
+pytest==9.1.1
+python-dotenv==1.2.2
+ruff==0.15.22
+setuptools==84.0.0
+starlette==1.6.0
+truststore==0.10.4
+typing-inspection==0.4.3
+typing_extensions==4.16.0
+uvicorn==0.51.0

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <title>IPSP — Intelligent Predictive Simulation Platform</title>
+    <link rel="stylesheet" href="/css/tokens.css">
+    <link rel="stylesheet" href="/css/theme-dark.css">
+    <link rel="stylesheet" href="/css/theme-light.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <script type="module" src="/js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="ambient ambient--primary" aria-hidden="true"></div>
+    <div class="ambient ambient--secondary" aria-hidden="true"></div>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="IPSP home">
+          <span class="brand__mark" aria-hidden="true">I</span>
+          <span>IPSP</span>
+          <span class="brand__qualifier">Platform foundation</span>
+        </a>
+        <button class="icon-button" id="theme-toggle" type="button" aria-pressed="false">
+          <span class="icon-button__glyph" aria-hidden="true">◐</span>
+          <span class="icon-button__label">Theme</span>
+        </button>
+      </header>
+
+      <main class="main" id="main-content">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Local-first foundation</div>
+          <h1 id="hero-title">Understand first.<br><span>Simulate responsibly.</span></h1>
+          <p>
+            IPSP is the dataset-agnostic foundation for evidence-backed understanding,
+            prediction, and what-if simulation. Analytical workflows arrive in later phases.
+          </p>
+        </section>
+
+        <section class="foundation-grid" aria-label="Application foundation status">
+          <article class="card card--status">
+            <div class="card__header">
+              <div>
+                <p class="card__kicker">Service readiness</p>
+                <h2>Application foundation</h2>
+              </div>
+              <span class="badge badge--neutral" id="service-badge">Checking</span>
+            </div>
+            <div class="status-panel" id="service-status" role="status" aria-live="polite">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Checking the local service…</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <p class="card__kicker">Foundation principles</p>
+            <h2>Built for trustworthy extension</h2>
+            <ul class="principle-list">
+              <li><span aria-hidden="true">01</span> Schema and dataset agnostic</li>
+              <li><span aria-hidden="true">02</span> Evidence before capability</li>
+              <li><span aria-hidden="true">03</span> Offline by default</li>
+              <li><span aria-hidden="true">04</span> Reproducible and traceable</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="empty-state" aria-labelledby="empty-title">
+          <div class="empty-state__icon" aria-hidden="true">◇</div>
+          <div>
+            <p class="card__kicker">Workspace</p>
+            <h2 id="empty-title">No project selected</h2>
+            <p>Project and dataset onboarding are intentionally reserved for the next implementation phase.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>IPSP v0.1.0</span>
+        <span>Local mode · No external assets</span>
+      </footer>
+    </div>
+  </body>
+</html>

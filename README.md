@@ -1,11 +1,12 @@
-# IPSP v1.0 — Copilot Foundation Pack
+# IPSP v1.0 — Intelligent Predictive Simulation Platform
 
 **Product:** Intelligent Predictive Simulation Platform (IPSP)  
 **Initial experience:** CampaignSim — Powered by IPSP  
-**Specification status:** v1.0 architecture freeze  
+**Specification status:** v1.0 architecture frozen
+**Implementation status:** Phase 1A / v0.1.0 application foundation
 **Implementation releases:** v0.1.0 → v1.0.0
 
-This repository pack is the implementation control plane for GitHub Copilot, Codex, and human developers. It converts the finalized design decisions into explicit architecture, flows, acceptance gates, and coding instructions.
+This repository contains the frozen specifications and the local-first IPSP application foundation. The current implementation provides the FastAPI factory, safe error/trace scaffolding, configuration, job contracts, health probes, and offline dark/light frontend shell. Analytical and authentication workflows remain intentionally unimplemented until their scheduled phases.
 
 ## Core product statement
 
@@ -53,3 +54,35 @@ Read in this order:
 ## Implementation rule
 
 Do not jump directly to predictive models. Build the platform in phase order and pass the phase acceptance gate before proceeding.
+
+## Local development
+
+Python 3.11 or newer is required. From the repository root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m uvicorn ipsp.main:create_app --factory --reload
+```
+
+Open `http://127.0.0.1:8000`. The UI and API foundation require no Internet connection at runtime.
+
+For a reproducible environment after `requirements.lock` is generated:
+
+```powershell
+python -m pip install -r requirements.lock
+python -m pip install -e . --no-deps
+```
+
+## Quality gates
+
+```powershell
+python -m pytest
+python -m ruff check .
+python -m ruff format --check .
+python -m mypy backend/ipsp
+```
+
+Infrastructure probes are intentionally unversioned at `/health/live` and `/health/ready`. Application APIs begin under `/api/v1`.

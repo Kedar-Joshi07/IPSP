@@ -1,0 +1,93 @@
+.app-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) max(var(--space-5), calc((100vw - var(--content-width)) / 2));
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg) 84%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.main {
+  width: min(100% - 2rem, var(--content-width));
+  margin: 0 auto;
+  padding: clamp(3rem, 8vw, 6rem) 0 var(--space-8);
+}
+
+.hero {
+  max-width: 54rem;
+  margin-bottom: var(--space-7);
+}
+
+.hero h1 {
+  margin-bottom: var(--space-5);
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.hero h1 span {
+  background: linear-gradient(120deg, var(--color-accent), var(--color-accent-strong));
+  background-clip: text;
+  color: transparent;
+}
+
+.hero > p {
+  max-width: 42rem;
+  color: var(--color-text-muted);
+  font-size: clamp(1rem, 2vw, 1.15rem);
+}
+
+.foundation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  gap: var(--space-4);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: min(100% - 2rem, var(--content-width));
+  margin: auto auto 0;
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.ambient {
+  position: fixed;
+  z-index: 0;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.ambient--primary {
+  top: -15rem;
+  left: -12rem;
+  background: radial-gradient(circle, var(--glow-accent), transparent 68%);
+}
+
+.ambient--secondary {
+  right: -12rem;
+  bottom: -18rem;
+  background: radial-gradient(circle, var(--glow-secondary), transparent 68%);
+}
