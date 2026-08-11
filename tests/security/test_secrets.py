@@ -60,6 +60,13 @@ def test_environment_secret_requires_explicit_reveal_and_has_safe_equality() -> 
     assert MARKER not in str(secret)
 
 
+def test_secret_value_equality_supports_non_ascii_values() -> None:
+    secret = SecretValue("pässwörd-秘密-🔐")
+
+    assert secret == SecretValue("pässwörd-秘密-🔐")
+    assert secret != SecretValue("pässwörd-秘密-🔓")
+
+
 def test_secret_value_is_not_ordinary_json_or_log_plaintext() -> None:
     secret = SecretValue(MARKER)
     envelope = SecretEnvelope(value=secret)

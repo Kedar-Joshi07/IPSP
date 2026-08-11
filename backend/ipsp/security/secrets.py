@@ -72,7 +72,10 @@ class SecretValue:
         return "[REDACTED]"
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, SecretValue) and hmac.compare_digest(self._value, other._value)
+        return isinstance(other, SecretValue) and hmac.compare_digest(
+            self._value.encode("utf-8"),
+            other._value.encode("utf-8"),
+        )
 
 
 class SecretProvider(Protocol):
