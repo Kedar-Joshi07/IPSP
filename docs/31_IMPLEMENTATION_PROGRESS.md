@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1C.1 database foundation hardening complete. Phase 1D blocked pending independent review.**
+Application implementation: **Phase 1D security-schema foundation complete. Phase 1E blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1C.1 PASS)** | Phase 1C.1 readiness, SQL privacy, deterministic SQLite, FK, migration-head, and conformance hardening gates passed; Phase 1D not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1D PASS)** | Phase 1D user/role/permission schema, UTC persistence, migration, constraint, and conformance gates passed; Phase 1E not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,51 @@ Application implementation: **Phase 1C.1 database foundation hardening complete.
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1D — User / Role / Permission Security-Schema Foundation
+
+- **Implementation Status:** COMPLETE (2026-08-11)
+- **Gate Result:** PASS; ready for independent review before Phase 1E
+- **Schema:** Canonical typed SQLAlchemy 2.x mappings add exactly `roles`, `permissions`,
+  `role_permissions`, and `users`. Model metadata contains no other tables, and the migration inserts
+  no production role, permission, mapping, user, password, or credential data
+- **Authorization Structure:** `User.role_id → Role → RolePermission → Permission` is the only
+  structural authorization path. Role-permission mappings use a composite primary key, and no
+  persisted `is_admin`, equivalent bypass Boolean/level, permission blob, wildcard, or role hierarchy
+  exists
+- **User Schema:** The frozen minimum identity/lifecycle fields are present; username is unique,
+  email and creator are nullable, role is required, creator is a self-FK, lifecycle defaults agree
+  between ORM and migration, and `failed_login_count >= 0` is enforced intrinsically
+- **UTC Boundary:** One reusable `UTCDateTime` rejects naive input, normalizes aware values to UTC
+  before SQLite persistence, and restores aware UTC datetimes. UTC, `+05:30`, nullable, default, and
+  all-security-timestamp round trips pass on real SQLite
+- **Migration:** Revision `20260811_02` directly descends from `20260811_01`, creates only the four
+  authorized tables, downgrades cleanly to the Phase 1C baseline, re-upgrades cleanly, leaves one
+  script head, and passes `alembic check`
+- **Constraint Evidence:** Real SQLite inserts prove username, role name, permission code, and mapping
+  uniqueness; user role, self-creator, and both mapping FKs; and non-negative failed-login enforcement
+- **ORM Evidence:** Canonical session transactions insert all four entities and query them using
+  `select()`, `Session.execute()`, `Session.scalars()`, and an explicit
+  `User → Role → RolePermission → Permission` join without a repository or RBAC service
+- **Readiness:** A Phase 1D-head database returns HTTP 200; a Phase 1C-baseline database returns HTTP
+  503 with `SYS-MIGRATION-REQUIRED`; FK-disabled readiness and database-independent liveness remain
+  unchanged
+- **Dependencies:** No direct or resolved dependency changes; `pyproject.toml` and
+  `requirements.lock` remain unchanged
+- **Test Evidence:** `pytest` — 101 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 53 files;
+  strict mypy passed for 36 source files; `pip check` and `git diff --check` passed
+- **Conformance Evidence:** The exact four-table allowlist, sole ORM/Alembic ownership, synchronous
+  SQLAlchemy, no production `create_all()`, no authorization bypass, no session/preference tables, no
+  authentication/RBAC/password behavior, and all prior framework/network/contamination guards pass
+- **Intentionally Deferred:** Password hashing, login/logout, sessions, cookies, CSRF, lockout
+  behavior, authentication routes, bootstrap administration, and RBAC permission enforcement remain
+  owned by Phase 1E/1F
+- **Architecture Decisions Added:** None; Phase 1D implements locked decisions D-004, D-014, D-015,
+  D-016, and the security schema authorities
+
+Phase 1 and v0.1.0 remain in progress. Phase 1E functionality was not introduced and must not begin
+until Phase 1D receives independent review.
 
 ## Phase 1C.1 — Database foundation hardening
 

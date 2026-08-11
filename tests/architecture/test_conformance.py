@@ -39,6 +39,15 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         "from redis",
         "import celery",
         "from celery",
+        "pwdlib",
+        "argon2",
+        "bcrypt",
+        "user_sessions",
+        "user_preferences",
+        "class authservice",
+        "class rbacservice",
+        "def has_permission(",
+        "def enforce_permission(",
     ):
         assert prohibited not in lowered
     for network_import in (
@@ -51,13 +60,31 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         assert network_import not in lowered
 
 
-def test_foundation_has_one_declarative_base_and_no_business_tables() -> None:
+def test_phase1d_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
     source = _read_production_source()
+    model_declaration_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "__tablename__" in path.read_text(encoding="utf-8")
+    ]
 
     assert re.findall(r"class\s+\w+\(DeclarativeBase\)", source) == ["class Base(DeclarativeBase)"]
-    # Phase 1C-only guard: replace with a Phase 1D table-name allowlist when Phase 1D begins.
-    assert "__tablename__" not in source
-    assert dict(Base.metadata.tables) == {}
+    assert model_declaration_files == [BACKEND / "database" / "models" / "security.py"]
+    assert set(Base.metadata.tables) == {"permissions", "role_permissions", "roles", "users"}
+
+
+def test_phase1d_security_schema_has_no_authorization_bypass_columns() -> None:
+    prohibited_columns = {
+        "is_admin",
+        "is_superuser",
+        "admin_flag",
+        "superuser",
+        "permission_level",
+        "access_level",
+    }
+
+    for table in Base.metadata.tables.values():
+        assert prohibited_columns.isdisjoint(table.columns.keys())
 
 
 def test_generic_core_has_no_benchmark_specific_output_terms() -> None:

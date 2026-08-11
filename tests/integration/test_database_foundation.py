@@ -22,7 +22,9 @@ from ipsp.services.readiness import ReadinessService
 from sqlalchemy import create_engine, inspect, text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-EXPECTED_HEAD = "20260811_01"
+BASELINE_REVISION = "20260811_01"
+EXPECTED_HEAD = "20260811_02"
+EXPECTED_TABLES = ["alembic_version", "permissions", "role_permissions", "roles", "users"]
 
 
 def _alembic_config() -> Config:
@@ -42,23 +44,31 @@ def test_migration_upgrade_current_repeat_and_downgrade(
         assert initial.expected_head == EXPECTED_HEAD
         assert initial.at_head is False
 
+        command.upgrade(_alembic_config(), BASELINE_REVISION)
+        baseline = state_service.inspect()
+        assert baseline.current_revision == BASELINE_REVISION
+        assert baseline.at_head is False
+        assert inspect(engine).get_table_names() == ["alembic_version"]
+
         command.upgrade(_alembic_config(), "head")
         command.upgrade(_alembic_config(), "head")
         upgraded = state_service.inspect()
         assert upgraded.current_revision == EXPECTED_HEAD
         assert upgraded.at_head is True
-        assert inspect(engine).get_table_names() == ["alembic_version"]
+        assert inspect(engine).get_table_names() == EXPECTED_TABLES
 
         command.check(_alembic_config())
-        command.downgrade(_alembic_config(), "base")
+        command.downgrade(_alembic_config(), BASELINE_REVISION)
         downgraded = state_service.inspect()
-        assert downgraded.current_revision is None
+        assert downgraded.current_revision == BASELINE_REVISION
         assert downgraded.at_head is False
+        assert inspect(engine).get_table_names() == ["alembic_version"]
 
         command.upgrade(_alembic_config(), "head")
         reupgraded = state_service.inspect()
         assert reupgraded.current_revision == EXPECTED_HEAD
         assert reupgraded.at_head is True
+        assert inspect(engine).get_table_names() == EXPECTED_TABLES
     finally:
         engine.dispose()
 
@@ -79,7 +89,12 @@ def test_offline_migration_renders_without_creating_database(
     assert not database_path.exists()
 
 
-def test_readiness_is_not_ready_before_migration(settings: Settings) -> None:
+def test_readiness_requires_phase1d_head(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IPSP_DATABASE__URL", settings.database.url)
+    command.upgrade(_alembic_config(), BASELINE_REVISION)
     app = create_app(settings)
     try:
         with TestClient(app, raise_server_exceptions=False) as client:
