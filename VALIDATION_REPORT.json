@@ -1,0 +1,18 @@
+{
+  "validated_at": "2026-08-11",
+  "total_files": 83,
+  "by_extension": {
+    ".json": 2,
+    ".example": 1,
+    ".md": 78,
+    ".txt": 1,
+    ".html": 1
+  },
+  "markdown_files": 78,
+  "flow_markdown_files": 21,
+  "forbidden_specific_core_violations": [],
+  "flow_files_missing_mermaid": [],
+  "reference_html_present": true,
+  "critical_files_present": true,
+  "status": "PASS"
+}

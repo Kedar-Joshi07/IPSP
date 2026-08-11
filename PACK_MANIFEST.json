@@ -1,0 +1,18 @@
+{
+  "product": "Intelligent Predictive Simulation Platform",
+  "short_name": "IPSP",
+  "spec_version": "1.0",
+  "implementation_status": "specification_frozen_implementation_not_started",
+  "ui_reference": "reference/Campaign_simulator_UI.html",
+  "benchmark_count": 7,
+  "principles": [
+    "dataset_agnostic_core",
+    "ml_statistics_quantitative_authority",
+    "llm_optional_semantic_layer",
+    "trust_validation_independent",
+    "predictive_not_causal",
+    "sqlite_control_plane_parquet_data_plane",
+    "rbac_privacy_observability_foundation",
+    "reproducible_versioned_runs"
+  ]
+}

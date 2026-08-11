@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampaignSim — AI-Powered Campaign Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0b0e;
+  --bg2: #0f1115;
+  --bg3: #14161c;
+  --bg4: #1a1d26;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e9ef;
+  --muted: #6b7280;
+  --accent: #6366f1;
+  --accent2: #8b5cf6;
+  --teal: #14b8a6;
+  --amber: #f59e0b;
+  --coral: #f87171;
+  --green: #4ade80;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+/* GLOW ORBS */
+.orb1 {
+  position: fixed; top: -200px; left: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.orb2 {
+  position: fixed; bottom: -200px; right: -100px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* LAYOUT */
+.app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,11,14,0.8);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: var(--font-head); font-size: 17px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px;
+}
+.logo-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.logo span { color: var(--muted); font-weight: 400; }
+
+.stepper { display: flex; align-items: center; gap: 0; }
+.step-item { display: flex; align-items: center; gap: 0; cursor: pointer; }
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-family: var(--font-mono); font-weight: 500;
+  color: var(--muted); transition: all 0.2s; position: relative;
+}
+.step-dot.done { background: rgba(99,102,241,0.2); border-color: var(--accent); color: var(--accent); }
+.step-dot.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 16px rgba(99,102,241,0.5); }
+.step-label { font-size: 11px; color: var(--muted); padding: 0 6px; display: none; }
+.step-line { width: 28px; height: 1px; background: var(--border); }
+.step-line.done { background: var(--accent); }
+
+.top-actions { display: flex; align-items: center; gap: 10px; }
+.btn-ghost {
+  padding: 6px 14px; font-size: 12px; border-radius: 6px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* MAIN CONTENT */
+.main { flex: 1; padding: 28px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+/* SCREENS */
+.screen { display: none; animation: fadeIn 0.3s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 28px; }
+.page-title { font-family: var(--font-head); font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+.page-sub { color: var(--muted); font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  margin-bottom: 14px;
+}
+.card-title { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; width: 3px; height: 12px; border-radius: 2px; background: var(--accent); }
+
+/* FORM ELEMENTS */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.3px; }
+input, select {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px; color: var(--text);
+  font-family: var(--font-body); font-size: 13px; width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+select option { background: var(--bg3); }
+
+/* CHANNEL GRID */
+.channel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ch-card {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 10px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: var(--bg3);
+}
+.ch-card:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+.ch-card.sel { border-color: var(--accent); background: rgba(99,102,241,0.1); box-shadow: 0 0 12px rgba(99,102,241,0.15); }
+.ch-icon { font-size: 20px; margin-bottom: 6px; }
+.ch-name { font-size: 11px; font-weight: 500; color: var(--muted); }
+.ch-card.sel .ch-name { color: var(--accent); }
+
+/* BUTTONS */
+.btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.btn {
+  padding: 9px 22px; font-size: 13px; font-weight: 500;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-family: var(--font-body); transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn:hover { border-color: var(--border2); color: var(--text); }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  box-shadow: 0 0 20px rgba(99,102,241,0.3);
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); box-shadow: 0 0 24px rgba(99,102,241,0.45); }
+
+/* BADGE */
+.badge {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 500; padding: 3px 8px;
+  border-radius: 20px; font-family: var(--font-mono);
+}
+.badge-accent { background: rgba(99,102,241,0.15); color: var(--accent); border: 1px solid rgba(99,102,241,0.25); }
+.badge-teal { background: rgba(20,184,166,0.12); color: var(--teal); border: 1px solid rgba(20,184,166,0.2); }
+.badge-amber { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.badge-green { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.badge-coral { background: rgba(248,113,113,0.12); color: var(--coral); border: 1px solid rgba(248,113,113,0.2); }
+
+/* SIMILARITY CARDS */
+.sim-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 10px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 14px;
+}
+.sim-card:hover { border-color: var(--border2); background: var(--bg4); }
+.sim-card-body { flex: 1; }
+.sim-name { font-size: 14px; font-weight: 500; margin-bottom: 5px; }
+.sim-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-family: var(--font-mono); }
+.sim-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.sim-score {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 20px; white-space: nowrap;
+  background: rgba(74,222,128,0.1); color: var(--green);
+  border: 1px solid rgba(74,222,128,0.2);
+}
+
+/* SLIDERS */
+.slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.slider-row label { min-width: 120px; font-size: 12px; color: var(--muted); }
+.slider-row input[type=range] {
+  flex: 1; height: 4px; background: var(--bg4);
+  border-radius: 2px; border: none; padding: 0;
+  appearance: none; cursor: pointer;
+}
+.slider-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); cursor: pointer;
+  box-shadow: 0 0 8px rgba(99,102,241,0.4);
+}
+.slider-val { font-family: var(--font-mono); font-size: 12px; font-weight: 500; min-width: 40px; text-align: right; color: var(--text); }
+
+/* METRIC CARDS */
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.metric-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px;
+}
+.metric-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-val { font-family: var(--font-head); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.metric-sub { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+/* TAB ROW */
+.tab-row { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab {
+  padding: 10px 18px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  color: var(--muted); transition: all 0.2s; white-space: nowrap;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SCENARIO CARDS */
+.scenario-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.scenario-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px; cursor: pointer;
+  transition: all 0.25s;
+}
+.scenario-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.scenario-card.sel-scenario {
+  border-color: var(--accent);
+  background: rgba(99,102,241,0.07);
+  box-shadow: 0 0 20px rgba(99,102,241,0.12);
+}
+.sc-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.sc-roas { font-family: var(--font-head); font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+.sc-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-bottom: 10px; }
+.sc-bar { background: var(--bg4); border-radius: 3px; height: 4px; }
+.sc-fill { height: 4px; border-radius: 3px; }
+.sc-desc { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+/* CHART BARS */
+.chart-wrap {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 14px;
+}
+.chart-title { font-size: 11px; color: var(--muted); margin-bottom: 12px; font-weight: 500; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-body { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.bar-seg { border-radius: 3px 3px 0 0; transition: all 0.4s; }
+.bar-lbl { font-size: 10px; color: var(--muted); font-family: var(--font-mono); text-align: center; }
+
+/* ALERTS */
+.alert { display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; line-height: 1.5; }
+.alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.alert-amber { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--amber); }
+.alert-accent { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); color: #a5b4fc; }
+.alert-coral { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--coral); }
+.alert-teal { background: rgba(20,184,166,0.08); border: 1px solid rgba(20,184,166,0.2); color: var(--teal); }
+.alert strong { font-weight: 500; display: block; margin-bottom: 2px; }
+
+/* COMPARE TABLE */
+.cmp-table { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.cmp-header { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg4); padding: 12px 16px; }
+.cmp-header > * { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.cmp-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border); }
+.cmp-row:hover { background: var(--bg3); }
+.cmp-row .metric-name { font-size: 12px; color: var(--muted); }
+.cmp-val-a { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+.cmp-val-b { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--teal); }
+
+/* SIMULATION SCREEN */
+.sim-progress-wrap { max-width: 480px; margin: 0 auto; padding: 60px 0; text-align: center; }
+.sim-icon { font-size: 48px; margin-bottom: 20px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(0.95)} }
+.sim-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.sim-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+.prog-track { background: var(--bg4); border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
+.prog-bar { height: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.08s linear; width: 0; box-shadow: 0 0 8px rgba(99,102,241,0.5); }
+.prog-lbl { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+.sim-log { margin-top: 24px; text-align: left; font-size: 11px; font-family: var(--font-mono); color: var(--muted); line-height: 2; }
+.sim-log-line { display: flex; align-items: center; gap: 8px; }
+.sim-log-line::before { content: '›'; color: var(--accent); }
+
+/* CHANNEL DONUT */
+.donut-legend { display: flex; flex-direction: column; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-val { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* AGGREGATE CARD */
+.agg-card {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.04));
+  border: 1px solid rgba(99,102,241,0.2); border-radius: 10px; padding: 16px;
+  margin-top: 10px;
+}
+.agg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.agg-item .lbl { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.agg-item .val { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+
+/* RISK SCORE BAR */
+.risk-meter { display: flex; gap: 4px; margin: 8px 0; }
+.risk-seg { flex: 1; height: 6px; border-radius: 3px; background: var(--bg4); }
+.risk-seg.fill-low { background: var(--green); }
+.risk-seg.fill-med { background: var(--amber); }
+.risk-seg.fill-high { background: var(--coral); }
+
+/* WEEK LABELS */
+.week-note { font-size: 10px; color: var(--coral); margin-top: 6px; font-style: italic; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .main { padding: 16px; }
+  .grid2,.grid3,.grid4 { grid-template-columns: 1fr; }
+  .channel-grid { grid-template-columns: repeat(2,1fr); }
+  .scenario-grid { grid-template-columns: 1fr; }
+  .metric-grid { grid-template-columns: repeat(2,1fr); }
+  .step-label { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="orb1"></div>
+<div class="orb2"></div>
+
+<div class="app">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      CampaignSim <span>/ AI Simulator</span>
+    </div>
+
+    <div class="stepper" id="stepper">
+      <div class="step-item" onclick="goTo(0)">
+        <div class="step-dot done" id="dot0">1</div>
+        <div class="step-line done" id="line0"></div>
+      </div>
+      <div class="step-item" onclick="goTo(1)">
+        <div class="step-dot done" id="dot1">2</div>
+        <div class="step-line" id="line1"></div>
+      </div>
+      <div class="step-item" onclick="goTo(2)">
+        <div class="step-dot active" id="dot2">3</div>
+        <div class="step-line" id="line2"></div>
+      </div>
+      <div class="step-item" onclick="goTo(3)">
+        <div class="step-dot" id="dot3">4</div>
+        <div class="step-line" id="line3"></div>
+      </div>
+      <div class="step-item" onclick="goTo(4)">
+        <div class="step-dot" id="dot4">5</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-ghost" onclick="goTo(0)">New campaign</button>
+      <button class="btn-ghost">Export PDF</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ===== SCREEN 0: BRIEF ===== -->
+    <div class="screen active" id="s0">
+      <div class="page-header">
+        <div class="page-title">Campaign brief</div>
+        <div class="page-sub">Define your campaign parameters — the simulator will find similar historical campaigns and forecast outcomes.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Basic info</div>
+        <div class="grid2" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Campaign name</label>
+            <input type="text" value="Summer Acquisition Q3 2026" />
+          </div>
+          <div class="form-group">
+            <label>Brand / product</label>
+            <input type="text" value="ClimateWear — Sustainable Apparel" />
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="form-group">
+            <label>Objective</label>
+            <select>
+              <option>Conversion / Sales</option>
+              <option>Brand awareness</option>
+              <option>Lead generation</option>
+              <option>Retention / Re-engagement</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Total budget</label>
+            <input type="text" value="₹ 12,00,000" />
+          </div>
+          <div class="form-group">
+            <label>Daily cap</label>
+            <input type="text" value="₹ 40,000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Flight & targeting</div>
+        <div class="grid4" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Start date</label>
+            <input type="date" value="2026-07-01" />
+          </div>
+          <div class="form-group">
+            <label>End date</label>
+            <input type="date" value="2026-08-15" />
+          </div>
+          <div class="form-group">
+            <label>Target age</label>
+            <input type="text" value="25 – 44" />
+          </div>
+          <div class="form-group">
+            <label>Geo target</label>
+            <input type="text" value="Mumbai, Pune, Bengaluru" />
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="form-group">
+            <label>Primary audience</label>
+            <select>
+              <option>Lookalike — past buyers</option>
+              <option>Retargeting</option>
+              <option>Prospecting</option>
+              <option>High-LTV segment</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Creative type</label>
+            <select>
+              <option>Video (15s + 30s)</option>
+              <option>Static image</option>
+              <option>Carousel</option>
+              <option>UGC / native</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Bid strategy</label>
+            <select>
+              <option>Target ROAS</option>
+              <option>Target CPA</option>
+              <option>Max conversions</option>
+              <option>Manual CPC</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Channel mix</div>
+        <div class="channel-grid" id="channels">
+          <div class="ch-card sel" onclick="toggleCh(this)">
+            <div class="ch-icon">🔍</div>
+            <div class="ch-name">Search</div>
+          </div>
+          <div class="ch-card sel" onclick="toggleCh(this)">
+            <div class="ch-icon">📱</div>
+            <div class="ch-name">Social</div>
+          </div>
+          <div class="ch-card" onclick="toggleCh(this)">
+            <div class="ch-icon">📺</div>
+            <div class="ch-name">CTV / Video</div>
+          </div>
+          <div class="ch-card" onclick="toggleCh(this)">
+            <div class="ch-icon">✉️</div>
+            <div class="ch-name">Email</div>
+          </div>
+          <div class="ch-card sel" onclick="toggleCh(this)">
+            <div class="ch-icon">📲</div>
+            <div class="ch-name">In-app</div>
+          </div>
+          <div class="ch-card" onclick="toggleCh(this)">
+            <div class="ch-icon">▶️</div>
+            <div class="ch-name">YouTube</div>
+          </div>
+          <div class="ch-card" onclick="toggleCh(this)">
+            <div class="ch-icon">🖥️</div>
+            <div class="ch-name">Display</div>
+          </div>
+          <div class="ch-card" onclick="toggleCh(this)">
+            <div class="ch-icon">🎙️</div>
+            <div class="ch-name">Podcast</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="goTo(1)">Find similar campaigns →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 1: SIMILARITY ===== -->
+    <div class="screen" id="s1">
+      <div class="page-header">
+        <div class="page-title">Historical similarity <span class="badge badge-accent" style="font-size:12px;vertical-align:middle;margin-left:8px">6 matches</span></div>
+        <div class="page-sub">Ranked by embedding similarity across objective, channel mix, audience profile, seasonality, and budget range.</div>
+      </div>
+
+      <div class="sim-card">
+        <div class="sim-card-body">
+          <div class="sim-name">Festive Acquisition — Oct 2025</div>
+          <div class="sim-meta">Search + Social · ₹14L · 45 days · Conversion · 28–45 age · Pan-India</div>
+          <div class="sim-badges">
+            <span class="badge badge-green">ROAS 4.2×</span>
+            <span class="badge badge-teal">CTR 3.8%</span>
+            <span class="badge badge-accent">CPA ₹420</span>
+          </div>
+        </div>
+        <div class="sim-score">94% match</div>
+      </div>
+
+      <div class="sim-card">
+        <div class="sim-card-body">
+          <div class="sim-name">Summer Reactivation — Jul 2025</div>
+          <div class="sim-meta">Social + In-app · ₹10L · 40 days · Conversion · 22–40 age · Metro cities</div>
+          <div class="sim-badges">
+            <span class="badge badge-green">ROAS 3.7×</span>
+            <span class="badge badge-teal">CTR 2.9%</span>
+            <span class="badge badge-amber">CPA ₹510</span>
+          </div>
+        </div>
+        <div class="sim-score">88% match</div>
+      </div>
+
+      <div class="sim-card">
+        <div class="sim-card-body">
+          <div class="sim-name">Apparel Conversion Drive — Q2 2025</div>
+          <div class="sim-meta">Search + Display · ₹8L · 30 days · Conversion · 25–35 age · Tier-1</div>
+          <div class="sim-badges">
+            <span class="badge badge-amber">ROAS 2.9×</span>
+            <span class="badge badge-teal">CTR 2.1%</span>
+            <span class="badge badge-green">CPA ₹390</span>
+          </div>
+        </div>
+        <div class="sim-score">81% match</div>
+      </div>
+
+      <div class="sim-card">
+        <div class="sim-card-body">
+          <div class="sim-name">D2C Growth Sprint — Aug 2024</div>
+          <div class="sim-meta">Social + YouTube · ₹18L · 60 days · Awareness+Conv · 20–38 age</div>
+          <div class="sim-badges">
+            <span class="badge badge-green">ROAS 3.9×</span>
+            <span class="badge badge-teal">CTR 3.2%</span>
+            <span class="badge badge-accent">CPA ₹445</span>
+          </div>
+        </div>
+        <div class="sim-score">74% match</div>
+      </div>
+
+      <div class="agg-card">
+        <div class="card-title" style="margin-bottom:12px">Aggregate signal — top 4 matches</div>
+        <div class="agg-grid">
+          <div class="agg-item"><div class="lbl">Median ROAS</div><div class="val" style="color:var(--green)">3.7×</div></div>
+          <div class="agg-item"><div class="lbl">Median CPA</div><div class="val">₹441</div></div>
+          <div class="agg-item"><div class="lbl">Avg CTR</div><div class="val">3.0%</div></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(0)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(2)">Configure simulation →</button>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 2: CONFIGURE ===== -->
+    <div class="screen" id="s2">
+      <div class="page-header">
+        <div class="page-title">Simulation parameters</div>
+        <div class="page-sub">Tune budget allocation, audience assumptions, and model uncertainty settings before running.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Budget allocation by channel</div>
+        <div class="slider-row">
+          <label>Search</label>
+          <input type="range" min="0" max="100" value="40" oninput="upd(this,'sv')">
+          <span class="slider-val" id="sv">40%</span>
+        </div>
+        <div class="slider-row">
+          <label>Social (Meta)</label>
+          <input type="range" min="0" max="100" value="35" oninput="upd(this,'mv')">
+          <span class="slider-val" id="mv">35%</span>
+        </div>
+        <div class="slider-row">
+          <label>In-app</label>
+          <input type="range" min="0" max="100" value="25" oninput="upd(this,'av')">
+          <span class="slider-val" id="av">25%</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Audience & targeting assumptions</div>
+        <div class="grid3">
+          <div class="form-group">
+            <label>Audience size</label>
+            <select><option>1M – 5M</option><option>5M – 20M</option><option>20M+</option></select>
+          </div>
+          <div class="form-group">
+            <label>Frequency cap</label>
+            <select><option>3× / week</option><option>5× / week</option><option>Uncapped</option></select>
+          </div>
+          <div class="form-group">
+            <label>LTV segment weight</label>
+            <select><option>High LTV focus</option><option>Balanced</option><option>Volume-first</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Model & uncertainty settings</div>
+        <div class="grid2" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Seasonality adjustment</label>
+            <select><option>Summer peak (+12%)</option><option>Neutral (0%)</option><option>Off-peak (-8%)</option></select>
+          </div>
+          <div class="form-group">
+            <label>Competition pressure</label>
+            <select><option>Medium (baseline)</option><option>High (+20% CPM)</option><option>Low (-10% CPM)</option></select>
+          </div>
+          <div class="form-group">
+            <label>Creative quality score</label>
+            <select><option>Above average (7/10)</option><option>Average (5/10)</option><option>Below average (3/10)</option></select>
+          </div>
+          <div class="form-group">
+            <label>Attribution model</label>
+            <select><option>Data-driven (MTA)</option><option>Last click</option><option>Linear</option><option>Time decay</option></select>
+          </div>
+          <div class="form-group">
+            <label>Ad fatigue model</label>
+            <select><option>Moderate decay (−15% wk 3)</option><option>Fast decay (−25% wk 2)</option><option>No decay</option></select>
+          </div>
+          <div class="form-group">
+            <label>Simulation runs (N)</label>
+            <select><option>1,000 runs</option><option>500 runs (faster)</option><option>5,000 runs (precise)</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(1)">← Back</button>
+        <button class="btn btn-primary" onclick="runSim()">⚡ Run simulation</button>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 3: RUNNING ===== -->
+    <div class="screen" id="s3">
+      <div class="sim-progress-wrap">
+        <div class="sim-icon">🧠</div>
+        <div class="sim-title">Running Monte Carlo simulation</div>
+        <div class="sim-sub">Sampling from 1,000 outcome distributions across 3 scenarios…</div>
+        <div class="prog-track">
+          <div class="prog-bar" id="prog"></div>
+        </div>
+        <div class="prog-lbl" id="prog-lbl">0 / 1000 runs</div>
+        <div class="sim-log" id="sim-log"></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 4: RESULTS ===== -->
+    <div class="screen" id="s4">
+      <div class="page-header">
+        <div class="page-title">Simulation results <span class="badge badge-green" style="font-size:12px;vertical-align:middle;margin-left:8px">Base scenario selected</span></div>
+        <div class="page-sub">1,000 Monte Carlo runs complete. 80% confidence intervals shown.</div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Predicted ROAS</div>
+          <div class="metric-val" style="color:var(--green)">3.8×</div>
+          <div class="metric-sub">P10: 2.6× · P90: 5.1×</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Predicted CPA</div>
+          <div class="metric-val">₹428</div>
+          <div class="metric-sub">±₹62 at 80% CI</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Est. reach</div>
+          <div class="metric-val" style="color:var(--accent)">2.4M</div>
+          <div class="metric-sub">Unique users</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Risk score</div>
+          <div class="metric-val" style="color:var(--amber)">Med</div>
+          <div class="risk-meter">
+            <div class="risk-seg fill-low"></div>
+            <div class="risk-seg fill-low"></div>
+            <div class="risk-seg fill-med"></div>
+            <div class="risk-seg"></div>
+            <div class="risk-seg"></div>
+          </div>
+          <div class="metric-sub">2 flags detected</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tab-row">
+        <div class="tab active" onclick="showTab(0,this)">Scenarios</div>
+        <div class="tab" onclick="showTab(1,this)">Channel split</div>
+        <div class="tab" onclick="showTab(2,this)">Risk & alerts</div>
+        <div class="tab" onclick="showTab(3,this)">vs. Historical</div>
+      </div>
+
+      <!-- TAB 0: SCENARIOS -->
+      <div class="tab-panel active" id="tab0">
+        <div class="scenario-grid">
+          <div class="scenario-card" onclick="pickSc(this)">
+            <div class="sc-label" style="color:var(--coral)">😟 Pessimistic (P10)</div>
+            <div class="sc-roas" style="color:var(--coral)">2.6×</div>
+            <div class="sc-meta">CPA ₹554 · CTR 1.8%</div>
+            <div class="sc-bar"><div class="sc-fill" style="width:38%;background:var(--coral)"></div></div>
+            <div class="sc-desc">High competition pressure + rapid creative fatigue in week 2.</div>
+          </div>
+          <div class="scenario-card sel-scenario" onclick="pickSc(this)">
+            <div class="sc-label" style="color:var(--accent)">📈 Base case (P50) ✓</div>
+            <div class="sc-roas" style="color:var(--accent)">3.8×</div>
+            <div class="sc-meta">CPA ₹428 · CTR 2.9%</div>
+            <div class="sc-bar"><div class="sc-fill" style="width:65%;background:var(--accent)"></div></div>
+            <div class="sc-desc">Historical trend baseline — most likely outcome.</div>
+          </div>
+          <div class="scenario-card" onclick="pickSc(this)">
+            <div class="sc-label" style="color:var(--green)">😊 Optimistic (P90)</div>
+            <div class="sc-roas" style="color:var(--green)">5.1×</div>
+            <div class="sc-meta">CPA ₹327 · CTR 4.2%</div>
+            <div class="sc-bar"><div class="sc-fill" style="width:88%;background:var(--green)"></div></div>
+            <div class="sc-desc">Low competition + strong creative resonance with audience.</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title">Weekly ROAS forecast — base case</div>
+          <div class="bar-chart" id="weekly-chart"></div>
+          <div class="week-note">⚠ Weeks 5–6 decline driven by predicted ad fatigue. Recommend creative refresh at day 28.</div>
+        </div>
+      </div>
+
+      <!-- TAB 1: CHANNEL SPLIT -->
+      <div class="tab-panel" id="tab1">
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">Recommended allocation vs your input</div>
+            <div class="cmp-table">
+              <div class="cmp-header">
+                <span>Channel</span><span>Your input</span><span>Recommended</span>
+              </div>
+              <div class="cmp-row">
+                <span class="metric-name">Search</span>
+                <span class="cmp-val-a">40%</span>
+                <span class="cmp-val-b">38%</span>
+              </div>
+              <div class="cmp-row">
+                <span class="metric-name">Social (Meta)</span>
+                <span class="cmp-val-a">35%</span>
+                <span class="cmp-val-b">40% ↑</span>
+              </div>
+              <div class="cmp-row">
+                <span class="metric-name">In-app</span>
+                <span class="cmp-val-a">25%</span>
+                <span class="cmp-val-b">22%</span>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:12px">Shifting 5% from Search → Social driven by similar campaigns achieving +0.4× ROAS uplift on Meta for this audience profile and category.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Expected contribution by channel</div>
+            <div class="bar-chart" id="channel-chart" style="height:100px;margin-bottom:12px"></div>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div><span>Search</span><span class="legend-val">38% · ₹2.3L lift</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div><span>Social</span><span class="legend-val">40% · ₹2.9L lift</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div><span>In-app</span><span class="legend-val">22% · ₹1.4L lift</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: RISK -->
+      <div class="tab-panel" id="tab2">
+        <div class="alert alert-amber">
+          <div class="alert-icon">⚠️</div>
+          <div><strong>Ad fatigue risk — week 5+</strong>Predicted 22% CTR drop post day-28. Recommend creative refresh or rotation with 2 new ad sets targeting the same audience with different hooks.</div>
+        </div>
+        <div class="alert alert-amber">
+          <div class="alert-icon">⚠️</div>
+          <div><strong>Audience saturation risk</strong>1M–5M pool with 3× weekly frequency cap may exhaust unique reach by week 4. Consider expanding with a lookalike audience tier (similarity ≥ 80%).</div>
+        </div>
+        <div class="alert alert-accent">
+          <div class="alert-icon">ℹ️</div>
+          <div><strong>Seasonality boost detected</strong>Historical data shows +12% CTR for this apparel category in July. The simulation already accounts for this uplift in the base case.</div>
+        </div>
+        <div class="alert alert-teal">
+          <div class="alert-icon">💡</div>
+          <div><strong>Budget pacing recommendation</strong>Front-load 60% of budget in weeks 1–3 during the peak engagement window. Reduce daily cap to ₹28,000 in the final week to avoid waste.</div>
+        </div>
+        <div class="alert alert-teal">
+          <div class="alert-icon">💡</div>
+          <div><strong>Creative quality opportunity</strong>Campaigns with video (30s) in this vertical outperform static by 1.4× ROAS on average. Consider adding a 30s video asset if not already planned.</div>
+        </div>
+      </div>
+
+      <!-- TAB 3: COMPARE -->
+      <div class="tab-panel" id="tab3">
+        <div class="cmp-table">
+          <div class="cmp-header">
+            <span>Metric</span>
+            <span style="color:var(--accent)">This simulation (P50)</span>
+            <span style="color:var(--teal)">Festive Acquisition 2025</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">ROAS</span>
+            <span class="cmp-val-a">3.8×</span>
+            <span class="cmp-val-b">4.2×</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">CPA</span>
+            <span class="cmp-val-a">₹428</span>
+            <span class="cmp-val-b">₹420</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">CTR</span>
+            <span class="cmp-val-a">2.9%</span>
+            <span class="cmp-val-b">3.8%</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">Reach</span>
+            <span class="cmp-val-a">2.4M</span>
+            <span class="cmp-val-b">3.1M</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">Budget</span>
+            <span class="cmp-val-a">₹12L</span>
+            <span class="cmp-val-b">₹14L</span>
+          </div>
+          <div class="cmp-row">
+            <span class="metric-name">Duration</span>
+            <span class="cmp-val-a">45 days</span>
+            <span class="cmp-val-b">45 days</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7">Gap analysis: The Festive campaign achieved higher CTR (3.8% vs 2.9%) primarily driven by a stronger creative quality score (8.5/10 vs your estimated 7/10) and a larger audience pool (Pan-India vs 3 metros). Expanding geo target and investing in high-quality video could close ~60% of this gap.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="goTo(2)">← Reconfigure</button>
+        <button class="btn btn-primary">⬇ Export report</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let cur = 0;
+const screens = ['s0','s1','s2','s3','s4'];
+
+function goTo(n) {
+  document.getElementById(screens[cur]).classList.remove('active');
+  cur = n;
+  document.getElementById(screens[cur]).classList.add('active');
+  updateStepper();
+}
+
+function updateStepper() {
+  [0,1,2,3,4].forEach(i => {
+    const d = document.getElementById('dot'+i);
+    d.className = 'step-dot' + (i < cur ? ' done' : i === cur ? ' active' : '');
+    if(i < 4) {
+      const l = document.getElementById('line'+i);
+      if(l) l.className = 'step-line' + (i < cur ? ' done' : '');
+    }
+  });
+}
+
+function toggleCh(el) { el.classList.toggle('sel'); }
+function upd(el, id) { document.getElementById(id).textContent = el.value + '%'; }
+
+function showTab(n, el) {
+  document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
+}
+
+function pickSc(el) {
+  document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('sel-scenario'));
+  el.classList.add('sel-scenario');
+}
+
+function runSim() {
+  goTo(3);
+  const msgs = [
+    'Extracting 147-dim feature vectors…',
+    'Loading FAISS embedding index…',
+    'Scoring performance via XGBoost…',
+    'Sampling uncertainty distributions…',
+    'Generating pessimistic scenario…',
+    'Generating base scenario…',
+    'Generating optimistic scenario…',
+    'Computing confidence intervals…',
+    'Running ad fatigue decay model…',
+    'Checking risk flags…',
+    'Finalising recommendations…'
+  ];
+  let p = 0, mi = 0;
+  const log = document.getElementById('sim-log');
+  const iv = setInterval(() => {
+    p = Math.min(p + Math.random() * 3.5 + 0.5, 100);
+    document.getElementById('prog').style.width = p + '%';
+    document.getElementById('prog-lbl').textContent = Math.round(p * 10) + ' / 1000 runs';
+    if(mi < msgs.length && p > (mi+1) * (100/msgs.length)) {
+      const line = document.createElement('div');
+      line.className = 'sim-log-line';
+      line.textContent = msgs[mi];
+      log.appendChild(line);
+      mi++;
+      log.scrollTop = log.scrollHeight;
+    }
+    if(p >= 100) {
+      clearInterval(iv);
+      setTimeout(() => { goTo(4); buildCharts(); }, 600);
+    }
+  }, 60);
+}
+
+function buildCharts() {
+  // Weekly ROAS chart
+  const wc = document.getElementById('weekly-chart');
+  if(wc && !wc.dataset.built) {
+    wc.dataset.built = '1';
+    const data = [
+      {w:'Wk 1', v:3.2, h:70, col:'var(--accent)'},
+      {w:'Wk 2', v:3.8, h:84, col:'var(--accent)'},
+      {w:'Wk 3', v:4.1, h:90, col:'var(--accent)'},
+      {w:'Wk 4', v:3.6, h:79, col:'var(--accent)'},
+      {w:'Wk 5', v:3.3, h:72, col:'var(--amber)'},
+      {w:'Wk 6', v:2.8, h:62, col:'var(--coral)'},
+    ];
+    data.forEach(d => {
+      const g = document.createElement('div');
+      g.className = 'bar-group';
+      g.innerHTML = `<div class="bar-body" style="height:${d.h}px"><div class="bar-seg" style="height:100%;background:${d.col};opacity:0.85"></div></div><div class="bar-lbl">${d.w}<br>${d.v}×</div>`;
+      wc.appendChild(g);
+    });
+  }
+  // Channel contribution chart
+  const cc = document.getElementById('channel-chart');
+  if(cc && !cc.dataset.built) {
+    cc.dataset.built = '1';
+    const data = [
+      {n:'Search', h:75, col:'var(--accent)'},
+      {n:'Social', h:95, col:'var(--teal)'},
+      {n:'In-app', h:55, col:'var(--amber)'},
+    ];
+    data.forEach(d => {
+      const g = document.createElement('div');
+      g.className = 'bar-group';
+      g.innerHTML = `<div class="bar-body" style="height:${d.h}%"><div class="bar-seg" style="height:100%;background:${d.col};opacity:0.85"></div></div><div class="bar-lbl">${d.n}</div>`;
+      cc.appendChild(g);
+    });
+  }
+}
+
+// Init stepper
+updateStepper();
+</script>
+</body>
+</html>
