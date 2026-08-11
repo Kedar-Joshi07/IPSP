@@ -23,6 +23,14 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
     assert "session.query(" not in lowered
     assert "python-jose" not in lowered
     assert "jsonwebtoken" not in lowered
+    for network_import in (
+        "import requests",
+        "import httpx",
+        "from httpx",
+        "import aiohttp",
+        "urllib.request",
+    ):
+        assert network_import not in lowered
 
 
 def test_generic_core_has_no_benchmark_specific_output_terms() -> None:

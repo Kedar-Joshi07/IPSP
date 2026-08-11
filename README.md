@@ -3,10 +3,15 @@
 **Product:** Intelligent Predictive Simulation Platform (IPSP)  
 **Initial experience:** CampaignSim — Powered by IPSP  
 **Specification status:** v1.0 architecture frozen
-**Implementation status:** Phase 1A / v0.1.0 application foundation
+**Implementation status:** Phase 1B / v0.1.0 configuration and security-policy foundation
 **Implementation releases:** v0.1.0 → v1.0.0
 
-This repository contains the frozen specifications and the local-first IPSP application foundation. The current implementation provides the FastAPI factory, safe error/trace scaffolding, configuration, job contracts, health probes, and offline dark/light frontend shell. Analytical and authentication workflows remain intentionally unimplemented until their scheduled phases.
+This repository contains the frozen specifications and the local-first IPSP application foundation.
+The current implementation provides the FastAPI factory, safe error/trace scaffolding, typed nested
+configuration and feature flags, environment-backed secret resolution, backend outbound policy,
+job contracts, health probes, and an offline dark/light frontend shell. Network adapters,
+analytical workflows, persistence, and authentication remain intentionally unimplemented until
+their scheduled phases.
 
 ## Core product statement
 
@@ -68,6 +73,17 @@ python -m uvicorn ipsp.main:create_app --factory --reload
 ```
 
 Open `http://127.0.0.1:8000`. The UI and API foundation require no Internet connection at runtime.
+
+## Configuration and secrets
+
+Copy `.env.example` to a local ignored `.env` when environment overrides are needed. Nested settings
+use a double underscore, for example `IPSP_FEATURES__REMOTE_LLM_ENABLED` and
+`IPSP_OUTBOUND__INTERNET_ENABLED`. Feature availability never overrides outbound denial; all feature
+and outbound controls default off.
+
+Secret values are injected separately into the process environment and resolved only through an
+explicit `SecretRef`. They are not normal Settings fields, examples, or persisted configuration.
+See `config/README.md` for the canonical environment shape and migration from Phase 1A names.
 
 For a reproducible environment after `requirements.lock` is generated:
 

@@ -14,6 +14,8 @@ from ipsp.observability import context as request_context
 def test_factory_builds_application_and_versioned_api(settings: Settings) -> None:
     app = create_app(settings)
     assert isinstance(app, FastAPI)
+    assert app.state.foundation_services.settings is settings
+    assert app.state.foundation_services.feature_flags is settings.features
 
     with TestClient(app) as client:
         response = client.get("/api/v1")

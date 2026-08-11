@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from ipsp.api.router import build_router
+from ipsp.config.providers import build_foundation_services
 from ipsp.config.settings import Settings
 from ipsp.errors.handlers import register_exception_handlers
 from ipsp.observability.context import RequestContextMiddleware
@@ -15,6 +16,7 @@ from ipsp.observability.logging import configure_logging
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Construct an isolated application instance with foundation services only."""
     app_settings = settings or Settings()
+    foundation_services = build_foundation_services(app_settings)
     configure_logging(app_settings.log_level)
 
     app = FastAPI(
@@ -23,6 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         debug=app_settings.debug,
     )
     app.state.settings = app_settings
+    app.state.foundation_services = foundation_services
     register_exception_handlers(app)
     app.add_middleware(RequestContextMiddleware)
     app.include_router(build_router())

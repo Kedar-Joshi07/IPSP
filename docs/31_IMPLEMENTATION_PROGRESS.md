@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1A.1 foundation hardening complete. Phase 1B independent review ready.**
+Application implementation: **Phase 1B configuration and security-policy foundation complete. Phase 1C blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1A.1 PASS)** | Phase 1A.1 safety/observability/clean-lock gates passed; Phase 1B not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1B PASS)** | Phase 1B typed configuration, secrets, outbound policy, and composition gates passed; Phase 1C not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,42 @@ Application implementation: **Phase 1A.1 foundation hardening complete. Phase 1B
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1B Status
+
+**Phase 1B — Configuration, SecretProvider, Feature Flags & Outbound Policy**
+
+- **Implementation Status:** COMPLETE (2026-08-11)
+- **Gate Result:** PASS; ready for independent review before Phase 1C
+- **Configuration:** One immutable Pydantic Settings tree now separates runtime values, safe-off
+  feature flags, secret-provider selection, and deny-by-default outbound permissions using canonical
+  `IPSP_FEATURES__*`, `IPSP_OUTBOUND__*`, and `IPSP_SECRETS__*` environment variables
+- **Secrets:** `SecretProvider`, validated `SecretRef`, redacted `SecretValue`, and the approved
+  environment-injected provider are implemented. Required resolution fails closed without generated
+  defaults, plaintext errors, configuration fields, logging, or ordinary JSON serialization
+- **Outbound Policy:** Side-effect-free evaluation and enforcement cover global Internet, remote LLM,
+  model-download, update-check, provider allowlisting, all five frozen transmission levels, explicit
+  dataset-policy inputs, restricted-data local-only defaults, and context-sensitive fail-closed rules
+- **Composition:** The app factory explicitly constructs immutable foundation services and exposes
+  them through application state without mutable globals or a general service locator
+- **Dependencies:** No direct or resolved dependency changes; `pyproject.toml` and
+  `requirements.lock` remain unchanged
+- **Test Evidence:** `pytest` — 59 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 41 files;
+  strict mypy passed for 30 source files; `pip check` and `git diff --check` passed
+- **Security Evidence:** The `DO_NOT_LEAK_PHASE1B_SECRET` marker remained absent from repr/str,
+  configuration snapshots, Pydantic/JSON serialization, API error details, structured logs, secret
+  lookup failures, and outbound-policy denials
+- **Conformance Evidence:** Benchmark/business-term, Streamlit, legacy `Session.query()`, runtime CDN,
+  JWT/browser-auth, actual network-call, and premature database/auth/upload/analytics scans passed
+- **Intentional Extension Point:** Protected OS, vault, and cloud secret backends remain future
+  `SecretProvider` implementations because no technology is frozen; approved environment injection
+  is the production provider implemented in this phase
+- **Architecture Decisions Added:** None; Phase 1B implements existing frozen configuration,
+  privacy, secrets, and outbound-policy authorities
+
+Phase 1 and v0.1.0 remain in progress. Phase 1C functionality was not introduced and must not begin
+until Phase 1B receives independent review.
 
 ## Phase 1A.1 Status
 
