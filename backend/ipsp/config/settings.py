@@ -8,6 +8,8 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
 
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.security.outbound import RemoteTransmissionLevel
@@ -51,6 +53,29 @@ class SecretSettings(BaseModel):
     provider: SecretProviderKind = SecretProviderKind.ENVIRONMENT
 
 
+class DatabaseSettings(BaseModel):
+    """Validated configuration for the local SQLite control plane."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
+
+    url: str = "sqlite:///./ipsp.db"
+    echo: bool = False
+    connection_timeout_seconds: float = Field(default=5.0, gt=0, le=60)
+
+    @field_validator("url")
+    @classmethod
+    def validate_sqlite_url(cls, value: str) -> str:
+        try:
+            parsed = make_url(value)
+        except ArgumentError:
+            raise ValueError("Database URL must be a valid SQLite URL") from None
+        if parsed.get_backend_name() != "sqlite":
+            raise ValueError("Only SQLite database URLs are supported")
+        if parsed.username is not None or parsed.password is not None or parsed.host is not None:
+            raise ValueError("SQLite database URLs must not contain credentials or a host")
+        return value
+
+
 def _repository_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
@@ -66,6 +91,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         frozen=True,
+        hide_input_in_errors=True,
     )
 
     environment: Environment = Environment.DEVELOPMENT
@@ -80,6 +106,7 @@ class Settings(BaseSettings):
     log_dir: Path = Field(default_factory=lambda: _repository_root() / "logs")
     frontend_dir: Path = Field(default_factory=lambda: _repository_root() / "frontend")
     default_theme: Literal["system", "dark", "light"] = "system"
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
     outbound: OutboundSettings = Field(default_factory=OutboundSettings)
     secrets: SecretSettings = Field(default_factory=SecretSettings)

@@ -5,10 +5,16 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from sqlalchemy import Engine
+
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.config.settings import Settings
+from ipsp.database.engine import create_database_engine
+from ipsp.database.migrations import MigrationStateService, canonical_migrations_path
+from ipsp.database.session import DatabaseSessionFactory
 from ipsp.security.outbound import OutboundPolicy
 from ipsp.security.secrets import EnvironmentSecretProvider, SecretProvider
+from ipsp.services.readiness import ReadinessService
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +25,10 @@ class FoundationServices:
     feature_flags: FeatureFlags
     secret_provider: SecretProvider
     outbound_policy: OutboundPolicy
+    database_engine: Engine
+    database_sessions: DatabaseSessionFactory
+    migration_state: MigrationStateService
+    readiness_service: ReadinessService
 
 
 def build_foundation_services(
@@ -38,9 +48,17 @@ def build_foundation_services(
         update_check_enabled=outbound.update_check_enabled,
         default_transmission_level=outbound.default_remote_transmission,
     )
+    database_engine = create_database_engine(settings.database)
+    database_sessions = DatabaseSessionFactory(database_engine)
+    migration_state = MigrationStateService(database_engine, canonical_migrations_path())
+    readiness_service = ReadinessService(settings, database_engine, migration_state)
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
         secret_provider=secret_provider,
         outbound_policy=outbound_policy,
+        database_engine=database_engine,
+        database_sessions=database_sessions,
+        migration_state=migration_state,
+        readiness_service=readiness_service,
     )

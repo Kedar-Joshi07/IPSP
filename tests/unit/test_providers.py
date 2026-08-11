@@ -41,6 +41,10 @@ def test_foundation_services_are_explicitly_composed() -> None:
 
     assert services.settings is settings
     assert services.feature_flags is settings.features
+    assert services.database_sessions is not None
+    assert services.migration_state is not None
+    assert services.readiness_service is not None
     assert secret.reveal() == marker
     assert decision.allowed is True
     assert marker not in repr(services)
+    services.database_engine.dispose()

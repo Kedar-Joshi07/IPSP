@@ -23,6 +23,7 @@ class HealthResponse(BaseModel):
 
     status: Literal["alive", "ready", "not_ready"]
     timestamp_utc: datetime
+    error_code: str | None = None
     checks: dict[str, str] = Field(default_factory=dict)
     deferred_checks: list[str] = Field(default_factory=list)
 

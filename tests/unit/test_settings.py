@@ -4,7 +4,7 @@ import json
 
 import pytest
 from ipsp.config.feature_flags import FeatureFlags
-from ipsp.config.settings import Environment, OutboundSettings, Settings
+from ipsp.config.settings import DatabaseSettings, Environment, OutboundSettings, Settings
 from ipsp.security.outbound import RemoteTransmissionLevel
 from pydantic import ValidationError
 
@@ -33,6 +33,9 @@ def test_settings_load_canonical_nested_environment(monkeypatch: pytest.MonkeyPa
         "IPSP_OUTBOUND__DEFAULT_REMOTE_TRANSMISSION",
         "sanitized_schema_only",
     )
+    monkeypatch.setenv("IPSP_DATABASE__URL", "sqlite:///./configured.db")
+    monkeypatch.setenv("IPSP_DATABASE__ECHO", "true")
+    monkeypatch.setenv("IPSP_DATABASE__CONNECTION_TIMEOUT_SECONDS", "7.5")
 
     settings = Settings(_env_file=None)
 
@@ -43,6 +46,9 @@ def test_settings_load_canonical_nested_environment(monkeypatch: pytest.MonkeyPa
     assert settings.outbound.internet_enabled is True
     assert settings.outbound.remote_llm_enabled is True
     assert settings.outbound.allowed_remote_providers == ("provider-a",)
+    assert settings.database.url == "sqlite:///./configured.db"
+    assert settings.database.echo is True
+    assert settings.database.connection_timeout_seconds == 7.5
     assert (
         settings.outbound.default_remote_transmission
         is RemoteTransmissionLevel.SANITIZED_SCHEMA_ONLY
@@ -91,3 +97,24 @@ def test_configuration_snapshot_never_loads_secret_values(
 def test_production_debug_fails_closed() -> None:
     with pytest.raises(ValidationError, match="Debug mode must be disabled"):
         Settings(_env_file=None, environment=Environment.PRODUCTION, debug=True)
+
+
+@pytest.mark.parametrize(
+    "url",
+    (
+        "postgresql://localhost/ipsp",
+        "mysql://localhost/ipsp",
+        "not-a-database-url",
+    ),
+)
+def test_non_sqlite_or_malformed_database_urls_are_rejected(url: str) -> None:
+    with pytest.raises(ValidationError):
+        DatabaseSettings(url=url)
+
+
+def test_database_url_credentials_are_rejected_without_echoing_them() -> None:
+    marker = "DO_NOT_LEAK_DATABASE_PASSWORD"
+    with pytest.raises(ValidationError) as failure:
+        DatabaseSettings(url=f"sqlite://user:{marker}@/control.db")
+
+    assert marker not in str(failure.value)

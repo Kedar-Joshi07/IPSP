@@ -38,8 +38,14 @@ def test_readiness_reports_only_active_and_deferred_checks(client: TestClient) -
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ready"
-    assert body["checks"] == {"application": "ready", "configuration": "ready"}
-    assert body["deferred_checks"] == ["database", "analytical_storage", "job_worker"]
+    assert body["error_code"] is None
+    assert body["checks"] == {
+        "application": "ready",
+        "configuration": "ready",
+        "database": "ready",
+        "migration": "ready",
+    }
+    assert body["deferred_checks"] == ["analytical_storage", "job_worker"]
 
 
 def test_trace_and_request_ids_are_propagated(client: TestClient) -> None:

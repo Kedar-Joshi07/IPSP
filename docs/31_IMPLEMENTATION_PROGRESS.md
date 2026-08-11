@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1B configuration and security-policy foundation complete. Phase 1C blocked pending independent review.**
+Application implementation: **Phase 1C synchronous SQLite/Alembic foundation complete. Phase 1D blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1B PASS)** | Phase 1B typed configuration, secrets, outbound policy, and composition gates passed; Phase 1C not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1C PASS)** | Phase 1C SQLite engine/session, canonical metadata, Alembic baseline, migration state, and readiness gates passed; Phase 1D not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,44 @@ Application implementation: **Phase 1B configuration and security-policy foundat
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1C Status
+
+**Phase 1C - Synchronous SQLite Control-Plane Foundation & Alembic Baseline**
+
+- **Implementation Status:** COMPLETE (2026-08-11)
+- **Gate Result:** PASS; ready for independent review before Phase 1D
+- **Configuration:** Immutable nested `IPSP_DATABASE__URL`, `IPSP_DATABASE__ECHO`, and
+  `IPSP_DATABASE__CONNECTION_TIMEOUT_SECONDS` settings now configure the control plane. Only
+  credential-free SQLite URLs are accepted; unsupported or malformed URLs fail closed
+- **Database Foundation:** One canonical `DeclarativeBase` and `MetaData` with deterministic naming
+  conventions live under `backend/ipsp/database/models/`. The explicit synchronous engine enables
+  SQLite foreign keys on every connection and applies the configured timeout without global engines,
+  automatic schema creation, WAL policy, or asynchronous SQLAlchemy
+- **Sessions:** The typed session factory always closes sessions, never commits implicitly, commits
+  only through an explicit transaction scope, and rolls failed transactions back
+- **Migrations:** Root `alembic.ini` and the sole history under `database/migrations/` support online
+  and offline execution through application Settings. The `20260811_01` no-op foundation baseline
+  creates no business entity tables, and upgrade/current/downgrade/re-upgrade/check flows pass
+- **Migration State & Readiness:** Side-effect-free revision inspection reports current revision,
+  expected head, and head alignment. Readiness actively checks configuration, SQLite connectivity,
+  and migration head with safe status codes; analytical storage and job workers remain explicitly
+  deferred, while liveness remains database-independent
+- **Dependencies:** Added maintained SQLAlchemy 2.0 and Alembic 1.x direct constraints. The exact
+  Python 3.12 lock snapshot records SQLAlchemy 2.0.51, Alembic 1.19.1, and required transitive packages
+- **Test Evidence:** `pytest` - 75 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 49 files;
+  strict mypy passed for 34 source files; `pip check` and `git diff --check` passed
+- **Clean Environment Evidence:** The exact lock installed in a fresh Python 3.12.0 virtual
+  environment; the local package installed with no dependency resolution; all tests, Ruff checks,
+  strict mypy, compileall, and `pip check` passed there
+- **Conformance Evidence:** Exactly one Alembic root; no business/auth/RBAC/job ORM tables; no
+  `create_all()`, legacy `Session.query()`, asynchronous SQLAlchemy, benchmark-specific production
+  constants, runtime CDN, or prohibited architecture patterns
+- **Architecture Decisions Added:** None; Phase 1C implements locked decisions D-004, D-014, and D-015
+
+Phase 1 and v0.1.0 remain in progress. Phase 1D functionality was not introduced and must not begin
+until Phase 1C receives independent review.
 
 ## Phase 1B Status
 

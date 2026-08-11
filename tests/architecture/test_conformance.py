@@ -45,3 +45,13 @@ def test_frontend_has_no_runtime_cdn_reference() -> None:
 
     for term in ("cdnjs", "unpkg.com", "jsdelivr.net"):
         assert term not in lowered
+
+
+def test_there_is_exactly_one_alembic_history_root() -> None:
+    migration_environments = [
+        path
+        for path in PROJECT_ROOT.rglob("env.py")
+        if ".venv" not in path.parts and "database" in path.parts
+    ]
+
+    assert migration_environments == [PROJECT_ROOT / "database" / "migrations" / "env.py"]
