@@ -1,10 +1,14 @@
-"""Phase 1A architecture and contamination guardrails."""
+"""Foundation architecture and contamination guardrails."""
 
+import re
 from pathlib import Path
+
+from ipsp.database.models import Base
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BACKEND = PROJECT_ROOT / "backend" / "ipsp"
 FRONTEND = PROJECT_ROOT / "frontend"
+MIGRATIONS = PROJECT_ROOT / "database" / "migrations"
 
 
 def _read_production_source() -> str:
@@ -12,6 +16,7 @@ def _read_production_source() -> str:
     paths.extend(
         path for path in FRONTEND.rglob("*") if path.suffix.lower() in {".html", ".css", ".js"}
     )
+    paths.extend(MIGRATIONS.rglob("*.py"))
     return "\n".join(path.read_text(encoding="utf-8") for path in paths)
 
 
@@ -19,10 +24,23 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
     source = _read_production_source()
     lowered = source.lower()
 
-    assert "streamlit" not in lowered
-    assert "session.query(" not in lowered
-    assert "python-jose" not in lowered
-    assert "jsonwebtoken" not in lowered
+    for prohibited in (
+        "streamlit",
+        "session.query(",
+        "asyncsession",
+        "create_async_engine",
+        "aiosqlite",
+        "metadata.create_all",
+        ".create_all(",
+        "python-jose",
+        "jsonwebtoken",
+        "import jwt",
+        "import redis",
+        "from redis",
+        "import celery",
+        "from celery",
+    ):
+        assert prohibited not in lowered
     for network_import in (
         "import requests",
         "import httpx",
@@ -33,6 +51,15 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         assert network_import not in lowered
 
 
+def test_foundation_has_one_declarative_base_and_no_business_tables() -> None:
+    source = _read_production_source()
+
+    assert re.findall(r"class\s+\w+\(DeclarativeBase\)", source) == ["class Base(DeclarativeBase)"]
+    # Phase 1C-only guard: replace with a Phase 1D table-name allowlist when Phase 1D begins.
+    assert "__tablename__" not in source
+    assert dict(Base.metadata.tables) == {}
+
+
 def test_generic_core_has_no_benchmark_specific_output_terms() -> None:
     lowered = _read_production_source().lower()
 
@@ -41,17 +68,32 @@ def test_generic_core_has_no_benchmark_specific_output_terms() -> None:
 
 
 def test_frontend_has_no_runtime_cdn_reference() -> None:
-    lowered = _read_production_source().lower()
+    frontend_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in FRONTEND.rglob("*")
+        if path.suffix.lower() in {".html", ".css", ".js"}
+    ).lower()
 
     for term in ("cdnjs", "unpkg.com", "jsdelivr.net"):
-        assert term not in lowered
+        assert term not in frontend_source
+    for framework in ("react", "vue", "angular"):
+        assert framework not in frontend_source
 
 
 def test_there_is_exactly_one_alembic_history_root() -> None:
+    def is_repository_source(path: Path) -> bool:
+        return not any(part == ".git" or part.startswith(".venv") for part in path.parts)
+
     migration_environments = [
-        path
-        for path in PROJECT_ROOT.rglob("env.py")
-        if ".venv" not in path.parts and "database" in path.parts
+        path for path in PROJECT_ROOT.rglob("env.py") if is_repository_source(path)
+    ]
+    alembic_configs = [
+        path for path in PROJECT_ROOT.rglob("alembic.ini") if is_repository_source(path)
+    ]
+    script_templates = [
+        path for path in PROJECT_ROOT.rglob("script.py.mako") if is_repository_source(path)
     ]
 
     assert migration_environments == [PROJECT_ROOT / "database" / "migrations" / "env.py"]
+    assert alembic_configs == [PROJECT_ROOT / "alembic.ini"]
+    assert script_templates == [PROJECT_ROOT / "database" / "migrations" / "script.py.mako"]

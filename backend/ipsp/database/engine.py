@@ -13,6 +13,7 @@ def create_database_engine(settings: DatabaseSettings) -> Engine:
     engine = create_engine(
         settings.url,
         echo=settings.echo,
+        hide_parameters=True,
         connect_args={
             "check_same_thread": False,
             "timeout": settings.connection_timeout_seconds,

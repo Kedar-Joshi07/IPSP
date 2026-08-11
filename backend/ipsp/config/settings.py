@@ -8,7 +8,7 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy.engine import make_url
+from sqlalchemy.engine import URL, make_url
 from sqlalchemy.exc import ArgumentError
 
 from ipsp.config.feature_flags import FeatureFlags
@@ -53,12 +53,23 @@ class SecretSettings(BaseModel):
     provider: SecretProviderKind = SecretProviderKind.ENVIRONMENT
 
 
+def _repository_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _default_database_url() -> str:
+    database_path = (_repository_root() / "database" / "ipsp.db").as_posix()
+    return URL.create(drivername="sqlite", database=database_path).render_as_string(
+        hide_password=False
+    )
+
+
 class DatabaseSettings(BaseModel):
     """Validated configuration for the local SQLite control plane."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", hide_input_in_errors=True)
 
-    url: str = "sqlite:///./ipsp.db"
+    url: str = Field(default_factory=_default_database_url)
     echo: bool = False
     connection_timeout_seconds: float = Field(default=5.0, gt=0, le=60)
 
@@ -69,15 +80,11 @@ class DatabaseSettings(BaseModel):
             parsed = make_url(value)
         except ArgumentError:
             raise ValueError("Database URL must be a valid SQLite URL") from None
-        if parsed.get_backend_name() != "sqlite":
-            raise ValueError("Only SQLite database URLs are supported")
+        if parsed.drivername not in {"sqlite", "sqlite+pysqlite"}:
+            raise ValueError("Only synchronous SQLite database URLs are supported")
         if parsed.username is not None or parsed.password is not None or parsed.host is not None:
             raise ValueError("SQLite database URLs must not contain credentials or a host")
         return value
-
-
-def _repository_root() -> Path:
-    return Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):

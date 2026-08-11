@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1C synchronous SQLite/Alembic foundation complete. Phase 1D blocked pending independent review.**
+Application implementation: **Phase 1C.1 database foundation hardening complete. Phase 1D blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1C PASS)** | Phase 1C SQLite engine/session, canonical metadata, Alembic baseline, migration state, and readiness gates passed; Phase 1D not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1C.1 PASS)** | Phase 1C.1 readiness, SQL privacy, deterministic SQLite, FK, migration-head, and conformance hardening gates passed; Phase 1D not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,42 @@ Application implementation: **Phase 1C synchronous SQLite/Alembic foundation com
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1C.1 — Database foundation hardening
+
+- **Implementation Status:** COMPLETE (2026-08-11)
+- **Gate Result:** PASS; Phase 1D ready for independent review
+- **H-001 Readiness Semantics:** Healthy readiness returns HTTP 200; migration-required,
+  database-unavailable, FK-disabled, and invalid migration-state responses return HTTP 503 with the
+  same minimal safe response contract. Liveness remains HTTP 200 and database-independent
+- **H-002 SQL Parameter Privacy:** Every engine forces SQLAlchemy `hide_parameters=True`; echo and
+  `StatementError` regression coverage proves the `DO_NOT_LEAK_DATABASE_PARAMETER` bound value is
+  absent from captured logs, output, and rendered errors
+- **H-003 Deterministic Default:** The no-environment default resolves through SQLAlchemy URL
+  utilities to `<repository>/database/ipsp.db` and remains unchanged when the process CWD changes.
+  `.env.example` leaves the optional absolute URL override commented out
+- **H-004 Synchronous Driver Restriction:** Database URL validation accepts only `sqlite` and
+  `sqlite+pysqlite`; `sqlite+aiosqlite`, non-SQLite, malformed, credential-bearing, and host-bearing
+  URLs fail closed without installing another driver
+- **H-005 FK Readiness:** Readiness now requires `PRAGMA foreign_keys=1`. Tests verify two distinct
+  DBAPI connection lifecycles and prove a real test-only invalid child insert raises an integrity error
+- **H-006 Migration Heads:** Script and database inspection use multi-head APIs, require one script
+  head, allow zero database heads before migration, accept one matching head, and convert multiple or
+  malformed heads into a safe migration-state failure and HTTP 503
+- **H-007 Conformance:** Automated guards now cover frontend frameworks, Streamlit, legacy and async
+  SQLAlchemy, aiosqlite, production `create_all()`, duplicate Declarative Bases/Alembic roots,
+  Phase-1C business tables, runtime CDNs, JWT libraries, outbound HTTP clients, Redis, and Celery. The
+  no-business-table assertion is explicitly documented as a Phase-1C-only guard for Phase 1D evolution
+- **Dependencies:** No direct or resolved dependency changes; `pyproject.toml` and
+  `requirements.lock` remain unchanged
+- **Test Evidence:** `pytest` — 84 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 49 files;
+  strict mypy passed for 34 source files; `pip check` and `git diff --check` passed
+- **Architecture Decisions Added:** None; this hardening pass corrects reviewed Phase 1C behavior
+  within locked decisions D-004, D-014, and D-015
+
+Phase 1 and v0.1.0 remain in progress. Phase 1D functionality was not introduced and remains blocked
+until Phase 1C.1 receives independent review.
 
 ## Phase 1C Status
 

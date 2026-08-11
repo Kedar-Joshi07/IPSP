@@ -2,16 +2,24 @@
 
 from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script.revision import RevisionError
 from fastapi.testclient import TestClient
 from ipsp.config.settings import Environment, Settings
 from ipsp.database.engine import create_database_engine
-from ipsp.database.migrations import MigrationStateService, canonical_migrations_path
+from ipsp.database.migrations import (
+    MigrationStateError,
+    MigrationStateService,
+    canonical_migrations_path,
+)
 from ipsp.main import create_app
-from sqlalchemy import inspect
+from ipsp.services.readiness import ReadinessService
+from sqlalchemy import create_engine, inspect, text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_HEAD = "20260811_01"
@@ -82,7 +90,7 @@ def test_readiness_is_not_ready_before_migration(settings: Settings) -> None:
 
     assert live_response.status_code == 200
     assert live_response.json()["status"] == "alive"
-    assert response.status_code == 200
+    assert response.status_code == 503
     assert response.json()["status"] == "not_ready"
     assert response.json()["error_code"] == "SYS-MIGRATION-REQUIRED"
     assert response.json()["checks"]["database"] == "ready"
@@ -100,15 +108,106 @@ def test_readiness_reports_safe_database_failure(tmp_path: Path) -> None:
     app = create_app(settings)
     try:
         with TestClient(app, raise_server_exceptions=False) as client:
+            live_response = client.get("/health/live")
             response = client.get("/health/ready")
     finally:
         app.state.foundation_services.database_engine.dispose()
 
-    assert response.status_code == 200
+    assert live_response.status_code == 200
+    assert live_response.json()["status"] == "alive"
+    assert response.status_code == 503
     assert response.json()["status"] == "not_ready"
     assert response.json()["error_code"] == "SYS-DATABASE-UNAVAILABLE"
     assert database_path.name not in response.text
     assert settings.database.url not in response.text
+
+
+def test_readiness_rejects_connection_without_foreign_key_enforcement(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IPSP_DATABASE__URL", settings.database.url)
+    command.upgrade(_alembic_config(), "head")
+    unsafe_engine = create_engine(settings.database.url, hide_parameters=True)
+    readiness_service = ReadinessService(
+        settings,
+        unsafe_engine,
+        MigrationStateService(unsafe_engine, canonical_migrations_path()),
+    )
+    app = create_app(settings)
+    original_services = app.state.foundation_services
+    app.state.foundation_services = SimpleNamespace(readiness_service=readiness_service)
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = client.get("/health/ready")
+    finally:
+        unsafe_engine.dispose()
+        original_services.database_engine.dispose()
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "not_ready"
+    assert response.json()["error_code"] == "SYS-DATABASE-FK-DISABLED"
+    assert response.json()["checks"]["foreign_keys"] == "not_ready"
+
+
+def test_multiple_database_migration_heads_fail_readiness_safely(settings: Settings) -> None:
+    app = create_app(settings)
+    engine = app.state.foundation_services.database_engine
+    with engine.begin() as connection:
+        connection.execute(
+            text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL PRIMARY KEY)")
+        )
+        connection.execute(
+            text("INSERT INTO alembic_version (version_num) VALUES (:head)"),
+            [{"head": "unexpected_head_a"}, {"head": "unexpected_head_b"}],
+        )
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = client.get("/health/ready")
+    finally:
+        engine.dispose()
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "not_ready"
+    assert response.json()["error_code"] == "SYS-MIGRATION-STATE-UNAVAILABLE"
+    assert "unexpected_head" not in response.text
+
+
+def test_multiple_script_heads_raise_safe_migration_state_error(settings: Settings) -> None:
+    engine = create_database_engine(settings.database)
+    script_directory = MagicMock()
+    script_directory.get_heads.return_value = ["head_a", "head_b"]
+    try:
+        with (
+            patch(
+                "ipsp.database.migrations.ScriptDirectory.from_config",
+                return_value=script_directory,
+            ),
+            pytest.raises(MigrationStateError, match="exactly one head"),
+        ):
+            MigrationStateService(engine, canonical_migrations_path()).expected_head()
+    finally:
+        engine.dispose()
+
+
+def test_malformed_script_history_raises_safe_migration_state_error(settings: Settings) -> None:
+    engine = create_database_engine(settings.database)
+    script_directory = MagicMock()
+    script_directory.get_heads.side_effect = RevisionError("private revision details")
+    try:
+        with (
+            patch(
+                "ipsp.database.migrations.ScriptDirectory.from_config",
+                return_value=script_directory,
+            ),
+            pytest.raises(MigrationStateError) as failure,
+        ):
+            MigrationStateService(engine, canonical_migrations_path()).expected_head()
+    finally:
+        engine.dispose()
+
+    assert str(failure.value) == "Migration history is unavailable"
+    assert "private revision details" not in str(failure.value)
 
 
 def test_application_construction_does_not_create_or_migrate_database(settings: Settings) -> None:

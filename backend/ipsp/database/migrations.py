@@ -8,6 +8,7 @@ from pathlib import Path
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from alembic.script.revision import RevisionError
 from alembic.util.exc import CommandError
 from sqlalchemy import Engine
 
@@ -41,17 +42,20 @@ class MigrationStateService:
         config = Config()
         config.set_main_option("script_location", str(self._migrations_path))
         try:
-            head = ScriptDirectory.from_config(config).get_current_head()
-        except (CommandError, OSError) as exc:
+            heads = ScriptDirectory.from_config(config).get_heads()
+        except (CommandError, OSError, RevisionError) as exc:
             raise MigrationStateError("Migration history is unavailable") from exc
-        if head is None:
-            raise MigrationStateError("Migration history has no expected head")
-        return head
+        if len(heads) != 1:
+            raise MigrationStateError("Migration history must have exactly one head")
+        return heads[0]
 
     def inspect(self) -> MigrationState:
         expected_head = self.expected_head()
         with self._engine.connect() as connection:
-            current_revision = MigrationContext.configure(connection).get_current_revision()
+            current_heads = MigrationContext.configure(connection).get_current_heads()
+        if len(current_heads) > 1:
+            raise MigrationStateError("Database has unexpected multiple migration heads")
+        current_revision = current_heads[0] if current_heads else None
         return MigrationState(
             current_revision=current_revision,
             expected_head=expected_head,

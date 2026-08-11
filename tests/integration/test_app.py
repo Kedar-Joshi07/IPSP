@@ -43,6 +43,7 @@ def test_readiness_reports_only_active_and_deferred_checks(client: TestClient) -
         "application": "ready",
         "configuration": "ready",
         "database": "ready",
+        "foreign_keys": "ready",
         "migration": "ready",
     }
     assert body["deferred_checks"] == ["analytical_storage", "job_worker"]

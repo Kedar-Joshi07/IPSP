@@ -11,6 +11,7 @@ from ipsp.config.settings import Settings
 from ipsp.database.migrations import MigrationStateError, MigrationStateService
 
 DATABASE_UNAVAILABLE = "SYS-DATABASE-UNAVAILABLE"
+DATABASE_FK_DISABLED = "SYS-DATABASE-FK-DISABLED"
 MIGRATION_STATE_UNAVAILABLE = "SYS-MIGRATION-STATE-UNAVAILABLE"
 MIGRATION_REQUIRED = "SYS-MIGRATION-REQUIRED"
 
@@ -55,6 +56,7 @@ class ReadinessService:
         try:
             with self._engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
+                foreign_keys_enabled = connection.scalar(text("PRAGMA foreign_keys"))
         except SQLAlchemyError:
             checks["database"] = "not_ready"
             checks["migration"] = "not_checked"
@@ -66,6 +68,17 @@ class ReadinessService:
             )
 
         checks["database"] = "ready"
+        if foreign_keys_enabled != 1:
+            checks["foreign_keys"] = "not_ready"
+            checks["migration"] = "not_checked"
+            return ReadinessResult(
+                ready=False,
+                checks=checks,
+                deferred_checks=("analytical_storage", "job_worker"),
+                error_code=DATABASE_FK_DISABLED,
+            )
+
+        checks["foreign_keys"] = "ready"
         try:
             migration_state = self._migration_state.inspect()
         except (MigrationStateError, SQLAlchemyError):

@@ -1,12 +1,16 @@
 """Typed nested settings and safe-default behavior."""
 
 import json
+from pathlib import Path
 
 import pytest
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.config.settings import DatabaseSettings, Environment, OutboundSettings, Settings
 from ipsp.security.outbound import RemoteTransmissionLevel
 from pydantic import ValidationError
+from sqlalchemy.engine import make_url
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_default_configuration_is_offline_and_features_are_disabled() -> None:
@@ -19,6 +23,21 @@ def test_default_configuration_is_offline_and_features_are_disabled() -> None:
     assert settings.outbound.update_check_enabled is False
     assert settings.outbound.allowed_remote_providers == ()
     assert settings.outbound.default_remote_transmission is RemoteTransmissionLevel.REMOTE_DISABLED
+    assert (
+        Path(make_url(settings.database.url).database or "").resolve()
+        == (PROJECT_ROOT / "database" / "ipsp.db").resolve()
+    )
+
+
+def test_default_database_location_does_not_depend_on_current_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected_url = Settings(_env_file=None).database.url
+
+    monkeypatch.chdir(tmp_path)
+
+    assert Settings(_env_file=None).database.url == expected_url
 
 
 def test_settings_load_canonical_nested_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -104,6 +123,7 @@ def test_production_debug_fails_closed() -> None:
     (
         "postgresql://localhost/ipsp",
         "mysql://localhost/ipsp",
+        "sqlite+aiosqlite:///./control.db",
         "not-a-database-url",
     ),
 )
