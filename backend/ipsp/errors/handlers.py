@@ -59,6 +59,8 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ipsp_trace_id": _trace_id(request),
                 "ipsp_request_id": _request_id(request),
                 "ipsp_action": "exception.handled",
+                "ipsp_stream": "errors",
+                "ipsp_component": "api",
                 "ipsp_status": "failure",
                 "ipsp_error_code": exc.error_code,
                 "ipsp_metadata": {"exception_type": type(exc).__name__},
@@ -84,6 +86,19 @@ def register_exception_handlers(app: FastAPI) -> None:
             {"location": list(error["loc"]), "message": error["msg"], "type": error["type"]}
             for error in exc.errors()
         ]
+        logger.warning(
+            "Handled request validation error",
+            extra={
+                "ipsp_trace_id": _trace_id(request),
+                "ipsp_request_id": _request_id(request),
+                "ipsp_stream": "errors",
+                "ipsp_component": "api",
+                "ipsp_action": "exception.handled",
+                "ipsp_status": "failure",
+                "ipsp_error_code": "DATA-VALIDATION",
+                "ipsp_metadata": {"exception_type": type(exc).__name__},
+            },
+        )
         return _response(
             request,
             ErrorResponse(
@@ -103,6 +118,8 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ipsp_trace_id": _trace_id(request),
                 "ipsp_request_id": _request_id(request),
                 "ipsp_action": "exception.unexpected",
+                "ipsp_stream": "errors",
+                "ipsp_component": "api",
                 "ipsp_status": "failure",
                 "ipsp_error_code": "SYS-UNEXPECTED",
                 "ipsp_metadata": {"exception_type": type(exc).__name__},

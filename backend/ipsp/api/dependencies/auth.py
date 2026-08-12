@@ -5,6 +5,7 @@ from typing import Annotated, cast
 from fastapi import Depends, Request
 
 from ipsp.auth.service import AuthPrincipal, AuthService
+from ipsp.observability.context import bind_authenticated_context
 
 
 def get_auth_service(request: Request) -> AuthService:
@@ -21,6 +22,11 @@ def require_authenticated_session(
     request.state.session_correlation_id = principal.session_correlation_id
     request.state.role_id = principal.role_id
     request.state.role_name = principal.role_name
+    bind_authenticated_context(
+        session_correlation_id=principal.session_correlation_id,
+        user_id=principal.user_id,
+        resolved_role=principal.role_name,
+    )
     return principal
 
 

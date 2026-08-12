@@ -15,6 +15,8 @@ from ipsp.config.settings import AuthSettings
 from ipsp.database.models import Role, User, UserSession
 from ipsp.database.session import DatabaseSessionFactory
 from ipsp.errors.exceptions import IPSPError
+from ipsp.observability.audit import AuditService
+from ipsp.observability.events import EventStream
 from ipsp.repositories.auth import RoleRepository, UserRepository, UserSessionRepository
 
 
@@ -63,10 +65,12 @@ class AuthService:
         settings: AuthSettings,
         sessions: DatabaseSessionFactory,
         passwords: PasswordService,
+        audit: AuditService,
     ) -> None:
         self._settings = settings
         self._sessions = sessions
         self._passwords = passwords
+        self._audit = audit
 
     @staticmethod
     def _invalid_credentials() -> IPSPError:
@@ -104,6 +108,14 @@ class AuthService:
         now = timestamp or _now()
         if not username or len(username) > 255:
             self._passwords.equalize_unknown_user(password)
+            self._audit.record(
+                stream=EventStream.SECURITY,
+                component="auth",
+                action="auth.login",
+                status="failure",
+                severity="WARNING",
+                error_code="AUTH-INVALID_CREDENTIALS",
+            )
             raise self._invalid_credentials()
 
         failure = False
@@ -160,6 +172,27 @@ class AuthService:
                             session_token=raw_session,
                             csrf_token=raw_csrf,
                         )
+                        self._audit.record_in_session(
+                            session,
+                            stream=EventStream.SECURITY,
+                            component="auth",
+                            action="auth.login",
+                            status="success",
+                            severity="INFO",
+                            user_id=user.id,
+                            resolved_role=role.name,
+                            session_correlation_id=user_session.session_correlation_id,
+                        )
+            if failure:
+                self._audit.record_in_session(
+                    session,
+                    stream=EventStream.SECURITY,
+                    component="auth",
+                    action="auth.login",
+                    status="failure",
+                    severity="WARNING",
+                    error_code="AUTH-INVALID_CREDENTIALS",
+                )
         if failure or result is None:
             raise self._invalid_credentials()
         return result
@@ -212,11 +245,33 @@ class AuthService:
             or stored_hash is None
             or not hmac.compare_digest(_digest(csrf_cookie or ""), stored_hash)
         ):
+            self._audit.record(
+                stream=EventStream.SECURITY,
+                component="auth",
+                action="auth.csrf_validation",
+                status="failure",
+                severity="WARNING",
+                error_code="AUTHZ-CSRF_INVALID",
+                user_id=principal.user_id,
+                resolved_role=principal.role_name,
+                session_correlation_id=principal.session_correlation_id,
+            )
             raise IPSPError("AUTHZ-CSRF_INVALID", "CSRF validation failed.")
 
     def logout(self, principal: AuthPrincipal, *, timestamp: datetime | None = None) -> None:
         with self._sessions.transaction() as session:
             UserSessionRepository(session).invalidate_one(principal.session_id, timestamp or _now())
+            self._audit.record_in_session(
+                session,
+                stream=EventStream.SECURITY,
+                component="auth",
+                action="auth.logout",
+                status="success",
+                severity="INFO",
+                user_id=principal.user_id,
+                resolved_role=principal.role_name,
+                session_correlation_id=principal.session_correlation_id,
+            )
 
     def change_password(
         self,
@@ -231,6 +286,17 @@ class AuthService:
         try:
             self._passwords.validate(new_password)
         except PasswordInputError:
+            self._audit.record(
+                stream=EventStream.SECURITY,
+                component="auth",
+                action="auth.password_change",
+                status="failure",
+                severity="WARNING",
+                error_code="AUTH-PASSWORD_INVALID",
+                user_id=principal.user_id,
+                resolved_role=principal.role_name,
+                session_correlation_id=principal.session_correlation_id,
+            )
             raise IPSPError("AUTH-PASSWORD_INVALID", "New password is invalid.") from None
         with self._sessions.transaction() as session:
             users = UserRepository(session)
@@ -248,7 +314,29 @@ class AuthService:
                     new_hash = self._passwords.hash(new_password)
                     users.replace_password(user, new_hash, now)
                     UserSessionRepository(session).invalidate_all_by_user(user.id, now)
+                    self._audit.record_in_session(
+                        session,
+                        stream=EventStream.SECURITY,
+                        component="auth",
+                        action="auth.password_change",
+                        status="success",
+                        severity="INFO",
+                        user_id=principal.user_id,
+                        resolved_role=principal.role_name,
+                        session_correlation_id=principal.session_correlation_id,
+                    )
         if failure:
+            self._audit.record(
+                stream=EventStream.SECURITY,
+                component="auth",
+                action="auth.password_change",
+                status="failure",
+                severity="WARNING",
+                error_code="AUTH-PASSWORD_INVALID",
+                user_id=principal.user_id,
+                resolved_role=principal.role_name,
+                session_correlation_id=principal.session_correlation_id,
+            )
             raise IPSPError("AUTH-PASSWORD_INVALID", "Current password is invalid.")
 
     def invalidate_all_user_sessions(self, user_id: int, timestamp: datetime | None = None) -> None:
@@ -275,7 +363,7 @@ class AuthService:
                 raise IPSPError(
                     "AUTH-BOOTSTRAP_UNAVAILABLE", "Admin bootstrap is no longer available."
                 )
-            RBACCatalogService.ensure_core_catalog_in_session(session, now)
+            RBACCatalogService.ensure_core_catalog_in_session(session, now, self._audit)
             try:
                 password_hash = self._passwords.hash(password)
             except PasswordInputError:
@@ -303,5 +391,15 @@ class AuthService:
             users.add(user)
             session.flush()
             user_id = user.id
+            self._audit.record_in_session(
+                session,
+                stream=EventStream.AUDIT,
+                component="auth",
+                action="auth.bootstrap_admin",
+                status="success",
+                severity="INFO",
+                user_id=user.id,
+                resolved_role=admin_role.name,
+            )
         assert user_id is not None
         return user_id

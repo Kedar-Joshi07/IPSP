@@ -53,6 +53,20 @@ no unfrozen keychain or vault technology is selected here.
 `.env.example` contains non-secret defaults only. Never commit a real `.env`, credential, bearer
 token, cookie, or resolved secret value.
 
+## Structured observability
+
+Phase 1G uses `IPSP_LOG_LEVEL` and `IPSP_LOG_DIR` for two local structured sinks: one console stream
+and `<log_dir>/ipsp-runtime.jsonl`, a UTF-8 JSONL file rotating at 10 MiB with five backups. Repeated
+application construction replaces only IPSP-owned handlers, closes the old file sink, and never
+configures a network exporter. Runtime JSONL files and rotations are operational artifacts and must
+not be committed.
+
+High-volume application, request, frontend, and performance events remain in the rotating runtime
+sink. SQLite stores only explicitly selected audit/security events through the append-only
+`audit_events` repository. Both forms share the same sanitized event envelope and non-secret
+request/trace/session correlation fields; neither accepts raw passwords, hashes, cookies, bearer or
+CSRF tokens, Authorization headers, request bodies, or exception messages/locals.
+
 ## Local RBAC provisioning
 
 Phase 1F provisioning is explicit and never runs at application startup or readiness. After applying

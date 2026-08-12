@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 from ipsp.database.models import Permission, Role
 from ipsp.database.session import DatabaseSessionFactory
 from ipsp.errors.exceptions import IPSPError, PermissionDeniedException
+from ipsp.observability.audit import AuditService
+from ipsp.observability.events import EventStream
 from ipsp.repositories.auth import RoleRepository, UserRepository, UserSessionRepository
 from ipsp.repositories.rbac import PermissionRepository, RBACRepository
 
@@ -61,8 +63,9 @@ class CatalogSyncResult:
 class RBACService:
     """Resolve current persisted authority and apply narrow privilege mutations."""
 
-    def __init__(self, sessions: DatabaseSessionFactory) -> None:
+    def __init__(self, sessions: DatabaseSessionFactory, audit: AuditService) -> None:
         self._sessions = sessions
+        self._audit = audit
 
     def has_permission(self, user_id: int, permission_code: str | CorePermission) -> bool:
         code = str(permission_code)
@@ -71,8 +74,27 @@ class RBACService:
         with self._sessions.session() as session:
             return RBACRepository(session).user_has_permission(user_id, code)
 
-    def enforce_permission(self, user_id: int, permission_code: str | CorePermission) -> None:
+    def enforce_permission(
+        self,
+        user_id: int,
+        permission_code: str | CorePermission,
+        *,
+        session_correlation_id: str | None = None,
+        resolved_role: str | None = None,
+    ) -> None:
         if not self.has_permission(user_id, permission_code):
+            self._audit.record(
+                stream=EventStream.SECURITY,
+                component="rbac",
+                action="rbac.permission_denied",
+                status="failure",
+                severity="WARNING",
+                error_code="AUTHZ-PERMISSION_DENIED",
+                user_id=user_id,
+                resolved_role=resolved_role,
+                session_correlation_id=session_correlation_id,
+                metadata={"permission_code": str(permission_code)},
+            )
             raise PermissionDeniedException()
 
     def assign_user_role(
@@ -93,6 +115,17 @@ class RBACService:
             user.role_id = role_id
             user.updated_at = now
             UserSessionRepository(session).invalidate_all_by_user(user_id, now)
+            self._audit.record_in_session(
+                session,
+                stream=EventStream.AUDIT,
+                component="rbac",
+                action="rbac.user_role_change",
+                status="success",
+                severity="INFO",
+                user_id=user_id,
+                resource_type="role",
+                resource_id=str(role_id),
+            )
         return True
 
     def replace_role_permissions(
@@ -125,24 +158,59 @@ class RBACService:
             user_sessions = UserSessionRepository(session)
             for user_id in user_ids:
                 user_sessions.invalidate_all_by_user(user_id, now)
+            self._audit.record_in_session(
+                session,
+                stream=EventStream.AUDIT,
+                component="rbac",
+                action="rbac.role_permissions_change",
+                status="success",
+                severity="INFO",
+                resource_type="role",
+                resource_id=str(role_id),
+                metadata={"permission_codes": sorted(requested)},
+            )
         return True
 
 
 class RBACCatalogService:
     """Additively provision core roles, permissions, and explicit Admin mappings."""
 
-    def __init__(self, sessions: DatabaseSessionFactory) -> None:
+    def __init__(self, sessions: DatabaseSessionFactory, audit: AuditService) -> None:
         self._sessions = sessions
+        self._audit = audit
 
     def ensure_core_catalog(self, timestamp: datetime | None = None) -> CatalogSyncResult:
         with self._sessions.transaction() as session:
-            return self.ensure_core_catalog_in_session(session, timestamp or _now())
+            result = self.ensure_core_catalog_in_session(session, timestamp or _now(), self._audit)
+            return result
 
     @staticmethod
     def ensure_core_catalog_in_session(
         session: Session,
         timestamp: datetime,
+        audit: AuditService | None = None,
     ) -> CatalogSyncResult:
+        result = RBACCatalogService._apply_core_catalog(session, timestamp)
+        if result.changed and audit is not None:
+            audit.record_in_session(
+                session,
+                stream=EventStream.AUDIT,
+                component="rbac",
+                action="rbac.catalog_sync",
+                status="success",
+                severity="INFO",
+                metadata={
+                    "roles_created": result.roles_created,
+                    "permissions_created": result.permissions_created,
+                    "admin_mappings_created": result.admin_mappings_created,
+                    "session_users_invalidated": result.sessions_invalidated_for_users,
+                },
+            )
+        return result
+
+    @staticmethod
+    def _apply_core_catalog(session: Session, timestamp: datetime) -> CatalogSyncResult:
+        """Apply catalog changes; caller owns transaction and optional audit insertion."""
         roles = RoleRepository(session)
         permissions = PermissionRepository(session)
         rbac = RBACRepository(session)

@@ -25,7 +25,12 @@ def require_permission(
         principal: Annotated[AuthPrincipal, Depends(require_authenticated_session)],
         rbac_service: Annotated[RBACService, Depends(get_rbac_service)],
     ) -> AuthPrincipal:
-        rbac_service.enforce_permission(principal.user_id, permission_code)
+        rbac_service.enforce_permission(
+            principal.user_id,
+            permission_code,
+            session_correlation_id=principal.session_correlation_id,
+            resolved_role=principal.role_name,
+        )
         return principal
 
     return enforce

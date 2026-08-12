@@ -16,6 +16,7 @@ from ipsp.api.schemas.auth import (
 )
 from ipsp.auth.cookies import clear_auth_cookies, set_auth_cookies
 from ipsp.auth.service import AuthPrincipal, AuthService
+from ipsp.observability.context import bind_authenticated_context
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -46,6 +47,15 @@ def login(
         payload.username,
         payload.password.get_secret_value(),
         existing_session_token=request.cookies.get(settings.session_cookie_name),
+    )
+    principal = result.principal
+    request.state.user_id = principal.user_id
+    request.state.session_correlation_id = principal.session_correlation_id
+    request.state.role_name = principal.role_name
+    bind_authenticated_context(
+        session_correlation_id=principal.session_correlation_id,
+        user_id=principal.user_id,
+        resolved_role=principal.role_name,
     )
     set_auth_cookies(response, settings, result)
     response.headers["Cache-Control"] = "no-store"

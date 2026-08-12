@@ -1,5 +1,6 @@
 """FastAPI factory, probes, errors, and correlation integration tests."""
 
+import json
 from unittest.mock import patch
 
 from fastapi import FastAPI
@@ -129,7 +130,13 @@ def test_unexpected_error_never_exposes_traceback(settings: Settings) -> None:
     app = create_app(settings)
 
     def explode() -> None:
-        raise RuntimeError("private-internal-marker")
+        local_marker = "DO_NOT_LEAK_UNEXPECTED_LOCAL"
+        raise RuntimeError(
+            "DO_NOT_LEAK_UNEXPECTED_MESSAGE",
+            "DO_NOT_LEAK_UNEXPECTED_ARG",
+            str(settings.log_dir / "DO_NOT_LEAK_UNEXPECTED_PATH"),
+            local_marker,
+        )
 
     app.add_api_route("/api/v1/test/explode", explode)
     with TestClient(app, raise_server_exceptions=False) as client:
@@ -137,9 +144,36 @@ def test_unexpected_error_never_exposes_traceback(settings: Settings) -> None:
 
     assert response.status_code == 500
     assert response.json()["error_code"] == "SYS-UNEXPECTED"
-    assert "private-internal-marker" not in response.text
+    for marker in (
+        "DO_NOT_LEAK_UNEXPECTED_MESSAGE",
+        "DO_NOT_LEAK_UNEXPECTED_ARG",
+        "DO_NOT_LEAK_UNEXPECTED_LOCAL",
+        "DO_NOT_LEAK_UNEXPECTED_PATH",
+    ):
+        assert marker not in response.text
     assert "Traceback" not in response.text
     assert response.headers["X-Trace-ID"]
+    runtime_events = [
+        json.loads(line)
+        for line in (settings.log_dir / "ipsp-runtime.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    unexpected = next(
+        event for event in reversed(runtime_events) if event["action"] == "exception.unexpected"
+    )
+    assert unexpected["exception_type"] == "RuntimeError"
+    assert unexpected["exception_frames"]
+    assert set(unexpected["exception_frames"][-1]) == {"file_name", "function", "line_number"}
+    rendered = json.dumps(unexpected)
+    for marker in (
+        "DO_NOT_LEAK_UNEXPECTED_MESSAGE",
+        "DO_NOT_LEAK_UNEXPECTED_ARG",
+        "DO_NOT_LEAK_UNEXPECTED_LOCAL",
+        "DO_NOT_LEAK_UNEXPECTED_PATH",
+        "Traceback (most recent call last)",
+    ):
+        assert marker not in rendered
 
 
 def test_request_log_status_is_success_for_2xx(client: TestClient) -> None:

@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1F RBAC permission enforcement complete. Phase 1G blocked pending independent review.**
+Application implementation: **Phase 1G structured observability and durable audit complete. Phase 1H blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1F PASS)** | Phase 1F current-database permission enforcement, explicit core provisioning, and privilege-change session invalidation passed; Phase 1G not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1G PASS)** | Phase 1G structured runtime observability, durable selected audit/security events, and safe diagnostics passed; Phase 1H not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,47 @@ Application implementation: **Phase 1F RBAC permission enforcement complete. Pha
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1G — Structured Observability & Durable Audit
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; ready for independent review before Phase 1H
+- **Canonical Envelope:** One immutable typed event model supplies aware UTC timestamps,
+  unpredictable UUID event IDs, trace/request correlation, component/action/status/severity,
+  sanitized metadata, and the frozen optional identity/resource/model/run/LLM context. The exact 12
+  streams are audit, security, application, frontend, data_processing, ml, llm, simulation,
+  performance, export, errors, and system
+- **Context and Runtime Logs:** Middleware isolates and resets request/trace plus authenticated user,
+  resolved-role, and non-secret session-correlation context. Every request emits one minimal
+  performance event. Console and `<log_dir>/ipsp-runtime.jsonl` share the formatter; JSONL rotates at
+  10 MiB with five backups and safe handler replacement across repeated app construction
+- **Safe Diagnostics:** Unexpected exceptions expose only exception type and at most 32 frames with
+  basename, function, and line number. Messages, args, traceback text, source lines, locals, object
+  reprs, absolute paths, and environment values are excluded
+- **Durable Audit:** Revision `20260812_04` adds only append-only `audit_events`. The repository owns
+  inserts/reads without update/delete or commits; `AuditService.record_in_session` atomically couples
+  security mutations with sanitized deterministic JSON audit insertion
+- **Selected Coverage:** Durable events cover login success/failure, logout, password-change
+  success/failure, bootstrap, CSRF failure, permission denial, user-role change, role-mapping change,
+  and changed catalog synchronization. No-op RBAC mutations emit no false change event, and ordinary
+  health/request/auth-me performance logs never populate SQLite
+- **Correlation and Privacy:** Integration tests correlate response IDs to runtime JSONL and durable
+  permission-denial events, while markers for passwords/hashes/session/token/CSRF/cookies/headers,
+  attempted unknown usernames, exception messages/args/locals/paths, and request bodies remain absent
+- **Migration and Schema:** Head is `20260812_04`; isolated 03→head→03→head and Alembic check pass.
+  The exact ORM allowlist is `audit_events`, `permissions`, `role_permissions`, `roles`,
+  `user_sessions`, and `users`; dependencies and lock remain unchanged
+- **Test Evidence:** `pytest` — 154 passed, 0 failed, 0 skipped, 0 warnings, including event model,
+  runtime rotation/reconfiguration, exception-frame privacy, schema constraints, selected auth/RBAC
+  durability, atomic rollback, trace continuity, runtime/SQLite separation, and all prior regressions
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 79 files;
+  strict mypy passed for 56 source files; `pip check`, `git diff --check`, isolated Alembic
+  heads/upgrade/current/check/downgrade/re-upgrade, architecture scans, and artifact checks passed
+- **Architecture Decisions Added:** None; Phase 1G implements the frozen observability/audit contract
+  without beginning jobs, rich Admin health, frontend expansion, or later domain phases
+
+Phase 1 and v0.1.0 remain in progress. Phase 1H has not begun and remains blocked pending independent
+review of Phase 1G.
 
 ## Phase 1F.1 — RBAC CLI safe-failure hardening
 

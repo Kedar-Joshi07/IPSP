@@ -55,7 +55,7 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         assert network_import not in lowered
 
 
-def test_phase1f_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
+def test_phase1g_has_one_declarative_base_and_exact_table_allowlist() -> None:
     source = _read_production_source()
     model_declaration_files = [
         path
@@ -64,14 +64,38 @@ def test_phase1f_has_one_declarative_base_and_exact_security_table_allowlist() -
     ]
 
     assert re.findall(r"class\s+\w+\(DeclarativeBase\)", source) == ["class Base(DeclarativeBase)"]
-    assert model_declaration_files == [BACKEND / "database" / "models" / "security.py"]
+    assert set(model_declaration_files) == {
+        BACKEND / "database" / "models" / "observability.py",
+        BACKEND / "database" / "models" / "security.py",
+    }
     assert set(Base.metadata.tables) == {
+        "audit_events",
         "permissions",
         "role_permissions",
         "roles",
         "user_sessions",
         "users",
     }
+
+
+def test_phase1g_audit_ownership_is_append_only_and_canonical() -> None:
+    repository_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class AuditEventRepository" in path.read_text(encoding="utf-8")
+    ]
+    service_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class AuditService" in path.read_text(encoding="utf-8")
+    ]
+    repository_source = (BACKEND / "repositories" / "audit.py").read_text(encoding="utf-8")
+
+    assert repository_files == [BACKEND / "repositories" / "audit.py"]
+    assert service_files == [BACKEND / "observability" / "audit.py"]
+    assert "def update" not in repository_source
+    assert "def delete" not in repository_source
+    assert "runtime_logs" not in Base.metadata.tables
 
 
 def test_phase1f_rbac_ownership_is_canonical() -> None:

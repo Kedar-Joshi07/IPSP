@@ -15,6 +15,7 @@ from ipsp.config.settings import Settings
 from ipsp.database.engine import create_database_engine
 from ipsp.database.migrations import MigrationStateService, canonical_migrations_path
 from ipsp.database.session import DatabaseSessionFactory
+from ipsp.observability.audit import AuditService
 from ipsp.security.outbound import OutboundPolicy
 from ipsp.security.secrets import EnvironmentSecretProvider, SecretProvider
 from ipsp.services.readiness import ReadinessService
@@ -33,6 +34,7 @@ class FoundationServices:
     migration_state: MigrationStateService
     readiness_service: ReadinessService
     password_service: PasswordService
+    audit_service: AuditService
     auth_service: AuthService
     rbac_service: RBACService
     rbac_catalog_service: RBACCatalogService
@@ -60,9 +62,10 @@ def build_foundation_services(
     migration_state = MigrationStateService(database_engine, canonical_migrations_path())
     readiness_service = ReadinessService(settings, database_engine, migration_state)
     password_service = PasswordService()
-    auth_service = AuthService(settings.auth, database_sessions, password_service)
-    rbac_service = RBACService(database_sessions)
-    rbac_catalog_service = RBACCatalogService(database_sessions)
+    audit_service = AuditService(database_sessions)
+    auth_service = AuthService(settings.auth, database_sessions, password_service, audit_service)
+    rbac_service = RBACService(database_sessions, audit_service)
+    rbac_catalog_service = RBACCatalogService(database_sessions, audit_service)
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
@@ -73,6 +76,7 @@ def build_foundation_services(
         migration_state=migration_state,
         readiness_service=readiness_service,
         password_service=password_service,
+        audit_service=audit_service,
         auth_service=auth_service,
         rbac_service=rbac_service,
         rbac_catalog_service=rbac_catalog_service,

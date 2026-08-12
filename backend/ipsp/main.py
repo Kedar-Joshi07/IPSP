@@ -17,7 +17,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Construct an isolated application instance with foundation services only."""
     app_settings = settings or Settings()
     foundation_services = build_foundation_services(app_settings)
-    configure_logging(app_settings.log_level)
+    configure_logging(app_settings.log_level, app_settings.log_dir)
 
     app = FastAPI(
         title=app_settings.app_name,
