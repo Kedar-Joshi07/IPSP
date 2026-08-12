@@ -112,10 +112,12 @@ class AuthService:
             sessions = UserSessionRepository(session)
             roles = RoleRepository(session)
             user = users.get_by_username(username)
-            if user is None:
+            if (
+                user is None
+                or not user.is_active
+                or (user.locked_until is not None and now < user.locked_until)
+            ):
                 self._passwords.equalize_unknown_user(password)
-                failure = True
-            elif not user.is_active or (user.locked_until is not None and now < user.locked_until):
                 failure = True
             else:
                 try:

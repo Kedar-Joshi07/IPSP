@@ -177,6 +177,90 @@ def test_me_updates_last_seen_and_logout_requires_csrf(auth_client: TestClient) 
     assert auth_client.get("/api/v1/auth/me").status_code == 401
 
 
+def test_logout_rejects_present_header_when_csrf_cookie_is_missing(
+    auth_client: TestClient,
+) -> None:
+    settings = auth_client.app.state.settings.auth
+    assert _login(auth_client).status_code == 200
+    csrf = auth_client.cookies.get(settings.csrf_cookie_name)
+    assert csrf
+    auth_client.cookies.delete(settings.csrf_cookie_name)
+
+    response = auth_client.post(
+        "/api/v1/auth/logout",
+        headers={settings.csrf_header_name: csrf},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error_code"] == "AUTHZ-CSRF_INVALID"
+
+
+def test_csrf_from_another_valid_session_cannot_authorize_current_session(
+    auth_app: FastAPI,
+) -> None:
+    settings = auth_app.state.settings.auth
+    with (
+        TestClient(auth_app, base_url="https://testserver") as first,
+        TestClient(auth_app, base_url="https://testserver") as second,
+        TestClient(auth_app, base_url="https://testserver") as mixed,
+    ):
+        assert _login(first).status_code == 200
+        assert _login(second).status_code == 200
+        first_session = first.cookies.get(settings.session_cookie_name)
+        second_csrf = second.cookies.get(settings.csrf_cookie_name)
+        assert first_session and second_csrf
+        mixed.cookies.set(settings.session_cookie_name, first_session)
+        mixed.cookies.set(settings.csrf_cookie_name, second_csrf)
+
+        response = mixed.post(
+            "/api/v1/auth/logout",
+            headers={settings.csrf_header_name: second_csrf},
+        )
+
+        assert response.status_code == 403
+        assert response.json()["error_code"] == "AUTHZ-CSRF_INVALID"
+        assert first.get("/api/v1/auth/me").status_code == 200
+
+
+def test_login_replaces_attacker_selected_session_without_persisting_it(
+    auth_app: FastAPI,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    marker = "ATTACKER_CHOSEN_SESSION_DO_NOT_ACCEPT"
+    marker_hash = hashlib.sha256(marker.encode()).hexdigest()
+    services = auth_app.state.foundation_services
+    cookie_name = auth_app.state.settings.auth.session_cookie_name
+    with TestClient(auth_app, base_url="https://testserver") as client:
+        client.cookies.set(
+            cookie_name,
+            marker,
+            domain="testserver.local",
+            path="/",
+        )
+        with caplog.at_level(logging.INFO):
+            response = _login(client)
+        issued_session = client.cookies.get(cookie_name)
+
+    assert response.status_code == 200
+    assert issued_session and issued_session != marker
+    issued_hash = hashlib.sha256(issued_session.encode()).hexdigest()
+    assert issued_hash != marker_hash
+    with services.database_sessions.session() as session:
+        authenticated = session.scalar(
+            select(UserSession).where(UserSession.token_hash == issued_hash)
+        )
+        attacker_selected = session.scalar(
+            select(UserSession).where(UserSession.token_hash == marker_hash)
+        )
+        assert authenticated is not None
+        assert authenticated.token_hash == issued_hash
+        assert attacker_selected is None
+        persisted_values = "|".join(str(value) for value in authenticated.__dict__.values())
+    assert marker not in persisted_values
+    assert marker not in response.text
+    assert marker not in caplog.text
+
+
 def test_login_failures_are_generic_and_lockout_expires(auth_app: FastAPI) -> None:
     services = auth_app.state.foundation_services
     _add_user(auth_app, "disabled", active=False)
@@ -188,14 +272,26 @@ def test_login_failures_are_generic_and_lockout_expires(auth_app: FastAPI) -> No
             _login(client, "disabled", PASSWORD),
             _login(client, "alice", "wrong"),
         ]
+        expected_failure = (
+            401,
+            "AUTH-INVALID_CREDENTIALS",
+            "Authentication failed.",
+        )
         for response in failures:
-            assert response.status_code == 401
-            assert response.json()["error_code"] == "AUTH-INVALID_CREDENTIALS"
-            assert response.json()["message"] == "Authentication failed."
+            assert (
+                response.status_code,
+                response.json()["error_code"],
+                response.json()["message"],
+            ) == expected_failure
 
         for _ in range(4):
             assert _login(client, "alice", "wrong").status_code == 401
-        assert _login(client).status_code == 401
+        locked_response = _login(client)
+        assert (
+            locked_response.status_code,
+            locked_response.json()["error_code"],
+            locked_response.json()["message"],
+        ) == expected_failure
 
         with services.database_sessions.transaction() as session:
             alice = session.scalar(select(User).where(User.username == "alice"))
@@ -211,6 +307,66 @@ def test_login_failures_are_generic_and_lockout_expires(auth_app: FastAPI) -> No
             assert alice.failed_login_count == 0
             assert alice.locked_until is None
             assert alice.last_login_at is not None
+
+
+def test_login_argon2_failure_cost_paths_are_exact(
+    auth_app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    services = auth_app.state.foundation_services
+    _add_user(auth_app, "disabled", active=False)
+    _add_user(auth_app, "locked")
+    with services.database_sessions.transaction() as session:
+        locked = session.scalar(select(User).where(User.username == "locked"))
+        assert locked is not None
+        locked.locked_until = datetime.now(UTC) + timedelta(minutes=5)
+
+    passwords = services.password_service
+    dummy_calls: list[str] = []
+    real_calls: list[str] = []
+    original_dummy = passwords.equalize_unknown_user
+    original_real = passwords.verify_and_update
+
+    def observe_dummy(candidate: str) -> None:
+        dummy_calls.append(candidate)
+        original_dummy(candidate)
+
+    def observe_real(candidate: str, password_hash: str) -> tuple[bool, str | None]:
+        real_calls.append(candidate)
+        return original_real(candidate, password_hash)
+
+    monkeypatch.setattr(passwords, "equalize_unknown_user", observe_dummy)
+    monkeypatch.setattr(passwords, "verify_and_update", observe_real)
+
+    def assert_failure(username: str, password: str) -> None:
+        with pytest.raises(IPSPError) as failure:
+            services.auth_service.login(username, password)
+        assert failure.value.error_code == "AUTH-INVALID_CREDENTIALS"
+        assert failure.value.safe_message == "Authentication failed."
+
+    assert_failure("unknown", "unknown-password")
+    assert dummy_calls == ["unknown-password"]
+    assert real_calls == []
+
+    dummy_calls.clear()
+    assert_failure("disabled", PASSWORD)
+    assert dummy_calls == [PASSWORD]
+    assert real_calls == []
+
+    dummy_calls.clear()
+    assert_failure("locked", PASSWORD)
+    assert dummy_calls == [PASSWORD]
+    assert real_calls == []
+
+    dummy_calls.clear()
+    assert_failure("alice", "wrong-password")
+    assert dummy_calls == []
+    assert real_calls == ["wrong-password"]
+
+    real_calls.clear()
+    assert services.auth_service.login("alice", PASSWORD).principal.username == "alice"
+    assert dummy_calls == []
+    assert real_calls == [PASSWORD]
 
 
 def test_disabled_authenticated_user_is_rejected_and_session_invalidated(

@@ -5,10 +5,6 @@ from pwdlib.exceptions import PwdlibError
 
 MAX_PASSWORD_LENGTH = 1_024
 _DUMMY_PASSWORD = "ipsp-non-secret-unknown-user-timing-value"
-_DUMMY_HASH = (
-    "$argon2id$v=19$m=65536,t=3,p=4$"
-    "hB9zCsN6QWt9dYx1c2iGvg$A6d67TRVc6WgWsH/0oU+4Aj/7wYOBsHD5KCFpRiz4kU"
-)
 
 
 class PasswordInputError(ValueError):
@@ -20,6 +16,7 @@ class PasswordService:
 
     def __init__(self) -> None:
         self._password_hash = PasswordHash.recommended()
+        self._dummy_hash = self._password_hash.hash(_DUMMY_PASSWORD)
 
     @staticmethod
     def validate(password: str) -> None:
@@ -45,6 +42,6 @@ class PasswordService:
             return False, None
 
     def equalize_unknown_user(self, password: str) -> None:
-        """Perform one real Argon2 verification without permitting authentication."""
+        """Perform one policy-aligned dummy verification without permitting authentication."""
         candidate = password if 0 < len(password) <= MAX_PASSWORD_LENGTH else _DUMMY_PASSWORD
-        self._password_hash.verify(candidate, _DUMMY_HASH)
+        self._password_hash.verify(candidate, self._dummy_hash)

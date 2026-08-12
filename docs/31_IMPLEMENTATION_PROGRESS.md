@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1E authentication and server-side session security complete. Phase 1F blocked pending independent review.**
+Application implementation: **Phase 1E.1 authentication hardening complete. Phase 1F blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1E PASS)** | Phase 1E Argon2id authentication, opaque server sessions, CSRF, lockout, bootstrap, migration, and conformance gates passed; Phase 1F not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1E.1 PASS)** | Phase 1E.1 equalized authentication failures and completed CSRF/fixation regressions; Phase 1F not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,34 @@ Application implementation: **Phase 1E authentication and server-side session se
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1E.1 — Authentication side-channel and regression hardening
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; Phase 1F ready for independent review
+- **Authentication Failure Equalization:** Unknown, disabled, and currently locked login attempts now
+  each perform exactly one dummy Argon2 verification. Active wrong-password and successful attempts
+  each perform one real verification without an additional dummy operation. All four public failure
+  classes retain the identical safe `AUTH-INVALID_CREDENTIALS` HTTP 401 response
+- **Dummy Credential Policy:** `PasswordService` constructs its non-secret dummy Argon2 hash once
+  with the same active `PasswordHash.recommended()` policy used for production hashes. It is not
+  hard-coded, generated per request, or capable of authenticating
+- **CSRF Regressions:** Integration coverage now proves a present CSRF header with a missing CSRF
+  cookie is rejected, and a CSRF cookie/header from one valid session cannot authorize a different
+  valid bearer session. Existing missing-header, mismatch, persisted-hash, Unicode, and leak checks
+  remain intact
+- **Session Fixation Regression:** An explicitly attacker-selected session cookie is replaced by a
+  fresh server-generated bearer token at login; neither its raw value nor its digest becomes the
+  authenticated session, while the stored SHA-256 digest matches only the newly issued token
+- **Test Evidence:** `pytest` — 125 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall, Ruff lint and format, strict mypy, `pip check`, and
+  `git diff --check` passed. Dependency files, migration history, and the five-table ORM allowlist
+  remained unchanged
+- **Architecture Decisions Added:** None; this is a narrow correction within the frozen Phase 1E
+  authentication architecture and introduces no Phase 1F permission enforcement
+
+Phase 1 and v0.1.0 remain in progress. Phase 1F must not begin until this hardening pass receives
+independent review.
 
 ## Phase 1E — Authentication & Server-Side Session Security
 
