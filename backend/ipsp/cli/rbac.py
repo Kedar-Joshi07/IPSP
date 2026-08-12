@@ -1,10 +1,25 @@
 """Explicit existing-installation synchronization for the core RBAC catalog."""
 
+from pydantic import ValidationError
+from pydantic_settings import SettingsError
+from sqlalchemy.exc import SQLAlchemyError
+
 from ipsp.auth.rbac import CatalogSyncResult, RBACCatalogService
-from ipsp.config.providers import build_foundation_services
+from ipsp.config.providers import FoundationServices, build_foundation_services
 from ipsp.config.settings import Settings
-from ipsp.database.migrations import MigrationStateService
+from ipsp.database.migrations import MigrationStateError, MigrationStateService
 from ipsp.errors.exceptions import IPSPError
+
+_EXPECTED_OPERATIONAL_ERRORS = (
+    IPSPError,
+    MigrationStateError,
+    SQLAlchemyError,
+    ValidationError,
+    SettingsError,
+)
+_SAFE_FAILURE_MESSAGE = (
+    "RBAC synchronization failed. Check configuration, database availability, and migration state."
+)
 
 
 def synchronize_core_rbac(
@@ -22,17 +37,20 @@ def synchronize_core_rbac(
 
 def main() -> int:
     """Run additive synchronization and print only non-secret counts."""
-    services = build_foundation_services(Settings())
+    services: FoundationServices | None = None
     try:
-        result = synchronize_core_rbac(
-            services.rbac_catalog_service,
-            services.migration_state,
-        )
-    except IPSPError as exc:
-        print(f"RBAC synchronization failed: {exc.safe_message}")
+        services = build_foundation_services(Settings())
+        try:
+            result = synchronize_core_rbac(
+                services.rbac_catalog_service,
+                services.migration_state,
+            )
+        finally:
+            services.database_engine.dispose()
+    except _EXPECTED_OPERATIONAL_ERRORS:
+        print(_SAFE_FAILURE_MESSAGE)
         return 1
-    finally:
-        services.database_engine.dispose()
+
     print(
         "RBAC synchronization complete: "
         f"roles_created={result.roles_created}, "

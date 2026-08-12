@@ -18,6 +18,31 @@ Application implementation: **Phase 1F RBAC permission enforcement complete. Pha
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
 
+## Phase 1F.1 — RBAC CLI safe-failure hardening
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; Phase 1G ready for independent review
+- **Safe Operational Boundary:** `ipsp-sync-rbac` now converts the finite expected set of IPSP,
+  migration-state, SQLAlchemy, and Pydantic settings failures into one generic non-zero CLI result.
+  Raw exception text, SQL, database URLs and paths, configuration values, stack traces, and
+  password/session/CSRF/token markers are never printed; `KeyboardInterrupt` and `SystemExit` remain
+  unswallowed
+- **Resource Cleanup:** Once foundation services exist, engine disposal is guaranteed for successful,
+  no-op, stale-migration, migration-inspection, and database-inspection outcomes, including process
+  control exceptions
+- **Regression Evidence:** Focused tests preserve successful and idempotent synchronization, prove
+  safe below-head refusal, inject `MigrationStateError`, SQLAlchemy inspection failure, and invalid
+  settings, verify marker suppression, and assert post-construction engine disposal
+- **Test Evidence:** `pytest` — 145 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall, Ruff lint/format for 73 files, strict mypy for 52 source files,
+  `pip check`, and `git diff --check` passed. `pyproject.toml`, `requirements.lock`, migration head
+  `20260811_03`, and the five-table ORM allowlist remain unchanged by this hardening pass
+- **Architecture Decisions Added:** None; this is a narrow Phase 1F CLI failure-boundary correction
+  and introduces no Phase 1G implementation
+
+Phase 1 and v0.1.0 remain in progress. Phase 1G has not begun and remains subject to independent
+review of this hardening pass.
+
 ## Phase 1F — RBAC Permission Enforcement
 
 - **Implementation Status:** COMPLETE (2026-08-12)

@@ -3,7 +3,9 @@
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Annotated
+from unittest.mock import Mock
 
 import pytest
 from alembic import command
@@ -14,13 +16,15 @@ from ipsp.api.dependencies.auth import require_csrf
 from ipsp.api.dependencies.rbac import require_permission
 from ipsp.auth.rbac import CORE_PERMISSION_CODES, CorePermission
 from ipsp.auth.service import AuthPrincipal
+from ipsp.cli import rbac as rbac_cli_module
 from ipsp.cli.rbac import main as rbac_cli_main
-from ipsp.cli.rbac import synchronize_core_rbac
 from ipsp.config.settings import Settings
+from ipsp.database.migrations import MigrationStateError
 from ipsp.database.models import Permission, Role, RolePermission, User, UserSession
 from ipsp.errors.exceptions import IPSPError, PermissionDeniedException
 from ipsp.main import create_app
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PASSWORD = "rbac-test-password-秘密"
@@ -425,23 +429,118 @@ def test_sync_cli_supports_existing_users_and_safe_noop_output(
     assert "admin_mappings_created=0" in second_output
 
 
+def test_sync_cli_handles_migration_state_error_safely_and_disposes_engine(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    secret_markers = (
+        "DO_NOT_LEAK_PASSWORD",
+        "DO_NOT_LEAK_SESSION",
+        "DO_NOT_LEAK_CSRF",
+        "DO_NOT_LEAK_TOKEN",
+    )
+    dispose = Mock()
+    migration_state = Mock()
+    migration_state.inspect.side_effect = MigrationStateError(" ".join(secret_markers))
+    services = SimpleNamespace(
+        rbac_catalog_service=Mock(),
+        migration_state=migration_state,
+        database_engine=SimpleNamespace(dispose=dispose),
+    )
+    monkeypatch.setattr(rbac_cli_module, "build_foundation_services", lambda _settings: services)
+
+    assert rbac_cli_main() == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert output == (
+        "RBAC synchronization failed. Check configuration, database availability, "
+        "and migration state.\n"
+    )
+    assert "Traceback" not in output
+    assert all(marker not in output for marker in secret_markers)
+    dispose.assert_called_once_with()
+
+
+def test_sync_cli_handles_database_inspection_error_without_internal_detail(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    database_path = "C:/private/DO_NOT_LEAK_DATABASE_PATH/control-plane.db"
+    dispose = Mock()
+    migration_state = Mock()
+    migration_state.inspect.side_effect = SQLAlchemyError(
+        f"SELECT secret FROM internal_table AT {database_path}"
+    )
+    services = SimpleNamespace(
+        rbac_catalog_service=Mock(),
+        migration_state=migration_state,
+        database_engine=SimpleNamespace(dispose=dispose),
+    )
+    monkeypatch.setattr(rbac_cli_module, "build_foundation_services", lambda _settings: services)
+
+    assert rbac_cli_main() == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "RBAC synchronization failed." in output
+    assert "Traceback" not in output
+    assert "SELECT secret" not in output
+    assert database_path not in output
+    dispose.assert_called_once_with()
+
+
+def test_sync_cli_handles_invalid_settings_without_echoing_input(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    invalid_value = "DO_NOT_LEAK_INVALID_CONFIG_VALUE"
+    monkeypatch.setenv("IPSP_PORT", invalid_value)
+
+    assert rbac_cli_main() == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "RBAC synchronization failed." in output
+    assert "Traceback" not in output
+    assert invalid_value not in output
+
+
+@pytest.mark.parametrize("interrupt", [KeyboardInterrupt(), SystemExit(7)])
+def test_sync_cli_does_not_swallow_process_control_exceptions(
+    interrupt: BaseException,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dispose = Mock()
+    migration_state = Mock()
+    migration_state.inspect.side_effect = interrupt
+    services = SimpleNamespace(
+        rbac_catalog_service=Mock(),
+        migration_state=migration_state,
+        database_engine=SimpleNamespace(dispose=dispose),
+    )
+    monkeypatch.setattr(rbac_cli_module, "build_foundation_services", lambda _settings: services)
+
+    with pytest.raises(type(interrupt)):
+        rbac_cli_main()
+    dispose.assert_called_once_with()
+
+
 def test_sync_refuses_database_below_current_migration_head(
     settings: Settings,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setenv("IPSP_DATABASE__URL", settings.database.url)
     command.upgrade(Config(str(PROJECT_ROOT / "alembic.ini")), "20260811_02")
-    app = create_app(settings)
-    try:
-        with pytest.raises(IPSPError) as failure:
-            synchronize_core_rbac(
-                app.state.foundation_services.rbac_catalog_service,
-                app.state.foundation_services.migration_state,
-            )
-    finally:
-        app.state.foundation_services.database_engine.dispose()
-    assert failure.value.error_code == "AUTHZ-RBAC_INVALID"
-    assert "migration head" in failure.value.safe_message
+
+    assert rbac_cli_main() == 1
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "RBAC synchronization failed. Check configuration" in captured.out
+    assert "Traceback" not in output
+    assert settings.database.url not in output
 
 
 def test_bootstrap_provisions_explicit_admin_authority_and_no_user_grants(
