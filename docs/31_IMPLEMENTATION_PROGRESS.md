@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1H.1 local-worker shutdown and persistence hardening complete. Phase 1I blocked pending independent review.**
+Application implementation: **Phase 1H.2 atomic worker-generation authority hardening complete. Phase 1I blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H.1 PASS)** | Bounded process shutdown, safe persisted-job decoding, and single-process deployment constraint passed; Phase 1I not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H.2 PASS)** | Atomic generation authority and abandoned-generation restart safety passed; Phase 1I not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,45 @@ Application implementation: **Phase 1H.1 local-worker shutdown and persistence h
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1H.2 — Atomic worker-generation authority hardening
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; Phase 1I ready for independent review
+- **Atomic Authority:** Start and persistence authority are synchronized by one generation-owned
+  mutex rather than Boolean snapshots. A worker holds the mutex only across one short
+  infrastructure-owned QUEUED-to-RUNNING claim, progress write, artifact write, or terminal-state
+  transaction; `stop_starting()` and `abandon()` revoke authority while holding the same mutex
+- **Abandonment Safety:** Once abandonment wins the mutex, the old generation cannot begin another
+  progress, artifact, success, failure, or cancellation write. Runtime terminal events are emitted
+  only for state changes that actually persisted
+- **Bounded Shutdown:** Arbitrary handler code never holds the authority mutex. Daemon-thread workers
+  retain the finite one-second default shutdown grace, so a permanently blocked handler still cannot
+  prevent interpreter termination. An already-authorized short database action may complete before
+  revocation
+- **Restart Safety:** A `LocalJobBackend` rejects `start()` with `JOB-WORKER-UNAVAILABLE` while any
+  abandoned prior-generation daemon thread remains alive. Once all such threads have exited, the
+  same backend may start a new generation and perform interrupted-job recovery safely
+- **Deterministic Race Evidence:** Event-gated tests force abandonment ahead of terminal persistence,
+  late progress and artifact calls after abandonment, start revocation ahead of a queued claim, and
+  revocation waiting for an already-authorized short persistence action. Persisted rows remain
+  recoverable without false terminal state or late mutation
+- **Phase 1H.1 Regression:** The ordinary pytest suite retains the permanent-block subprocess
+  termination and fresh-process `JOB-WORKER-INTERRUPTED` recovery proof, daemon-worker checks,
+  graceful completion, safe persistence decoding, owner-only API, audit, and ContextVar isolation
+- **Unchanged Contracts:** No schema, migration, dependency, status/type, public API, retry,
+  authentication, RBAC, audit-envelope, readiness, frontend, or Phase 1I change was introduced
+- **Test Evidence:** `pytest` — 182 passed, 0 failed, 0 skipped, 0 warnings, including all
+  deterministic authority interleavings and the permanent-block subprocess termination/recovery
+  proof
+- **Quality Evidence:** Compileall, Ruff lint/format for 89 files, strict mypy for 64 source files,
+  `pip check`, `git diff --check`, isolated Alembic heads/current/check, seven-table ORM inspection,
+  architecture scans, and artifact checks passed
+- **Architecture Decisions Added:** None; this is a concurrency correction within the frozen local
+  single-process worker architecture
+
+Phase 1 and v0.1.0 remain in progress. Phase 1I has not begun and remains blocked pending independent
+review of Phase 1H.2.
 
 ## Phase 1H.1 — Local Worker Shutdown & Persistence Hardening
 

@@ -38,26 +38,34 @@ class JobExecutionLifecycle:
     """Generation-scoped authority for starting and completing local executions."""
 
     def __init__(self) -> None:
-        self._stopping = threading.Event()
-        self._abandoned = threading.Event()
+        self._authority_lock = threading.Lock()
+        self._starting_revoked = False
+        self._persistence_revoked = False
 
     def stop_starting(self) -> None:
-        self._stopping.set()
+        with self._authority_lock:
+            self._starting_revoked = True
 
     def abandon(self) -> None:
-        self._stopping.set()
-        self._abandoned.set()
+        with self._authority_lock:
+            self._starting_revoked = True
+            self._persistence_revoked = True
 
     def is_abandoned(self) -> bool:
-        return self._abandoned.is_set()
+        with self._authority_lock:
+            return self._persistence_revoked
 
     @contextmanager
-    def starting_allowed(self) -> Iterator[bool]:
-        yield not self._stopping.is_set()
+    def start_authority(self) -> Iterator[bool]:
+        """Serialize start revocation with one short QUEUED-to-RUNNING claim."""
+        with self._authority_lock:
+            yield not self._starting_revoked
 
     @contextmanager
-    def completion_allowed(self) -> Iterator[bool]:
-        yield not self._abandoned.is_set()
+    def persistence_authority(self) -> Iterator[bool]:
+        """Serialize abandonment with one short worker-owned persistence action."""
+        with self._authority_lock:
+            yield not self._persistence_revoked
 
 
 class PersistentJobExecutionContext:
@@ -91,11 +99,13 @@ class PersistentJobExecutionContext:
         return self._attempt
 
     def update_progress(self, progress: JobProgress) -> None:
-        self._raise_if_abandoned()
-        with self._sessions.transaction() as session:
-            updated = JobRepository(session).update_progress(
-                self._job_id, progress, datetime.now(UTC)
-            )
+        with self._lifecycle.persistence_authority() as allowed:
+            if not allowed:
+                raise JobExecutionAbandoned()
+            with self._sessions.transaction() as session:
+                updated = JobRepository(session).update_progress(
+                    self._job_id, progress, datetime.now(UTC)
+                )
         if not updated:
             raise JobCancellationAcknowledged()
         logger.info(
@@ -119,13 +129,15 @@ class PersistentJobExecutionContext:
             raise JobCancellationAcknowledged()
 
     def add_artifact_reference(self, reference: str) -> None:
-        self._raise_if_abandoned()
         if not is_safe_artifact_reference(reference):
             raise ValueError("Artifact reference must be a safe relative identifier")
-        with self._sessions.transaction() as session:
-            updated = JobRepository(session).add_artifact_reference(
-                self._job_id, reference, datetime.now(UTC)
-            )
+        with self._lifecycle.persistence_authority() as allowed:
+            if not allowed:
+                raise JobExecutionAbandoned()
+            with self._sessions.transaction() as session:
+                updated = JobRepository(session).add_artifact_reference(
+                    self._job_id, reference, datetime.now(UTC)
+                )
         if not updated:
             raise JobCancellationAcknowledged()
 
@@ -207,7 +219,7 @@ class JobExecutor:
             return tuple(record.job_id for record in queued)
 
     def execute(self, job_id: str, lifecycle: JobExecutionLifecycle) -> None:
-        with lifecycle.starting_allowed() as allowed:
+        with lifecycle.start_authority() as allowed:
             if not allowed:
                 return
             with self._sessions.transaction() as session:
@@ -220,10 +232,12 @@ class JobExecutor:
                     return
         handler = self._handlers.get(snapshot.job_type)
         if handler is None:
-            self._fail_without_exception(
-                snapshot.job_id,
-                JobError("JOB-HANDLER-UNAVAILABLE", "Job handler is unavailable.", True),
-            )
+            with lifecycle.persistence_authority() as allowed:
+                if allowed:
+                    self._fail_without_exception(
+                        snapshot.job_id,
+                        JobError("JOB-HANDLER-UNAVAILABLE", "Job handler is unavailable.", True),
+                    )
             return
         request_id = snapshot.request_id or str(uuid4())
         with bind_observability_context(
@@ -266,13 +280,22 @@ class JobExecutor:
         except JobExecutionAbandoned:
             return
         except JobCancellationAcknowledged:
-            with lifecycle.completion_allowed() as allowed:
+            cancelled = False
+            with lifecycle.persistence_authority() as allowed:
                 if allowed:
-                    self._mark_cancelled(job_id, started)
+                    cancelled = self._mark_cancelled(job_id)
+            if cancelled:
+                self._log_cancelled(job_id, started)
         except Exception:
-            with lifecycle.completion_allowed() as allowed:
+            failed = False
+            with lifecycle.persistence_authority() as allowed:
                 if not allowed:
                     return
+                failed = self._fail_without_exception(
+                    job_id,
+                    JobError("JOB-EXECUTION-FAILED", "Job execution failed.", snapshot.retryable),
+                )
+            if failed:
                 logger.exception(
                     "Job execution failed",
                     extra={
@@ -284,45 +307,49 @@ class JobExecutor:
                         "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
                     },
                 )
-                self._fail_without_exception(
-                    job_id,
-                    JobError("JOB-EXECUTION-FAILED", "Job execution failed.", snapshot.retryable),
-                )
         else:
-            with lifecycle.completion_allowed() as allowed:
+            succeeded = False
+            cancelled = False
+            with lifecycle.persistence_authority() as allowed:
                 if not allowed:
                     return
                 with self._sessions.transaction() as session:
                     succeeded = JobRepository(session).mark_succeeded(job_id, datetime.now(UTC))
-                if succeeded:
-                    logger.info(
-                        "Job execution succeeded",
-                        extra={
-                            "ipsp_action": "job.succeeded",
-                            "ipsp_stream": "application",
-                            "ipsp_component": "jobs",
-                            "ipsp_status": "success",
-                            "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
-                        },
-                    )
-                else:
-                    self._mark_cancelled(job_id, started)
+                if not succeeded:
+                    cancelled = self._mark_cancelled(job_id)
+            if succeeded:
+                logger.info(
+                    "Job execution succeeded",
+                    extra={
+                        "ipsp_action": "job.succeeded",
+                        "ipsp_stream": "application",
+                        "ipsp_component": "jobs",
+                        "ipsp_status": "success",
+                        "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
+                    },
+                )
+            elif cancelled:
+                self._log_cancelled(job_id, started)
 
-    def _mark_cancelled(self, job_id: str, started: float) -> None:
+    def _mark_cancelled(self, job_id: str) -> bool:
         with self._sessions.transaction() as session:
-            cancelled = JobRepository(session).mark_cancelled(job_id, datetime.now(UTC))
-        if cancelled:
-            logger.info(
-                "Job execution cancelled",
-                extra={
-                    "ipsp_action": "job.cancelled",
-                    "ipsp_stream": "application",
-                    "ipsp_component": "jobs",
-                    "ipsp_status": "success",
-                    "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
-                },
+            return JobRepository(session).mark_cancelled(job_id, datetime.now(UTC))
+
+    @staticmethod
+    def _log_cancelled(job_id: str, started: float) -> None:
+        logger.info(
+            "Job execution cancelled",
+            extra={
+                "ipsp_action": "job.cancelled",
+                "ipsp_stream": "application",
+                "ipsp_component": "jobs",
+                "ipsp_status": "success",
+                "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
+            },
+        )
+
+    def _fail_without_exception(self, job_id: str, error: JobError) -> bool:
+        with self._sessions.transaction() as session:
+            return JobRepository(session).mark_failed(
+                job_id, error, datetime.now(UTC), allow_queued=True
             )
-
-    def _fail_without_exception(self, job_id: str, error: JobError) -> None:
-        with self._sessions.transaction() as session:
-            JobRepository(session).mark_failed(job_id, error, datetime.now(UTC), allow_queued=True)

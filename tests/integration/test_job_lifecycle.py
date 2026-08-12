@@ -6,6 +6,8 @@ import json
 import subprocess
 import sys
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Barrier, Event, Lock, Thread, current_thread
@@ -22,6 +24,11 @@ from ipsp.database.models import AuditEvent, JobRecord, Role, User
 from ipsp.errors.exceptions import IPSPError
 from ipsp.jobs.contracts import JobError, JobExecutionContext, JobProgress
 from ipsp.jobs.enums import JobStatus, JobType
+from ipsp.jobs.executor import (
+    JobExecutionAbandoned,
+    JobExecutionLifecycle,
+    PersistentJobExecutionContext,
+)
 from ipsp.jobs.local import LocalJobBackend
 from ipsp.jobs.service import JobService
 from ipsp.main import create_app
@@ -120,6 +127,35 @@ print(json.dumps({
 backend.shutdown()
 services.database_engine.dispose()
 """
+
+
+class _GateBeforeAuthorityLifecycle(JobExecutionLifecycle):
+    """Deterministically pause one request before it acquires lifecycle authority."""
+
+    def __init__(self, *, gate_start: bool = False, gate_persistence: bool = False) -> None:
+        super().__init__()
+        self._gate_start = gate_start
+        self._gate_persistence = gate_persistence
+        self.authority_requested = Event()
+        self.release_authority = Event()
+
+    @contextmanager
+    def start_authority(self) -> Iterator[bool]:
+        if self._gate_start:
+            self._gate_start = False
+            self.authority_requested.set()
+            assert self.release_authority.wait(2)
+        with super().start_authority() as allowed:
+            yield allowed
+
+    @contextmanager
+    def persistence_authority(self) -> Iterator[bool]:
+        if self._gate_persistence:
+            self._gate_persistence = False
+            self.authority_requested.set()
+            assert self.release_authority.wait(2)
+        with super().persistence_authority() as allowed:
+            yield allowed
 
 
 def _upgrade(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -497,6 +533,182 @@ def test_repository_enforces_state_machine_and_atomic_claim_retry(
         services.database_engine.dispose()
 
 
+def test_terminal_persistence_request_loses_deterministically_to_abandonment(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    handler_returned = Event()
+
+    def handler(_: JobExecutionContext) -> None:
+        handler_returned.set()
+
+    app = create_app(settings, job_handlers={JobType.RESTORE: handler})
+    services = app.state.foundation_services
+    record = _record(status=JobStatus.QUEUED, job_type=JobType.RESTORE)
+    lifecycle = _GateBeforeAuthorityLifecycle(gate_persistence=True)
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+        worker = Thread(target=services.job_executor.execute, args=(record.job_id, lifecycle))
+        worker.start()
+        assert handler_returned.wait(2)
+        assert lifecycle.authority_requested.wait(2)
+        lifecycle.abandon()
+        lifecycle.release_authority.set()
+        worker.join(timeout=2)
+        assert not worker.is_alive()
+
+        snapshot = services.job_service.get_internal(record.job_id)
+        assert snapshot.status is JobStatus.RUNNING
+        assert snapshot.error is None
+        assert not snapshot.cancel_requested
+        assert {getattr(item, "ipsp_action", None) for item in caplog.records}.isdisjoint(
+            {"job.succeeded", "job.failed", "job.cancelled"}
+        )
+    finally:
+        lifecycle.release_authority.set()
+        services.database_engine.dispose()
+
+
+def test_progress_after_abandonment_is_rejected_without_persistence(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings)
+    services = app.state.foundation_services
+    record = _record(status=JobStatus.RUNNING)
+    lifecycle = JobExecutionLifecycle()
+    context = PersistentJobExecutionContext(
+        services.database_sessions,
+        job_id=record.job_id,
+        job_type=JobType.PROFILING,
+        attempt=1,
+        lifecycle=lifecycle,
+    )
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+        lifecycle.abandon()
+        with pytest.raises(JobExecutionAbandoned):
+            context.update_progress(JobProgress(75, "late", "Late update."))
+        snapshot = services.job_service.get_internal(record.job_id)
+        assert snapshot.progress == JobProgress(0, "queued", "Queued.")
+        assert snapshot.status is JobStatus.RUNNING
+    finally:
+        services.database_engine.dispose()
+
+
+def test_artifact_after_abandonment_is_rejected_without_persistence(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings)
+    services = app.state.foundation_services
+    record = _record(status=JobStatus.RUNNING)
+    lifecycle = JobExecutionLifecycle()
+    context = PersistentJobExecutionContext(
+        services.database_sessions,
+        job_id=record.job_id,
+        job_type=JobType.PROFILING,
+        attempt=1,
+        lifecycle=lifecycle,
+    )
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+        lifecycle.abandon()
+        with pytest.raises(JobExecutionAbandoned):
+            context.add_artifact_reference("reports/late-artifact")
+        snapshot = services.job_service.get_internal(record.job_id)
+        assert snapshot.artifact_refs == ()
+        assert snapshot.status is JobStatus.RUNNING
+    finally:
+        services.database_engine.dispose()
+
+
+def test_start_claim_request_loses_deterministically_to_stop_starting(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings, job_handlers={JobType.RESTORE: lambda _: None})
+    services = app.state.foundation_services
+    record = _record(status=JobStatus.QUEUED, job_type=JobType.RESTORE)
+    lifecycle = _GateBeforeAuthorityLifecycle(gate_start=True)
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+        worker = Thread(target=services.job_executor.execute, args=(record.job_id, lifecycle))
+        worker.start()
+        assert lifecycle.authority_requested.wait(2)
+        lifecycle.stop_starting()
+        lifecycle.release_authority.set()
+        worker.join(timeout=2)
+        assert not worker.is_alive()
+        assert services.job_service.get_internal(record.job_id).status is JobStatus.QUEUED
+    finally:
+        lifecycle.release_authority.set()
+        services.database_engine.dispose()
+
+
+def test_authorized_short_persistence_completes_before_abandonment_revokes_authority(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings)
+    services = app.state.foundation_services
+    record = _record(status=JobStatus.RUNNING)
+    lifecycle = JobExecutionLifecycle()
+    authority_acquired = Event()
+    abandonment_requested = Event()
+    release_persistence = Event()
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+
+        def persist() -> None:
+            with lifecycle.persistence_authority() as allowed:
+                assert allowed
+                authority_acquired.set()
+                assert release_persistence.wait(2)
+                with services.database_sessions.transaction() as session:
+                    assert JobRepository(session).update_progress(
+                        record.job_id,
+                        JobProgress(35, "authorized", "Authorized update."),
+                        datetime.now(UTC),
+                    )
+
+        persistence_thread = Thread(target=persist)
+        persistence_thread.start()
+        assert authority_acquired.wait(2)
+
+        def abandon() -> None:
+            abandonment_requested.set()
+            lifecycle.abandon()
+
+        abandonment_thread = Thread(target=abandon)
+        abandonment_thread.start()
+        assert abandonment_requested.wait(2)
+        assert abandonment_thread.is_alive()
+        release_persistence.set()
+        persistence_thread.join(timeout=2)
+        abandonment_thread.join(timeout=2)
+        assert not persistence_thread.is_alive()
+        assert not abandonment_thread.is_alive()
+        assert services.job_service.get_internal(record.job_id).progress == JobProgress(
+            35, "authorized", "Authorized update."
+        )
+        assert lifecycle.is_abandoned()
+    finally:
+        release_persistence.set()
+        services.database_engine.dispose()
+
+
 def test_worker_success_progress_artifact_audit_and_context_isolation(
     settings: Settings,
     monkeypatch: pytest.MonkeyPatch,
@@ -800,6 +1012,9 @@ def test_shutdown_does_not_falsely_succeed_running_job_and_lifecycle_is_idempote
         with pytest.raises(IPSPError) as unavailable:
             backend.enqueue(str(uuid4()))
         assert unavailable.value.error_code == "JOB-WORKER-UNAVAILABLE"
+        with pytest.raises(IPSPError) as overlapping_generation:
+            backend.start()
+        assert overlapping_generation.value.error_code == "JOB-WORKER-UNAVAILABLE"
         release.set()
         assert finished.wait(2)
         deadline = time.monotonic() + 2

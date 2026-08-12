@@ -41,6 +41,7 @@ class LocalJobBackend:
         self._threads: tuple[threading.Thread, ...] = ()
         self._stop_requested: threading.Event | None = None
         self._lifecycle: JobExecutionLifecycle | None = None
+        self._abandoned_threads: tuple[threading.Thread, ...] = ()
         self._accepting = False
         self._shutting_down = False
         self._generation = 0
@@ -52,6 +53,11 @@ class LocalJobBackend:
         with self._lock:
             if self._accepting:
                 return
+            self._abandoned_threads = tuple(
+                thread for thread in self._abandoned_threads if thread.is_alive()
+            )
+            if self._abandoned_threads:
+                raise IPSPError("JOB-WORKER-UNAVAILABLE", "Job worker is unavailable.")
             if self._queue is not None or self._shutting_down:
                 raise IPSPError("JOB-WORKER-UNAVAILABLE", "Job worker is unavailable.")
             self._generation += 1
@@ -115,6 +121,7 @@ class LocalJobBackend:
             lifecycle.abandon()
 
         with self._lock:
+            self._abandoned_threads = tuple(thread for thread in threads if thread.is_alive())
             self._clear_generation(work_queue)
 
     def health(self) -> JobBackendHealth:
