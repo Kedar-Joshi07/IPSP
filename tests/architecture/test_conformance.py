@@ -1,5 +1,6 @@
 """Foundation architecture and contamination guardrails."""
 
+import ast
 import re
 from pathlib import Path
 
@@ -53,6 +54,26 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         "urllib.request",
     ):
         assert network_import not in lowered
+
+
+def test_production_logger_calls_use_one_literal_message_argument() -> None:
+    log_methods = {"debug", "info", "warning", "error", "exception", "critical"}
+    checked = 0
+    for path in BACKEND.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in log_methods
+            ):
+                continue
+            checked += 1
+            assert len(node.args) == 1, f"{path}:{node.lineno} uses positional log formatting"
+            assert isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str), (
+                f"{path}:{node.lineno} log message must be a literal string"
+            )
+    assert checked > 0
 
 
 def test_phase1g_has_one_declarative_base_and_exact_table_allowlist() -> None:

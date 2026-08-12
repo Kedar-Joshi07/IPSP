@@ -39,6 +39,15 @@ def _request_id(request: Request) -> str:
     return str(getattr(request.state, "request_id", "unavailable"))
 
 
+def _request_identity_context(request: Request) -> dict[str, object]:
+    """Return safe identity fields propagated through request state across task boundaries."""
+    return {
+        "ipsp_session_correlation_id": getattr(request.state, "session_correlation_id", None),
+        "ipsp_user_id": getattr(request.state, "user_id", None),
+        "ipsp_resolved_role": getattr(request.state, "role_name", None),
+    }
+
+
 def _response(request: Request, error: ErrorResponse, status_code: int) -> JSONResponse:
     response = JSONResponse(status_code=status_code, content=error.model_dump(mode="json"))
     response.headers["X-Trace-ID"] = error.trace_id
@@ -64,6 +73,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ipsp_status": "failure",
                 "ipsp_error_code": exc.error_code,
                 "ipsp_metadata": {"exception_type": type(exc).__name__},
+                **_request_identity_context(request),
             },
         )
         return _response(
@@ -97,6 +107,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ipsp_status": "failure",
                 "ipsp_error_code": "DATA-VALIDATION",
                 "ipsp_metadata": {"exception_type": type(exc).__name__},
+                **_request_identity_context(request),
             },
         )
         return _response(
@@ -123,6 +134,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "ipsp_status": "failure",
                 "ipsp_error_code": "SYS-UNEXPECTED",
                 "ipsp_metadata": {"exception_type": type(exc).__name__},
+                **_request_identity_context(request),
             },
         )
         return _response(

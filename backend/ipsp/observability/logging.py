@@ -12,6 +12,7 @@ from types import TracebackType
 from typing import Any
 from uuid import uuid4
 
+from ipsp.observability.context import get_request_id, get_trace_id
 from ipsp.observability.events import EventStream, new_event
 from ipsp.security.redaction import JsonSafeValue, sanitize_structured_data
 
@@ -75,6 +76,10 @@ class JsonFormatter(logging.Formatter):
         if not isinstance(timestamp_utc, datetime):
             timestamp_utc = datetime.now(UTC)
             record.ipsp_timestamp_utc = timestamp_utc
+        trace_id = getattr(record, "ipsp_trace_id", None) or get_trace_id() or str(uuid4())
+        request_id = getattr(record, "ipsp_request_id", None) or get_request_id() or str(uuid4())
+        record.ipsp_trace_id = trace_id
+        record.ipsp_request_id = request_id
         context = {
             field: getattr(record, f"ipsp_{field}", None) for field in _OPTIONAL_CONTEXT_FIELDS
         }
@@ -87,8 +92,8 @@ class JsonFormatter(logging.Formatter):
             metadata=getattr(record, "ipsp_metadata", {}),
             timestamp_utc=timestamp_utc,
             event_id=event_id,
-            trace_id=getattr(record, "ipsp_trace_id", None),
-            request_id=getattr(record, "ipsp_request_id", None),
+            trace_id=trace_id,
+            request_id=request_id,
             **context,
         )
         payload: dict[str, Any] = event.as_json_dict()

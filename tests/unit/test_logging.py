@@ -2,6 +2,7 @@
 
 import json
 import logging
+from io import StringIO
 from pathlib import Path
 
 from ipsp.observability.events import EventStream, new_event
@@ -127,6 +128,38 @@ def test_event_streams_and_generated_envelope_are_exact() -> None:
     assert event.trace_id
     assert event.request_id
     assert event.timestamp_utc.utcoffset() is not None
+
+
+def test_formatter_freezes_all_event_identity_on_one_record() -> None:
+    record = _record()
+
+    first = json.loads(JsonFormatter().format(record))
+    second = json.loads(JsonFormatter().format(record))
+
+    for field in ("timestamp_utc", "event_id", "trace_id", "request_id"):
+        assert first[field] == second[field]
+
+
+def test_console_and_jsonl_share_one_log_record_identity(tmp_path: Path) -> None:
+    logger = logging.getLogger("ipsp.multisink")
+    console = StringIO()
+    configure_logging("INFO", tmp_path)
+    app_logger = logging.getLogger("ipsp")
+    console_handler = next(
+        handler
+        for handler in app_logger.handlers
+        if getattr(handler, "ipsp_sink", None) == "console"
+    )
+    console_handler.setStream(console)
+
+    logger.info("Safe multi-sink event")
+
+    console_event = json.loads(console.getvalue())
+    file_event = json.loads(
+        (tmp_path / "ipsp-runtime.jsonl").read_text(encoding="utf-8").splitlines()[-1]
+    )
+    for field in ("timestamp_utc", "event_id", "trace_id", "request_id"):
+        assert console_event[field] == file_event[field]
 
 
 def test_formatter_emits_bounded_structure_without_exception_secrets(tmp_path: Path) -> None:

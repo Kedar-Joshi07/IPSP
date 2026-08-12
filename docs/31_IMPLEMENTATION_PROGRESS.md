@@ -18,6 +18,38 @@ Application implementation: **Phase 1G structured observability and durable audi
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
 
+## Phase 1G.1 — Observability context and correlation hardening
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; Phase 1H ready for independent review
+- **H-001 Authenticated Context:** Authentication is now a two-stage dependency: a synchronous helper
+  performs `AuthService`/SQLAlchemy work in FastAPI's worker thread, then an async wrapper binds safe
+  identity ContextVars and request state in the request task. Protected sync routes and downstream
+  sync dependencies inherit user/session-correlation/role plus trace/request IDs; centralized error
+  logs use the safe request-state bridge required across `BaseHTTPMiddleware` task boundaries
+- **H-001 Isolation Evidence:** Tests prove authenticated context visibility, anonymous follow-up
+  reset, and deterministic two-user interleaving without identity cross-contamination. Existing
+  dependency caching, 401/403, CSRF, session, RBAC, and request-state behavior remains unchanged
+- **H-002 Multi-Sink Correlation:** `JsonFormatter` now freezes timestamp, event ID, trace ID, and
+  request ID on each `LogRecord`. Repeated formatting and the real console-plus-JSONL handler path
+  produce identical four-field event identity, including when no request context exists
+- **H-003 Static Messages:** An AST conformance guard scans production `logger.debug/info/warning/error/
+  exception/critical` calls and requires exactly one positional literal string message with runtime
+  values confined to structured fields
+- **Test Evidence:** `pytest` — 160 passed, 0 failed, 0 skipped, 0 warnings, including request-task
+  binding, downstream sync inheritance, handled-error identity, anonymous reset, deterministic
+  concurrent isolation, and repeated/dual-handler correlation identity
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 79 files;
+  strict mypy passed for 56 source files; `pip check`, `git diff --check`, Alembic heads/check,
+  architecture scans, and artifact checks passed. Migration `20260812_04`, the six-table ORM
+  allowlist, dependency files, rotation defaults, streams/actions, and audit/RBAC/auth architecture
+  remain unchanged
+- **Architecture Decisions Added:** None; this is a narrow correction to the Phase 1G context and
+  logging contracts and introduces no Phase 1H implementation
+
+Phase 1 and v0.1.0 remain in progress. Phase 1H has not begun and remains subject to independent
+review of this hardening pass.
+
 ## Phase 1G — Structured Observability & Durable Audit
 
 - **Implementation Status:** COMPLETE (2026-08-12)

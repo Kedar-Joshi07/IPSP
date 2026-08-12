@@ -12,12 +12,20 @@ def get_auth_service(request: Request) -> AuthService:
     return cast(AuthService, request.app.state.foundation_services.auth_service)
 
 
-def require_authenticated_session(
+def _authenticate_session(
     request: Request,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> AuthPrincipal:
+    """Perform synchronous session/database work in FastAPI's worker thread."""
     settings = request.app.state.settings.auth
-    principal = auth_service.authenticate_session(request.cookies.get(settings.session_cookie_name))
+    return auth_service.authenticate_session(request.cookies.get(settings.session_cookie_name))
+
+
+async def require_authenticated_session(
+    request: Request,
+    principal: Annotated[AuthPrincipal, Depends(_authenticate_session)],
+) -> AuthPrincipal:
+    """Bind authenticated identity in the request task after synchronous authentication."""
     request.state.user_id = principal.user_id
     request.state.session_correlation_id = principal.session_correlation_id
     request.state.role_id = principal.role_id
