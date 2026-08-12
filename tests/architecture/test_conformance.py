@@ -76,7 +76,7 @@ def test_production_logger_calls_use_one_literal_message_argument() -> None:
     assert checked > 0
 
 
-def test_phase1g_has_one_declarative_base_and_exact_table_allowlist() -> None:
+def test_phase1h_has_one_declarative_base_and_exact_table_allowlist() -> None:
     source = _read_production_source()
     model_declaration_files = [
         path
@@ -86,17 +86,53 @@ def test_phase1g_has_one_declarative_base_and_exact_table_allowlist() -> None:
 
     assert re.findall(r"class\s+\w+\(DeclarativeBase\)", source) == ["class Base(DeclarativeBase)"]
     assert set(model_declaration_files) == {
+        BACKEND / "database" / "models" / "jobs.py",
         BACKEND / "database" / "models" / "observability.py",
         BACKEND / "database" / "models" / "security.py",
     }
     assert set(Base.metadata.tables) == {
         "audit_events",
+        "jobs",
         "permissions",
         "role_permissions",
         "roles",
         "user_sessions",
         "users",
     }
+
+
+def test_phase1h_job_ownership_and_execution_boundaries_are_canonical() -> None:
+    source = _read_production_source().lower()
+    job_model_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class JobRecord" in path.read_text(encoding="utf-8")
+    ]
+    job_repository_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class JobRepository" in path.read_text(encoding="utf-8")
+    ]
+    job_service_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class JobService" in path.read_text(encoding="utf-8")
+    ]
+
+    assert job_model_files == [BACKEND / "database" / "models" / "jobs.py"]
+    assert job_repository_files == [BACKEND / "repositories" / "jobs.py"]
+    assert job_service_files == [BACKEND / "jobs" / "service.py"]
+    for prohibited in (
+        "import rabbitmq",
+        "import kafka",
+        "import pickle",
+        "pickle.loads",
+        "importlib.import_module",
+        "__import__(",
+        "exec(",
+        "eval(",
+    ):
+        assert prohibited not in source
 
 
 def test_phase1g_audit_ownership_is_append_only_and_canonical() -> None:

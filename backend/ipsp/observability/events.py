@@ -88,12 +88,14 @@ def new_event(
     context = current_observability_context()
     effective_trace_id = trace_id or context.trace_id or str(uuid4())
     effective_request_id = request_id or context.request_id or str(uuid4())
-    optional = {
+    optional: dict[str, object] = {
         "session_correlation_id": context.session_correlation_id,
         "user_id": context.user_id,
         "resolved_role": context.resolved_role,
-        **context_overrides,
+        "resource_type": context.resource_type,
+        "resource_id": context.resource_id,
     }
+    optional.update({key: value for key, value in context_overrides.items() if value is not None})
     return EventEnvelope(
         timestamp_utc=timestamp_utc or datetime.now(UTC),
         event_id=event_id or str(uuid4()),

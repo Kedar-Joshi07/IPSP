@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import re
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Final
@@ -18,6 +20,8 @@ _trace_id: ContextVar[str] = ContextVar("trace_id", default="")
 _session_correlation_id: ContextVar[str | None] = ContextVar("session_correlation_id", default=None)
 _user_id: ContextVar[int | None] = ContextVar("user_id", default=None)
 _resolved_role: ContextVar[str | None] = ContextVar("resolved_role", default=None)
+_resource_type: ContextVar[str | None] = ContextVar("resource_type", default=None)
+_resource_id: ContextVar[str | None] = ContextVar("resource_id", default=None)
 _SAFE_CORRELATION_ID: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 logger = logging.getLogger("ipsp.request")
@@ -48,6 +52,8 @@ class ObservabilityContext:
     session_correlation_id: str | None
     user_id: int | None
     resolved_role: str | None
+    resource_type: str | None
+    resource_id: str | None
 
 
 def current_observability_context() -> ObservabilityContext:
@@ -58,6 +64,8 @@ def current_observability_context() -> ObservabilityContext:
         session_correlation_id=_session_correlation_id.get(),
         user_id=_user_id.get(),
         resolved_role=_resolved_role.get(),
+        resource_type=_resource_type.get(),
+        resource_id=_resource_id.get(),
     )
 
 
@@ -68,6 +76,35 @@ def bind_authenticated_context(
     _session_correlation_id.set(session_correlation_id)
     _user_id.set(user_id)
     _resolved_role.set(resolved_role)
+
+
+@contextmanager
+def bind_observability_context(
+    *,
+    request_id: str,
+    trace_id: str,
+    user_id: int | None = None,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+) -> Iterator[None]:
+    """Bind and reliably reset one fresh non-secret worker execution context."""
+    request_token = _request_id.set(_safe_correlation_id(request_id))
+    trace_token = _trace_id.set(_safe_correlation_id(trace_id))
+    session_token = _session_correlation_id.set(None)
+    user_token = _user_id.set(user_id)
+    role_token = _resolved_role.set(None)
+    resource_type_token = _resource_type.set(resource_type)
+    resource_id_token = _resource_id.set(resource_id)
+    try:
+        yield
+    finally:
+        _resource_id.reset(resource_id_token)
+        _resource_type.reset(resource_type_token)
+        _resolved_role.reset(role_token)
+        _user_id.reset(user_token)
+        _session_correlation_id.reset(session_token)
+        _trace_id.reset(trace_token)
+        _request_id.reset(request_token)
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -83,6 +120,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         session_token = _session_correlation_id.set(None)
         user_token = _user_id.set(None)
         role_token = _resolved_role.set(None)
+        resource_type_token = _resource_type.set(None)
+        resource_id_token = _resource_id.set(None)
         started = time.perf_counter()
 
         try:
@@ -111,6 +150,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             )
             return response
         finally:
+            _resource_id.reset(resource_id_token)
+            _resource_type.reset(resource_type_token)
             _resolved_role.reset(role_token)
             _user_id.reset(user_token)
             _session_correlation_id.reset(session_token)

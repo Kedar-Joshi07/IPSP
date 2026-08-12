@@ -16,6 +16,13 @@ sanitized deterministic JSON metadata, and no raw credentials, bodies, headers, 
 future-domain foreign keys. Downgrading to `20260811_03` removes only `audit_events`; the five prior
 security tables remain intact.
 
+Phase 1H revision `20260812_05` directly follows `20260812_04` and adds only `jobs`. The table stores
+bounded generic job type/status/progress, owner and trace correlation, manual-attempt and cooperative
+cancellation state, safe artifact references, sanitized metadata and errors, and UTC lifecycle
+timestamps. It stores no analytical rows, arbitrary payloads, credentials, tracebacks, callable
+paths, pickled objects, or artifact bytes. Downgrading to `20260812_04` removes only `jobs`; the six
+prior control-plane tables remain intact.
+
 Run commands from the repository root. The Alembic environment reads the same validated
 `IPSP_DATABASE__*` settings as the application; `alembic.ini` intentionally contains no duplicate
 database URL.

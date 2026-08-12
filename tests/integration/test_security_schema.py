@@ -18,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_TABLES = {
     "alembic_version",
     "audit_events",
+    "jobs",
     "permissions",
     "role_permissions",
     "roles",

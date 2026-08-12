@@ -15,6 +15,11 @@ from ipsp.config.settings import Settings
 from ipsp.database.engine import create_database_engine
 from ipsp.database.migrations import MigrationStateService, canonical_migrations_path
 from ipsp.database.session import DatabaseSessionFactory
+from ipsp.jobs.contracts import JobHandler
+from ipsp.jobs.enums import JobType
+from ipsp.jobs.executor import JobExecutor
+from ipsp.jobs.local import LocalJobBackend
+from ipsp.jobs.service import JobService
 from ipsp.observability.audit import AuditService
 from ipsp.security.outbound import OutboundPolicy
 from ipsp.security.secrets import EnvironmentSecretProvider, SecretProvider
@@ -38,14 +43,18 @@ class FoundationServices:
     auth_service: AuthService
     rbac_service: RBACService
     rbac_catalog_service: RBACCatalogService
+    job_executor: JobExecutor
+    job_backend: LocalJobBackend
+    job_service: JobService
 
 
 def build_foundation_services(
     settings: Settings,
     *,
     environ: Mapping[str, str] | None = None,
+    job_handlers: Mapping[JobType, JobHandler] | None = None,
 ) -> FoundationServices:
-    """Construct Phase 1B services without mutable globals or provider side effects."""
+    """Construct current foundation services without mutable globals or runtime side effects."""
     secret_provider = EnvironmentSecretProvider(environ)
     outbound = settings.outbound
     outbound_policy = OutboundPolicy(
@@ -66,6 +75,9 @@ def build_foundation_services(
     auth_service = AuthService(settings.auth, database_sessions, password_service, audit_service)
     rbac_service = RBACService(database_sessions, audit_service)
     rbac_catalog_service = RBACCatalogService(database_sessions, audit_service)
+    job_executor = JobExecutor(database_sessions, audit_service, job_handlers)
+    job_backend = LocalJobBackend(job_executor)
+    job_service = JobService(database_sessions, job_backend, audit_service)
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
@@ -80,4 +92,7 @@ def build_foundation_services(
         auth_service=auth_service,
         rbac_service=rbac_service,
         rbac_catalog_service=rbac_catalog_service,
+        job_executor=job_executor,
+        job_backend=job_backend,
+        job_service=job_service,
     )

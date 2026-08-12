@@ -30,9 +30,10 @@ def _record_count(engine: Engine) -> int:
         return int(connection.scalar(text("SELECT count(*) FROM test_records")) or 0)
 
 
-def test_canonical_metadata_contains_only_phase1g_control_tables() -> None:
+def test_canonical_metadata_contains_only_phase1h_control_tables() -> None:
     assert set(Base.metadata.tables) == {
         "audit_events",
+        "jobs",
         "permissions",
         "role_permissions",
         "roles",

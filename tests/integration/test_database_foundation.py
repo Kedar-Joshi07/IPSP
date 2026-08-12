@@ -22,17 +22,18 @@ from ipsp.services.readiness import ReadinessService
 from sqlalchemy import create_engine, inspect, text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-PHASE1F_REVISION = "20260811_03"
-EXPECTED_HEAD = "20260812_04"
-PHASE1F_TABLES = [
+PRIOR_HEAD = "20260812_04"
+EXPECTED_HEAD = "20260812_05"
+PRIOR_TABLES = [
     "alembic_version",
+    "audit_events",
     "permissions",
     "role_permissions",
     "roles",
     "user_sessions",
     "users",
 ]
-EXPECTED_TABLES = ["alembic_version", "audit_events", *PHASE1F_TABLES[1:]]
+EXPECTED_TABLES = ["alembic_version", "audit_events", "jobs", *PRIOR_TABLES[2:]]
 
 
 def _alembic_config() -> Config:
@@ -52,11 +53,11 @@ def test_migration_upgrade_current_repeat_and_downgrade(
         assert initial.expected_head == EXPECTED_HEAD
         assert initial.at_head is False
 
-        command.upgrade(_alembic_config(), PHASE1F_REVISION)
+        command.upgrade(_alembic_config(), PRIOR_HEAD)
         baseline = state_service.inspect()
-        assert baseline.current_revision == PHASE1F_REVISION
+        assert baseline.current_revision == PRIOR_HEAD
         assert baseline.at_head is False
-        assert inspect(engine).get_table_names() == PHASE1F_TABLES
+        assert inspect(engine).get_table_names() == PRIOR_TABLES
 
         command.upgrade(_alembic_config(), "head")
         command.upgrade(_alembic_config(), "head")
@@ -66,11 +67,11 @@ def test_migration_upgrade_current_repeat_and_downgrade(
         assert inspect(engine).get_table_names() == EXPECTED_TABLES
 
         command.check(_alembic_config())
-        command.downgrade(_alembic_config(), PHASE1F_REVISION)
+        command.downgrade(_alembic_config(), PRIOR_HEAD)
         downgraded = state_service.inspect()
-        assert downgraded.current_revision == PHASE1F_REVISION
+        assert downgraded.current_revision == PRIOR_HEAD
         assert downgraded.at_head is False
-        assert inspect(engine).get_table_names() == PHASE1F_TABLES
+        assert inspect(engine).get_table_names() == PRIOR_TABLES
 
         command.upgrade(_alembic_config(), "head")
         reupgraded = state_service.inspect()
@@ -97,12 +98,12 @@ def test_offline_migration_renders_without_creating_database(
     assert not database_path.exists()
 
 
-def test_readiness_requires_phase1g_head(
+def test_readiness_requires_phase1h_head(
     settings: Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("IPSP_DATABASE__URL", settings.database.url)
-    command.upgrade(_alembic_config(), PHASE1F_REVISION)
+    command.upgrade(_alembic_config(), PRIOR_HEAD)
     app = create_app(settings)
     try:
         with TestClient(app, raise_server_exceptions=False) as client:

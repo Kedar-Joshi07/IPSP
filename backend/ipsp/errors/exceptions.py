@@ -9,7 +9,7 @@ from typing import Any
 from ipsp.security.redaction import JsonSafeValue, sanitize_details
 
 _ERROR_CODE_PATTERN = re.compile(
-    r"^(AUTH|AUTHZ|DATA|SEM|REL|ML|LLM|SIM|TRUST|EXP|JOB|SYS)-[A-Z0-9_]+$"
+    r"^(AUTH|AUTHZ|DATA|SEM|REL|ML|LLM|SIM|TRUST|EXP|JOB|SYS)-[A-Z0-9_]+(?:-[A-Z0-9_]+)*$"
 )
 
 

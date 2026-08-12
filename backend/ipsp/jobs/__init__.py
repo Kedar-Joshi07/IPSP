@@ -1,14 +1,24 @@
-"""Background-job domain contracts; no execution backend is implemented in Phase 1A."""
+"""Persistent job contracts and local execution foundation."""
 
-from ipsp.jobs.contracts import JobBackend, JobError, JobProgress, JobRepository, JobService
+from ipsp.jobs.contracts import (
+    JobBackend,
+    JobBackendHealth,
+    JobError,
+    JobExecutionContext,
+    JobHandler,
+    JobProgress,
+    JobSnapshot,
+)
 from ipsp.jobs.enums import JobStatus, JobType
 
 __all__ = [
     "JobBackend",
+    "JobBackendHealth",
     "JobError",
+    "JobExecutionContext",
+    "JobHandler",
     "JobProgress",
-    "JobRepository",
-    "JobService",
+    "JobSnapshot",
     "JobStatus",
     "JobType",
 ]

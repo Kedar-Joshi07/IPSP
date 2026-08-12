@@ -29,6 +29,13 @@ _STATUS_BY_PREFIX = {
     "JOB": 500,
     "SYS": 500,
 }
+_STATUS_BY_CODE = {
+    "JOB-NOT-FOUND": 404,
+    "JOB-CANCEL-NOT-ALLOWED": 409,
+    "JOB-RETRY-NOT-ALLOWED": 409,
+    "JOB-HANDLER-UNAVAILABLE": 503,
+    "JOB-WORKER-UNAVAILABLE": 503,
+}
 
 
 def _trace_id(request: Request) -> str:
@@ -61,7 +68,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(IPSPError)
     async def handle_ipsp_error(request: Request, exc: IPSPError) -> JSONResponse:
         prefix = exc.error_code.partition("-")[0]
-        status_code = _STATUS_BY_PREFIX.get(prefix, 500)
+        status_code = _STATUS_BY_CODE.get(exc.error_code, _STATUS_BY_PREFIX.get(prefix, 500))
         logger.warning(
             "Handled IPSP error",
             extra={

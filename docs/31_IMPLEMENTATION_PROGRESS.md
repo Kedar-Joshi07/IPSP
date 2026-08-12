@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1G structured observability and durable audit complete. Phase 1H blocked pending independent review.**
+Application implementation: **Phase 1H persistent jobs and local worker foundation complete. Phase 1I blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1G PASS)** | Phase 1G structured runtime observability, durable selected audit/security events, and safe diagnostics passed; Phase 1H not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H PASS)** | Persistent generic jobs, local worker lifecycle, owner-only control API, and safe recovery passed; Phase 1I not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,60 @@ Application implementation: **Phase 1G structured observability and durable audi
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1H — Persistent Job Service & Local Worker Backend
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; ready for independent review before Phase 1I
+- **Persistent Contract:** Revision `20260812_05` adds only `jobs`, producing the exact seven-table
+  ORM allowlist: `audit_events`, `jobs`, `permissions`, `role_permissions`, `roles`, `user_sessions`,
+  and `users`. Job rows contain bounded generic lifecycle/progress, owner and trace correlation,
+  bounded manual-attempt/cancellation state, safe artifact references, sanitized metadata/errors,
+  and UTC timestamps. They contain no analytical rows, arbitrary payload, credentials, traceback,
+  callable/module path, pickle, or artifact bytes
+- **Lifecycle and Concurrency:** Guarded SQL updates enforce exactly queued→running/cancelled,
+  running→succeeded/failed/cancelled, and eligible failed/cancelled→queued. Claims and retries are
+  single-winner under competing sessions; success ends at 100%; retries reuse the logical job ID,
+  increment the bounded attempt count, reset transient state, and remain manual only
+- **Local Worker:** A bounded two-thread `ThreadPoolExecutor` schedules persisted IDs through an
+  immutable trusted `JobType`→handler registry. Application construction starts no threads; FastAPI
+  lifespan starts/stops the worker only when existing readiness is green. Production composition
+  registers zero domain handlers, no client submission route exists, and no dynamic imports,
+  arbitrary code, network queue, Redis, Celery, RabbitMQ, or Kafka were introduced
+- **Cancellation and Shutdown:** Queued cancellation atomically reaches `CANCELLED`; running
+  cancellation is cooperative through the execution context and never force-kills a Python thread.
+  Shutdown stops acceptance and queued futures without falsely marking a non-cooperative running
+  handler successful; unresolved `RUNNING` work is recovered safely on the next start
+- **Recovery and Safe Failure:** Startup converts stale `RUNNING` rows to retryable `FAILED` with
+  `JOB-WORKER-INTERRUPTED`, while queued jobs are re-enqueued only when a trusted handler is
+  registered. Unexpected handler failures persist only `JOB-EXECUTION-FAILED` and the generic
+  message `Job execution failed.`; runtime JSONL keeps only safe exception type/frame metadata
+- **API and Governance:** Authenticated owner-only `GET /api/v1/jobs`, `GET /api/v1/jobs/{job_id}`,
+  `POST /api/v1/jobs/{job_id}/cancel`, and `POST /api/v1/jobs/{job_id}/retry` expose immutable safe
+  schemas. Cross-owner and absent IDs share `JOB-NOT-FOUND`; cancel/retry require CSRF; ownerless jobs
+  are not exposed. No new permission code or role-name authority was invented
+- **Observability and Audit:** Runtime submission/start/progress/success/failure/cancellation/retry/
+  recovery events use job resource IDs and persisted worker trace/request context. Durable
+  `job.submit`, `job.cancel`, and `job.retry` record control actions; interrupted recovery is also
+  audited, while progress ticks remain out of SQLite
+- **Worker Health:** `JobBackendHealth` exposes only `running`, `accepting_jobs`, `worker_count`, and
+  `queue_depth`. Readiness integration is intentionally deferred to Phase 1I; Phase 1H preserves the
+  existing minimal readiness response and its explicit `job_worker` deferred check
+- **Migration Evidence:** Isolated empty→`20260812_05`, current/check, `20260812_05`→`20260812_04`→
+  `20260812_05` passed. `alembic check` reported no new upgrade operations
+- **Test Evidence:** `pytest` — 172 passed, 0 failed, 0 skipped, 0 warnings, including schema,
+  state-machine, competing claim/retry, worker lifecycle, cancellation, recovery, shutdown, privacy,
+  owner isolation, CSRF, audit, context separation, and all prior authentication/RBAC/observability
+  regressions
+- **Quality Evidence:** Compileall, Ruff lint/format, strict mypy, `pip check`, `git diff --check`,
+  Alembic head/current/check/downgrade/re-upgrade, architecture scans, and artifact checks passed;
+  dependencies and lock remain unchanged
+- **Architecture Decisions Added:** None; Phase 1H implements the frozen local-first job architecture
+  without beginning rich Admin health, frontend work, domain jobs, ingestion, analytics, models,
+  simulation, LLMs, or Phase 1I
+
+Phase 1 and v0.1.0 remain in progress. Phase 1I has not begun and remains blocked pending independent
+review of Phase 1H.
 
 ## Phase 1G.1 — Observability context and correlation hardening
 
