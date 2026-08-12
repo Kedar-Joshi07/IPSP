@@ -26,6 +26,9 @@ class UserRepository:
     def add(self, user: User) -> None:
         self._session.add(user)
 
+    def list_ids_by_role(self, role_id: int) -> list[int]:
+        return list(self._session.scalars(select(User.id).where(User.role_id == role_id)))
+
     @staticmethod
     def record_failed_login(user: User, timestamp: datetime, locked_until: datetime | None) -> None:
         user.failed_login_count += 1

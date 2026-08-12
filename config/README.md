@@ -52,3 +52,16 @@ no unfrozen keychain or vault technology is selected here.
 
 `.env.example` contains non-secret defaults only. Never commit a real `.env`, credential, bearer
 token, cookie, or resolved secret value.
+
+## Local RBAC provisioning
+
+Phase 1F provisioning is explicit and never runs at application startup or readiness. After applying
+the canonical Alembic migrations, use `ipsp-create-admin` for a fresh installation with zero users.
+It creates the first Admin identity and provisions the core permission catalog through explicit
+`role_permissions` mappings.
+
+For an existing installation, run `ipsp-sync-rbac`. It requires the database to already be at the
+current migration head, ensures the Admin/User roles and the 13 core permissions, adds missing Admin
+mappings, preserves all custom roles/permissions/mappings, and deletes nothing. User receives no
+automatic permission grants. Synchronization is idempotent; any newly expanded Admin privileges
+invalidate existing Admin-user sessions so affected users must authenticate again.

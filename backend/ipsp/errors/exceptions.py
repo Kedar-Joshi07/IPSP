@@ -31,3 +31,10 @@ class IPSPError(Exception):
         self.safe_message = safe_message
         self.recoverable = recoverable
         self.details: dict[str, JsonSafeValue] | None = sanitize_details(details)
+
+
+class PermissionDeniedException(IPSPError):
+    """The current persisted authority does not grant the requested action."""
+
+    def __init__(self) -> None:
+        super().__init__("AUTHZ-PERMISSION_DENIED", "Permission denied.")

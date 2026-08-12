@@ -43,9 +43,6 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         "passlib",
         "pyjwt",
         "user_preferences",
-        "class rbacservice",
-        "def has_permission(",
-        "def enforce_permission(",
     ):
         assert prohibited not in lowered
     for network_import in (
@@ -58,7 +55,7 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         assert network_import not in lowered
 
 
-def test_phase1e_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
+def test_phase1f_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
     source = _read_production_source()
     model_declaration_files = [
         path
@@ -75,6 +72,60 @@ def test_phase1e_has_one_declarative_base_and_exact_security_table_allowlist() -
         "user_sessions",
         "users",
     }
+
+
+def test_phase1f_rbac_ownership_is_canonical() -> None:
+    rbac_service_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class RBACService" in path.read_text(encoding="utf-8")
+    ]
+    permission_repository_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "class PermissionRepository" in path.read_text(encoding="utf-8")
+    ]
+    permission_dependency_files = [
+        path
+        for path in BACKEND.rglob("*.py")
+        if "def require_permission(" in path.read_text(encoding="utf-8")
+    ]
+
+    assert rbac_service_files == [BACKEND / "auth" / "rbac.py"]
+    assert permission_repository_files == [BACKEND / "repositories" / "rbac.py"]
+    assert permission_dependency_files == [BACKEND / "api" / "dependencies" / "rbac.py"]
+
+    route_source = "\n".join(
+        path.read_text(encoding="utf-8") for path in (BACKEND / "api" / "routes").rglob("*.py")
+    )
+    dependency_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (BACKEND / "api" / "dependencies").rglob("*.py")
+    )
+    for database_pattern in (
+        "sqlalchemy",
+        "select(",
+        "session.execute(",
+        "session.scalars(",
+        "session.query(",
+    ):
+        assert database_pattern not in (route_source + dependency_source).lower()
+
+
+def test_phase1f_has_no_runtime_role_name_authorization_or_session_snapshot() -> None:
+    rbac_source = (BACKEND / "auth" / "rbac.py").read_text(encoding="utf-8")
+    session_columns = set(Base.metadata.tables["user_sessions"].columns.keys())
+
+    assert "role.name" not in rbac_source
+    assert '== "Admin"' not in rbac_source
+    assert "BaseRepository" not in _read_production_source()
+    assert {
+        "permissions",
+        "permission_codes",
+        "permission_snapshot",
+        "role_name",
+        "is_admin",
+    }.isdisjoint(session_columns)
 
 
 def test_phase1d_security_schema_has_no_authorization_bypass_columns() -> None:

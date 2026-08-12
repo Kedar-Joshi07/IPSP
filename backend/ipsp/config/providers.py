@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from sqlalchemy import Engine
 
 from ipsp.auth.passwords import PasswordService
+from ipsp.auth.rbac import RBACCatalogService, RBACService
 from ipsp.auth.service import AuthService
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.config.settings import Settings
@@ -33,6 +34,8 @@ class FoundationServices:
     readiness_service: ReadinessService
     password_service: PasswordService
     auth_service: AuthService
+    rbac_service: RBACService
+    rbac_catalog_service: RBACCatalogService
 
 
 def build_foundation_services(
@@ -58,6 +61,8 @@ def build_foundation_services(
     readiness_service = ReadinessService(settings, database_engine, migration_state)
     password_service = PasswordService()
     auth_service = AuthService(settings.auth, database_sessions, password_service)
+    rbac_service = RBACService(database_sessions)
+    rbac_catalog_service = RBACCatalogService(database_sessions)
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
@@ -69,4 +74,6 @@ def build_foundation_services(
         readiness_service=readiness_service,
         password_service=password_service,
         auth_service=auth_service,
+        rbac_service=rbac_service,
+        rbac_catalog_service=rbac_catalog_service,
     )

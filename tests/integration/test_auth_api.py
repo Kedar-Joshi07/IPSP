@@ -516,7 +516,7 @@ def test_role_change_invalidation_primitive_is_user_scoped(auth_app: FastAPI) ->
     assert bob_id != alice_id
 
 
-def test_bootstrap_requires_head_is_one_time_and_creates_no_permissions(
+def test_bootstrap_requires_head_is_one_time_and_creates_core_permissions(
     settings: Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -539,7 +539,7 @@ def test_bootstrap_requires_head_is_one_time_and_creates_no_permissions(
             role = session.get(Role, user.role_id)
             assert role is not None and role.name == "Admin"
             assert {name for (name,) in session.execute(select(Role.name))} == {"Admin", "User"}
-            assert session.scalar(select(func.count()).select_from(RolePermission)) == 0
+            assert session.scalar(select(func.count()).select_from(RolePermission)) == 13
             assert PasswordService().verify(PASSWORD, user.password_hash)
         with pytest.raises(IPSPError, match="no longer available"):
             bootstrap_first_admin(

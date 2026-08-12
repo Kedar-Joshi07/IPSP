@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1E.1 authentication hardening complete. Phase 1F blocked pending independent review.**
+Application implementation: **Phase 1F RBAC permission enforcement complete. Phase 1G blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1E.1 PASS)** | Phase 1E.1 equalized authentication failures and completed CSRF/fixation regressions; Phase 1F not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1F PASS)** | Phase 1F current-database permission enforcement, explicit core provisioning, and privilege-change session invalidation passed; Phase 1G not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,48 @@ Application implementation: **Phase 1E.1 authentication hardening complete. Phas
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1F — RBAC Permission Enforcement
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; ready for independent review before Phase 1G
+- **Runtime Authority:** `User.role_id → Role → RolePermission → Permission` is the sole permission
+  path. `RBACService.has_permission` performs a fresh fail-closed database query, and
+  `enforce_permission` raises the safe `PermissionDeniedException` mapped to HTTP 403
+  `AUTHZ-PERMISSION_DENIED`. There is no role-name, persisted Admin Boolean, wildcard, access-level,
+  cookie, session, or cached permission shortcut
+- **Core Catalog:** A typed first-party `CorePermission` catalog contains exactly the 13 frozen codes:
+  `simulation.run`, `simulation.export`, `dataset.view`, `dataset.upload`, `dataset.configure`,
+  `dataset.assign`, `model.train`, `model.promote`, `llm.configure`, `internet.configure`,
+  `user.manage`, `logs.view`, and `system.configure`. Persisted permission strings remain extensible
+- **Provisioning:** Additive, idempotent synchronization ensures Admin/User roles, all 13 core
+  Permission rows, and 13 explicit Admin mappings. User receives no automatic grants, and custom
+  roles, permissions, and mappings are preserved without pruning. Admin is usable only because of
+  its mappings, not its name
+- **API Boundary:** The reusable permission dependency authenticates first, resolves the composed
+  RBAC service, and enforces using the authenticated user ID. Temporary integration routes prove
+  401 authentication precedence, safe 403 denials, allowed mapped access, and independent CSRF plus
+  RBAC composition for state-changing requests; no new production endpoint was added
+- **Privilege Changes:** Narrow transactional primitives change a user's role or replace a role's
+  mappings and invalidate all active sessions for exactly the affected users. Same-role and
+  identical-mapping operations are no-ops. Catalog privilege expansion invalidates existing Admin
+  users' sessions while no-op synchronization and unrelated-role sessions remain valid
+- **Bootstrap and Existing Installations:** Fresh `ipsp-create-admin` now provisions the catalog and
+  creates the first Admin with explicit mappings. `ipsp-sync-rbac` requires the database at current
+  migration head, supports databases with users, reports only safe counts, and is repeatable
+- **Schema and Dependencies:** No table, column, session snapshot, or Alembic migration was added;
+  head remains `20260811_03` and the five-table ORM allowlist is unchanged. No dependency was added,
+  `requirements.lock` is unchanged, and `pyproject.toml` changed only for `ipsp-sync-rbac`
+- **Test Evidence:** `pytest` — 140 passed, 0 failed, 0 skipped, 0 warnings, including catalog,
+  extensibility, anti-bypass, fail-closed matrix, dependency/CSRF, bootstrap/CLI, runtime freshness,
+  privilege invalidation, and all Phase 1E/1E.1 authentication regressions
+- **Quality Evidence:** Compileall, Ruff lint/format, strict mypy, `pip check`, `git diff --check`,
+  Alembic heads/current/check, architecture scans, and runtime-artifact checks passed
+- **Architecture Decisions Added:** None; Phase 1F implements locked decision D-016 without beginning
+  Phase 1G durable audit/observability work
+
+Phase 1 and v0.1.0 remain in progress. General user management, dataset ACL, and durable audit
+persistence remain incomplete; Phase 1G must not begin until Phase 1F receives independent review.
 
 ## Phase 1E.1 — Authentication side-channel and regression hardening
 

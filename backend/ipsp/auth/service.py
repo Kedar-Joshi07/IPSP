@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 from ipsp.auth.passwords import PasswordInputError, PasswordService
+from ipsp.auth.rbac import RBACCatalogService
 from ipsp.config.settings import AuthSettings
 from ipsp.database.models import Role, User, UserSession
 from ipsp.database.session import DatabaseSessionFactory
@@ -274,6 +275,7 @@ class AuthService:
                 raise IPSPError(
                     "AUTH-BOOTSTRAP_UNAVAILABLE", "Admin bootstrap is no longer available."
                 )
+            RBACCatalogService.ensure_core_catalog_in_session(session, now)
             try:
                 password_hash = self._passwords.hash(password)
             except PasswordInputError:
@@ -281,12 +283,7 @@ class AuthService:
                     "AUTH-BOOTSTRAP_UNAVAILABLE", "Admin bootstrap input is invalid."
                 ) from None
             admin_role = roles.get_by_name("Admin")
-            if admin_role is None:
-                admin_role = Role(name="Admin", description="Platform administration role")
-                roles.add(admin_role)
-            if roles.get_by_name("User") is None:
-                roles.add(Role(name="User", description="Standard platform user role"))
-            session.flush()
+            assert admin_role is not None
             user = User(
                 username=username,
                 display_name=display_name,
