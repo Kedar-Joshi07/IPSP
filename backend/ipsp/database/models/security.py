@@ -96,3 +96,19 @@ class User(Base):
         default=utc_now,
         server_default=text("CURRENT_TIMESTAMP"),
     )
+
+
+class UserSession(Base):
+    """A server-side opaque browser session with hash-only credentials."""
+
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    csrf_token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_correlation_id: Mapped[str] = mapped_column(String(36), nullable=False, unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
+    invalidated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)

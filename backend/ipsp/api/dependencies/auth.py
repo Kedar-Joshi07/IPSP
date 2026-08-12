@@ -1,0 +1,38 @@
+"""Authentication and CSRF dependencies without permission enforcement."""
+
+from typing import Annotated, cast
+
+from fastapi import Depends, Request
+
+from ipsp.auth.service import AuthPrincipal, AuthService
+
+
+def get_auth_service(request: Request) -> AuthService:
+    return cast(AuthService, request.app.state.foundation_services.auth_service)
+
+
+def require_authenticated_session(
+    request: Request,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> AuthPrincipal:
+    settings = request.app.state.settings.auth
+    principal = auth_service.authenticate_session(request.cookies.get(settings.session_cookie_name))
+    request.state.user_id = principal.user_id
+    request.state.session_correlation_id = principal.session_correlation_id
+    request.state.role_id = principal.role_id
+    request.state.role_name = principal.role_name
+    return principal
+
+
+def require_csrf(
+    request: Request,
+    principal: Annotated[AuthPrincipal, Depends(require_authenticated_session)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> AuthPrincipal:
+    settings = request.app.state.settings.auth
+    auth_service.validate_csrf(
+        principal,
+        request.cookies.get(settings.csrf_cookie_name),
+        request.headers.get(settings.csrf_header_name),
+    )
+    return principal

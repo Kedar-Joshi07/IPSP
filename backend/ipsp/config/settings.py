@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, Self
@@ -87,6 +88,45 @@ class DatabaseSettings(BaseModel):
         return value
 
 
+_COOKIE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_HEADER_NAME_PATTERN = re.compile(r"^[A-Za-z0-9-]{1,64}$")
+
+
+class AuthSettings(BaseModel):
+    """Non-secret authentication and browser-session policy."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    session_ttl_minutes: int = Field(default=480, gt=0, le=43_200)
+    failed_login_threshold: int = Field(default=5, ge=1, le=100)
+    lockout_minutes: int = Field(default=15, gt=0, le=10_080)
+    session_cookie_name: str = "ipsp_session"
+    csrf_cookie_name: str = "ipsp_csrf"
+    csrf_header_name: str = "X-CSRF-Token"
+    cookie_secure: bool = True
+    cookie_samesite: Literal["lax", "strict"] = "lax"
+
+    @field_validator("session_cookie_name", "csrf_cookie_name")
+    @classmethod
+    def validate_cookie_name(cls, value: str) -> str:
+        if not _COOKIE_NAME_PATTERN.fullmatch(value):
+            raise ValueError("Cookie names must contain only safe ASCII characters")
+        return value
+
+    @field_validator("csrf_header_name")
+    @classmethod
+    def validate_header_name(cls, value: str) -> str:
+        if not _HEADER_NAME_PATTERN.fullmatch(value):
+            raise ValueError("CSRF header name must contain only safe ASCII characters")
+        return value
+
+    @model_validator(mode="after")
+    def validate_distinct_cookie_names(self) -> Self:
+        if self.session_cookie_name == self.csrf_cookie_name:
+            raise ValueError("Session and CSRF cookie names must be distinct")
+        return self
+
+
 class Settings(BaseSettings):
     """Single validated source for non-secret IPSP process configuration."""
 
@@ -114,6 +154,7 @@ class Settings(BaseSettings):
     frontend_dir: Path = Field(default_factory=lambda: _repository_root() / "frontend")
     default_theme: Literal["system", "dark", "light"] = "system"
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    auth: AuthSettings = Field(default_factory=AuthSettings)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
     outbound: OutboundSettings = Field(default_factory=OutboundSettings)
     secrets: SecretSettings = Field(default_factory=SecretSettings)
@@ -123,6 +164,8 @@ class Settings(BaseSettings):
         """Reject unsafe process behavior without coupling features to permissions."""
         if self.environment is Environment.PRODUCTION and self.debug:
             raise ValueError("Debug mode must be disabled in production")
+        if self.environment is Environment.PRODUCTION and not self.auth.cookie_secure:
+            raise ValueError("Secure authentication cookies are required in production")
         return self
 
     def safe_snapshot(self) -> dict[str, Any]:

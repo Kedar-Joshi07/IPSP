@@ -1,10 +1,13 @@
-# Generated from a clean Python 3.12 Phase 1C virtual environment on 2026-08-11.
+# Generated from a clean Python 3.12 Phase 1E virtual environment on 2026-08-12.
 # Install this snapshot, then install the local package with: pip install -e . --no-deps
 alembic==1.19.1
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.14.2
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
 ast_serialize==0.8.0
+cffi==2.1.1
 click==8.4.2
 colorama==0.4.6
 fastapi==0.139.2
@@ -22,6 +25,8 @@ mypy_extensions==1.1.0
 packaging==26.3
 pathspec==1.1.1
 pluggy==1.6.0
+pwdlib==0.3.0
+pycparser==3.0
 pydantic==2.13.4
 pydantic-settings==2.15.0
 pydantic_core==2.46.4

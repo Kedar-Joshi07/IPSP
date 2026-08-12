@@ -2,6 +2,7 @@
 
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.config.settings import (
+    AuthSettings,
     DatabaseSettings,
     Environment,
     OutboundSettings,
@@ -10,6 +11,7 @@ from ipsp.config.settings import (
 )
 
 __all__ = [
+    "AuthSettings",
     "DatabaseSettings",
     "Environment",
     "FeatureFlags",

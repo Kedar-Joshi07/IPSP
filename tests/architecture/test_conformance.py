@@ -39,12 +39,10 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         "from redis",
         "import celery",
         "from celery",
-        "pwdlib",
-        "argon2",
         "bcrypt",
-        "user_sessions",
+        "passlib",
+        "pyjwt",
         "user_preferences",
-        "class authservice",
         "class rbacservice",
         "def has_permission(",
         "def enforce_permission(",
@@ -60,7 +58,7 @@ def test_production_source_has_no_prohibited_architecture_patterns() -> None:
         assert network_import not in lowered
 
 
-def test_phase1d_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
+def test_phase1e_has_one_declarative_base_and_exact_security_table_allowlist() -> None:
     source = _read_production_source()
     model_declaration_files = [
         path
@@ -70,7 +68,13 @@ def test_phase1d_has_one_declarative_base_and_exact_security_table_allowlist() -
 
     assert re.findall(r"class\s+\w+\(DeclarativeBase\)", source) == ["class Base(DeclarativeBase)"]
     assert model_declaration_files == [BACKEND / "database" / "models" / "security.py"]
-    assert set(Base.metadata.tables) == {"permissions", "role_permissions", "roles", "users"}
+    assert set(Base.metadata.tables) == {
+        "permissions",
+        "role_permissions",
+        "roles",
+        "user_sessions",
+        "users",
+    }
 
 
 def test_phase1d_security_schema_has_no_authorization_bypass_columns() -> None:

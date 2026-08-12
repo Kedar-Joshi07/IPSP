@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1D security-schema foundation complete. Phase 1E blocked pending independent review.**
+Application implementation: **Phase 1E authentication and server-side session security complete. Phase 1F blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1D PASS)** | Phase 1D user/role/permission schema, UTC persistence, migration, constraint, and conformance gates passed; Phase 1E not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1E PASS)** | Phase 1E Argon2id authentication, opaque server sessions, CSRF, lockout, bootstrap, migration, and conformance gates passed; Phase 1F not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,54 @@ Application implementation: **Phase 1D security-schema foundation complete. Phas
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1E — Authentication & Server-Side Session Security
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; ready for independent review before Phase 1F
+- **Passwords:** Maintained `pwdlib[argon2]` produces Argon2id hashes, supports verify-and-update,
+  preserves bounded Unicode input, and performs a real dummy Argon2 verification for unknown users.
+  No plaintext, bcrypt, passlib, JWT, pepper, or generated default password path exists
+- **Sessions:** Every successful login generates independent 256-bit-or-greater opaque session and
+  CSRF tokens. Only deterministic SHA-256 hashes are stored in `user_sessions`; bearer values remain
+  cookies only. Sessions use fixed expiry, UTC timestamps, last-seen updates, fresh non-secret UUID
+  correlation IDs, fixation protection, logout invalidation, and user-scoped all-session invalidation
+- **Browser Security:** Central cookie helpers set the session cookie HttpOnly and both cookies
+  Secure by default, SameSite `lax`, Path `/`, and aligned expiry. Production rejects insecure-cookie
+  configuration; explicit insecure cookies are limited to development/localhost HTTP. Authenticated
+  logout and password change enforce the readable CSRF-cookie/header/hash contract
+- **Login & Identity:** Generic authentication failures conceal unknown, wrong-password, disabled,
+  and locked states. Failed attempts increment the persisted counter, apply temporary lockout at the
+  configured threshold, and reset after an eligible successful login. Disabled users cannot log in
+  or continue old sessions. Safe identity context resolves role ID/name but no permissions
+- **API:** Thin `/api/v1/auth/login`, `/me`, `/logout`, and `/change-password` routes use explicit
+  Pydantic `SecretStr` requests, safe response schemas, reusable session/CSRF dependencies, stable
+  IPSP errors, no-store responses, and no bearer values in JSON
+- **Password Change:** Current-password verification precedes persisted replacement; success updates
+  the Argon2id hash and UTC password timestamp, clears forced-change and lock state, invalidates every
+  session for that user, clears cookies, and leaves other users' sessions unchanged
+- **Bootstrap:** The interactive `ipsp-create-admin` CLI requires an already migrated empty database,
+  reads/confirm passwords with `getpass`, ensures only the canonical Admin/User role rows, assigns the
+  first user to Admin, creates no permission mappings, and refuses subsequent bootstrap attempts
+- **Migration:** Revision `20260811_03` directly descends from `20260811_02`, creates only
+  `user_sessions`, downgrades only that table, re-upgrades cleanly, leaves one head, and retains the
+  five-table ORM allowlist
+- **Dependencies:** Added `pwdlib[argon2]>=0.3.0,<0.4`; the Python 3.12 lock resolves pwdlib 0.3.0,
+  argon2-cffi 25.1.0, argon2-cffi-bindings 25.1.0, cffi 2.1.1, and pycparser 3.0
+- **Test Evidence:** `pytest` — 121 passed, 0 failed, 0 skipped, 0 warnings, covering password,
+  settings, session schema/lifecycle, login/lockout, cookies, identity, CSRF, logout, password change,
+  disabled users, scoped invalidation, bootstrap, readiness, leak markers, and conformance behavior
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format check passed for 68 files;
+  strict mypy passed for 48 source files; `pip check`, `git diff --check`, and the isolated Alembic
+  upgrade/current/check/downgrade/re-upgrade smoke passed
+- **Clean Environment Evidence:** The exact lock installed in a disposable Python 3.12.0 environment;
+  IPSP installed with `--no-deps`; all 121 tests, Ruff checks, strict mypy, compileall, and `pip check`
+  passed, after which the environment was removed
+- **Architecture Decisions Added:** None; Phase 1E implements the frozen authentication authorities
+  and intentionally does not implement RBAC permission enforcement or Admin-name authorization
+
+Phase 1 and v0.1.0 remain in progress. RBAC permission enforcement remains owned by Phase 1F and
+must not begin until Phase 1E receives independent review.
 
 ## Phase 1D — User / Role / Permission Security-Schema Foundation
 

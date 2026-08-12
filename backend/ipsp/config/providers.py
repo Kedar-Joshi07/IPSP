@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 from sqlalchemy import Engine
 
+from ipsp.auth.passwords import PasswordService
+from ipsp.auth.service import AuthService
 from ipsp.config.feature_flags import FeatureFlags
 from ipsp.config.settings import Settings
 from ipsp.database.engine import create_database_engine
@@ -29,6 +31,8 @@ class FoundationServices:
     database_sessions: DatabaseSessionFactory
     migration_state: MigrationStateService
     readiness_service: ReadinessService
+    password_service: PasswordService
+    auth_service: AuthService
 
 
 def build_foundation_services(
@@ -52,6 +56,8 @@ def build_foundation_services(
     database_sessions = DatabaseSessionFactory(database_engine)
     migration_state = MigrationStateService(database_engine, canonical_migrations_path())
     readiness_service = ReadinessService(settings, database_engine, migration_state)
+    password_service = PasswordService()
+    auth_service = AuthService(settings.auth, database_sessions, password_service)
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
@@ -61,4 +67,6 @@ def build_foundation_services(
         database_sessions=database_sessions,
         migration_state=migration_state,
         readiness_service=readiness_service,
+        password_service=password_service,
+        auth_service=auth_service,
     )
