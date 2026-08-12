@@ -74,6 +74,13 @@ python -m uvicorn ipsp.main:create_app --factory --reload
 
 Open `http://127.0.0.1:8000`. The UI and API foundation require no Internet connection at runtime.
 
+### Local job-worker deployment constraint
+
+`LocalJobBackend` is a single-process execution provider. Do not run multiple active local worker
+processes against the same SQLite control-plane database. Multi-process or distributed execution
+requires a future provider with explicit worker ownership and leases; the current local backend does
+not implement distributed locking, heartbeats, or coordination.
+
 ## Configuration and secrets
 
 Copy `.env.example` to a local ignored `.env` when environment overrides are needed. Nested settings

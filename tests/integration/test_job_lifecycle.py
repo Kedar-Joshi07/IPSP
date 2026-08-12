@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from threading import Barrier, Event, Lock, Thread
+from threading import Barrier, Event, Lock, Thread, current_thread
+from threading import enumerate as enumerate_threads
 from uuid import uuid4
 
 import pytest
@@ -19,14 +22,104 @@ from ipsp.database.models import AuditEvent, JobRecord, Role, User
 from ipsp.errors.exceptions import IPSPError
 from ipsp.jobs.contracts import JobError, JobExecutionContext, JobProgress
 from ipsp.jobs.enums import JobStatus, JobType
+from ipsp.jobs.local import LocalJobBackend
+from ipsp.jobs.service import JobService
 from ipsp.main import create_app
 from ipsp.observability.context import bind_observability_context, current_observability_context
-from ipsp.repositories.jobs import JobRepository
+from ipsp.repositories.jobs import JobRepository, decode_job_metadata
 from sqlalchemy import inspect, select
 from sqlalchemy.exc import IntegrityError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PASSWORD = "job-test-password-secret"
+
+_BLOCKED_WORKER_CHILD = """
+import json
+import sys
+import threading
+import time
+from pathlib import Path
+
+from ipsp.config.providers import build_foundation_services
+from ipsp.config.settings import Environment, Settings
+from ipsp.jobs.enums import JobType
+from ipsp.jobs.local import LocalJobBackend
+from ipsp.jobs.service import JobService
+
+database_path = Path(sys.argv[1])
+settings = Settings(
+    _env_file=None,
+    environment=Environment.TEST,
+    database={"url": f"sqlite:///{database_path.as_posix()}"},
+    log_dir=database_path.parent / "child-logs",
+    frontend_dir=database_path.parent / "missing-frontend",
+)
+started = threading.Event()
+never_release = threading.Event()
+
+def blocked_handler(_context):
+    started.set()
+    never_release.wait()
+
+services = build_foundation_services(settings, job_handlers={JobType.RESTORE: blocked_handler})
+backend = LocalJobBackend(
+    services.job_executor,
+    worker_count=1,
+    shutdown_grace_seconds=0.05,
+)
+service = JobService(services.database_sessions, backend, services.audit_service)
+backend.start()
+job = service.submit(JobType.RESTORE, 81, retryable=True, max_attempts=2)
+if not started.wait(2):
+    raise RuntimeError("handler did not start")
+shutdown_started = time.monotonic()
+backend.shutdown()
+elapsed = time.monotonic() - shutdown_started
+snapshot = service.get_internal(job.job_id)
+print(json.dumps({"job_id": job.job_id, "status": snapshot.status.value, "elapsed": elapsed}))
+services.database_engine.dispose()
+"""
+
+_RECOVERY_CHILD = """
+import json
+import sys
+from pathlib import Path
+
+from ipsp.config.providers import build_foundation_services
+from ipsp.config.settings import Environment, Settings
+from ipsp.jobs.enums import JobType
+from ipsp.jobs.local import LocalJobBackend
+from ipsp.jobs.service import JobService
+
+database_path = Path(sys.argv[1])
+job_id = sys.argv[2]
+settings = Settings(
+    _env_file=None,
+    environment=Environment.TEST,
+    database={"url": f"sqlite:///{database_path.as_posix()}"},
+    log_dir=database_path.parent / "recovery-logs",
+    frontend_dir=database_path.parent / "missing-frontend",
+)
+services = build_foundation_services(
+    settings,
+    job_handlers={JobType.RESTORE: lambda _context: None},
+)
+backend = LocalJobBackend(
+    services.job_executor,
+    worker_count=1,
+    shutdown_grace_seconds=0.05,
+)
+service = JobService(services.database_sessions, backend, services.audit_service)
+backend.start()
+snapshot = service.get_internal(job_id)
+print(json.dumps({
+    "status": snapshot.status.value,
+    "error_code": snapshot.error.error_code if snapshot.error else None,
+    "retryable": snapshot.retryable,
+}))
+backend.shutdown()
+services.database_engine.dispose()
+"""
 
 
 def _upgrade(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -212,6 +305,110 @@ def test_jobs_schema_is_exact_bounded_indexed_and_utc(
         services.database_engine.dispose()
 
 
+def test_persisted_metadata_and_artifact_corruption_decodes_safely(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings)
+    services = app.state.foundation_services
+    record = _record()
+    marker = "DO_NOT_RETURN_TAMPERED_JOB_SECRET"
+    try:
+        with services.database_sessions.transaction() as session:
+            session.add(record)
+            session.flush()
+            record.artifact_refs_json = json.dumps(
+                [
+                    "reports/safe-id",
+                    "/absolute/path",
+                    "C:/absolute/path",
+                    "reports/../secret",
+                    "reports/./secret",
+                    "reports//secret",
+                    "reports/has space",
+                    "x" * 256,
+                    17,
+                ]
+            )
+            record.metadata_json = json.dumps({"safe": ["value", 1, True], "password": marker})
+
+        snapshot = services.job_service.get_internal(record.job_id)
+        assert snapshot.artifact_refs == ("reports/safe-id",)
+        with services.database_sessions.session() as session:
+            persisted = session.scalar(select(JobRecord).where(JobRecord.job_id == record.job_id))
+            assert persisted is not None
+            assert decode_job_metadata(persisted.metadata_json) == {
+                "password": "[REDACTED]",
+                "safe": ["value", 1, True],
+            }
+
+        with services.database_sessions.transaction() as session:
+            persisted = session.scalar(select(JobRecord).where(JobRecord.job_id == record.job_id))
+            assert persisted is not None
+            persisted.artifact_refs_json = "not-json"
+            persisted.metadata_json = "not-json"
+
+        assert services.job_service.get_internal(record.job_id).artifact_refs == ()
+        assert decode_job_metadata("not-json") == {}
+        assert marker not in str(decode_job_metadata("not-json"))
+    finally:
+        services.database_engine.dispose()
+
+
+def test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    database_path = Path(settings.database.url.removeprefix("sqlite:///"))
+
+    blocked = subprocess.Popen(
+        [sys.executable, "-c", _BLOCKED_WORKER_CHILD, str(database_path)],
+        cwd=PROJECT_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        stdout, stderr = blocked.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        blocked.kill()
+        blocked.communicate()
+        pytest.fail("Non-cooperative daemon worker prevented child process termination")
+    assert blocked.returncode == 0, stderr
+    blocked_result = json.loads(stdout.strip().splitlines()[-1])
+    assert blocked_result["status"] == JobStatus.RUNNING.value
+    assert blocked_result["elapsed"] < 0.5
+
+    recovered = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            _RECOVERY_CHILD,
+            str(database_path),
+            blocked_result["job_id"],
+        ],
+        cwd=PROJECT_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        recovery_stdout, recovery_stderr = recovered.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        recovered.kill()
+        recovered.communicate()
+        pytest.fail("Fresh worker recovery child did not terminate")
+    assert recovered.returncode == 0, recovery_stderr
+    recovery_result = json.loads(recovery_stdout.strip().splitlines()[-1])
+    assert recovery_result == {
+        "status": JobStatus.FAILED.value,
+        "error_code": "JOB-WORKER-INTERRUPTED",
+        "retryable": True,
+    }
+
+
 def test_repository_enforces_state_machine_and_atomic_claim_retry(
     settings: Settings,
     monkeypatch: pytest.MonkeyPatch,
@@ -306,12 +503,14 @@ def test_worker_success_progress_artifact_audit_and_context_isolation(
 ) -> None:
     _upgrade(settings, monkeypatch)
     contexts: list[tuple[str, int | None, str | None]] = []
+    daemon_flags: list[bool] = []
     barrier = Barrier(2)
 
     def handler(context: JobExecutionContext) -> None:
         barrier.wait(timeout=3)
         active = current_observability_context()
         contexts.append((active.trace_id, active.user_id, active.resource_id))
+        daemon_flags.append(current_thread().daemon)
         context.update_progress(JobProgress(60, "work", "Processing."))
         context.add_artifact_reference(f"reports/{context.job_id}")
 
@@ -333,6 +532,7 @@ def test_worker_success_progress_artifact_audit_and_context_isolation(
             ("trace-one", 11, first.job_id),
             ("trace-two", 22, second.job_id),
         }
+        assert daemon_flags == [True, True]
         with services.database_sessions.session() as session:
             actions = list(session.scalars(select(AuditEvent.action).order_by(AuditEvent.id)))
         assert actions == ["job.submit", "job.submit"]
@@ -581,34 +781,101 @@ def test_shutdown_does_not_falsely_succeed_running_job_and_lifecycle_is_idempote
 
     app = create_app(settings, job_handlers={JobType.RESTORE: handler})
     services = app.state.foundation_services
+    backend = LocalJobBackend(
+        services.job_executor,
+        worker_count=1,
+        shutdown_grace_seconds=0.05,
+    )
+    service = JobService(services.database_sessions, backend, services.audit_service)
     try:
-        services.job_backend.start()
-        services.job_backend.start()
-        job = services.job_service.submit(JobType.RESTORE, 51, retryable=True, max_attempts=2)
+        backend.start()
+        backend.start()
+        job = service.submit(JobType.RESTORE, 51, retryable=True, max_attempts=2)
         assert started.wait(2)
-        services.job_backend.shutdown()
-        services.job_backend.shutdown()
-        assert services.job_backend.health().accepting_jobs is False
+        shutdown_started = time.monotonic()
+        backend.shutdown()
+        assert time.monotonic() - shutdown_started < 0.5
+        backend.shutdown()
+        assert backend.health().accepting_jobs is False
         with pytest.raises(IPSPError) as unavailable:
-            services.job_backend.enqueue(str(uuid4()))
+            backend.enqueue(str(uuid4()))
         assert unavailable.value.error_code == "JOB-WORKER-UNAVAILABLE"
         release.set()
         assert finished.wait(2)
         deadline = time.monotonic() + 2
-        assert services.job_service.get_internal(job.job_id).status is JobStatus.RUNNING
+        assert service.get_internal(job.job_id).status is JobStatus.RUNNING
         while True:
             try:
-                services.job_backend.start()
+                backend.start()
                 break
             except IPSPError:
                 if time.monotonic() >= deadline:
                     raise
                 time.sleep(0.01)
-        recovered = _wait_for_status(app, job.job_id, {JobStatus.FAILED})
+        recovered = service.get_internal(job.job_id)
         assert recovered.error is not None
         assert recovered.error.error_code == "JOB-WORKER-INTERRUPTED"
     finally:
         release.set()
+        backend.shutdown()
+        services.database_engine.dispose()
+
+
+def test_handler_finishing_within_shutdown_grace_succeeds(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    started = Event()
+    release = Event()
+
+    def handler(_: JobExecutionContext) -> None:
+        started.set()
+        release.wait(2)
+
+    app = create_app(settings, job_handlers={JobType.BACKUP: handler})
+    services = app.state.foundation_services
+    backend = LocalJobBackend(
+        services.job_executor,
+        worker_count=1,
+        shutdown_grace_seconds=0.5,
+    )
+    service = JobService(services.database_sessions, backend, services.audit_service)
+    try:
+        backend.start()
+        job = service.submit(JobType.BACKUP, 91)
+        assert started.wait(2)
+        shutdown_thread = Thread(target=backend.shutdown)
+        shutdown_thread.start()
+        time.sleep(0.02)
+        release.set()
+        shutdown_thread.join(timeout=2)
+        assert not shutdown_thread.is_alive()
+        assert service.get_internal(job.job_id).status is JobStatus.SUCCEEDED
+    finally:
+        release.set()
+        backend.shutdown()
+        services.database_engine.dispose()
+
+
+def test_repeated_app_lifespan_does_not_leave_worker_infrastructure(
+    settings: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _upgrade(settings, monkeypatch)
+    app = create_app(settings)
+    services = app.state.foundation_services
+    try:
+        for _ in range(2):
+            with TestClient(app) as client:
+                assert client.get("/health/live").status_code == 200
+                assert services.job_backend.health().running is True
+            assert services.job_backend.health().running is False
+            assert not any(
+                thread.is_alive() and thread.name.startswith("ipsp-job-")
+                for thread in enumerate_threads()
+            )
+    finally:
         services.job_backend.shutdown()
         services.database_engine.dispose()
 

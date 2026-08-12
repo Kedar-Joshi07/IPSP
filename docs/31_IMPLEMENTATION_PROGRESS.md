@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1H persistent jobs and local worker foundation complete. Phase 1I blocked pending independent review.**
+Application implementation: **Phase 1H.1 local-worker shutdown and persistence hardening complete. Phase 1I blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H PASS)** | Persistent generic jobs, local worker lifecycle, owner-only control API, and safe recovery passed; Phase 1I not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H.1 PASS)** | Bounded process shutdown, safe persisted-job decoding, and single-process deployment constraint passed; Phase 1I not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,45 @@ Application implementation: **Phase 1H persistent jobs and local worker foundati
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1H.1 — Local Worker Shutdown & Persistence Hardening
+
+- **Implementation Status:** COMPLETE (2026-08-12)
+- **Gate Result:** PASS; Phase 1I ready for independent review
+- **Bounded Process Shutdown:** `LocalJobBackend` now uses a standard-library queue and a bounded set
+  of at most 32 explicit daemon worker threads rather than `ThreadPoolExecutor`. Shutdown rejects new
+  work immediately, drains queued local IDs, waits a finite one-second grace period by default, and then
+  abandons completion authority for any still-running generation. The constructor accepts a bounded
+  grace override for deterministic tests
+- **Completion and Recovery Safety:** Cooperative handlers may finish or acknowledge cancellation
+  during grace. A handler returning after grace cannot persist progress or a false terminal result;
+  its row remains `RUNNING` and the next worker start converts it to retryable `FAILED` with
+  `JOB-WORKER-INTERRUPTED` / `Job execution was interrupted.`
+- **Process-Level Evidence:** A child process started a permanently blocked non-cooperative handler,
+  completed backend shutdown in under 0.5 seconds, exited normally without releasing the handler,
+  and left the job non-succeeded. A fresh recovery child using the same isolated migrated database
+  produced the required retryable interrupted failure
+- **Safe Persistence Decoding:** Job metadata now has a `json.loads`-only sanitized decoder that
+  returns `{}` for malformed text. Artifact references use one canonical bounded relative-reference
+  validator on both writes and reads; corrupt absolute, traversal, unsupported-character, oversized,
+  non-string, and malformed entries are never exposed through snapshots or the API
+- **Deployment Constraint:** `LocalJobBackend` is explicitly documented as a single-process provider.
+  Multiple active local worker processes sharing one control-plane database are unsupported;
+  multi-process/distributed execution requires a future provider with worker ownership and leases
+- **Unchanged Contracts:** The job schema, revision `20260812_05`, seven-table ORM allowlist, frozen
+  statuses/types/transitions, owner-only API, authentication, CSRF, RBAC, audit schema/actions,
+  observability envelope, readiness behavior, dependency declarations, and lock file are unchanged
+- **Test Evidence:** `pytest` — 177 passed, 0 failed, 0 skipped, 0 warnings, including the subprocess
+  termination/recovery proof, grace-period completion, late-completion suppression, repeated app
+  lifespan cleanup, corruption/tampering decoding, and all Phase 1E–1H regressions
+- **Quality Evidence:** Compileall, Ruff lint/format, strict mypy, `pip check`, `git diff --check`,
+  Alembic heads/check, architecture scans, and artifact checks passed with no migration or dependency
+  changes
+- **Architecture Decisions Added:** None; this pass hardens the frozen local-first provider without
+  adding distributed coordination or beginning Phase 1I
+
+Phase 1 and v0.1.0 remain in progress. Phase 1I has not begun and remains blocked pending independent
+review of Phase 1H.1.
 
 ## Phase 1H — Persistent Job Service & Local Worker Backend
 

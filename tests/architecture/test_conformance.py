@@ -135,6 +135,17 @@ def test_phase1h_job_ownership_and_execution_boundaries_are_canonical() -> None:
         assert prohibited not in source
 
 
+def test_phase1h1_local_worker_is_bounded_daemon_and_documented_single_process() -> None:
+    worker_source = (BACKEND / "jobs" / "local.py").read_text(encoding="utf-8")
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "ThreadPoolExecutor" not in worker_source
+    assert "daemon=True" in worker_source
+    assert "shutdown_grace_seconds" in worker_source
+    assert "single-process execution provider" in readme
+    assert "Do not run multiple active local worker" in readme
+
+
 def test_phase1g_audit_ownership_is_append_only_and_canonical() -> None:
     repository_files = [
         path

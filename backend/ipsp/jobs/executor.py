@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
-import re
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from types import MappingProxyType
 from uuid import uuid4
@@ -17,14 +17,47 @@ from ipsp.jobs.enums import JobStatus, JobType
 from ipsp.observability.audit import AuditService
 from ipsp.observability.context import bind_observability_context
 from ipsp.observability.events import EventStream
-from ipsp.repositories.jobs import JobRepository, snapshot_from_record
+from ipsp.repositories.jobs import (
+    JobRepository,
+    is_safe_artifact_reference,
+    snapshot_from_record,
+)
 
 logger = logging.getLogger("ipsp.jobs")
-_ARTIFACT_REFERENCE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,254}$")
 
 
 class JobCancellationAcknowledged(Exception):
     """Internal control flow used only for cooperative worker cancellation."""
+
+
+class JobExecutionAbandoned(Exception):
+    """Internal control flow preventing persistence after shutdown grace expires."""
+
+
+class JobExecutionLifecycle:
+    """Generation-scoped authority for starting and completing local executions."""
+
+    def __init__(self) -> None:
+        self._stopping = threading.Event()
+        self._abandoned = threading.Event()
+
+    def stop_starting(self) -> None:
+        self._stopping.set()
+
+    def abandon(self) -> None:
+        self._stopping.set()
+        self._abandoned.set()
+
+    def is_abandoned(self) -> bool:
+        return self._abandoned.is_set()
+
+    @contextmanager
+    def starting_allowed(self) -> Iterator[bool]:
+        yield not self._stopping.is_set()
+
+    @contextmanager
+    def completion_allowed(self) -> Iterator[bool]:
+        yield not self._abandoned.is_set()
 
 
 class PersistentJobExecutionContext:
@@ -37,11 +70,13 @@ class PersistentJobExecutionContext:
         job_id: str,
         job_type: JobType,
         attempt: int,
+        lifecycle: JobExecutionLifecycle,
     ) -> None:
         self._sessions = sessions
         self._job_id = job_id
         self._job_type = job_type
         self._attempt = attempt
+        self._lifecycle = lifecycle
 
     @property
     def job_id(self) -> str:
@@ -56,6 +91,7 @@ class PersistentJobExecutionContext:
         return self._attempt
 
     def update_progress(self, progress: JobProgress) -> None:
+        self._raise_if_abandoned()
         with self._sessions.transaction() as session:
             updated = JobRepository(session).update_progress(
                 self._job_id, progress, datetime.now(UTC)
@@ -74,6 +110,7 @@ class PersistentJobExecutionContext:
         )
 
     def is_cancel_requested(self) -> bool:
+        self._raise_if_abandoned()
         with self._sessions.session() as session:
             return JobRepository(session).is_cancel_requested(self._job_id)
 
@@ -82,11 +119,8 @@ class PersistentJobExecutionContext:
             raise JobCancellationAcknowledged()
 
     def add_artifact_reference(self, reference: str) -> None:
-        if (
-            not _ARTIFACT_REFERENCE.fullmatch(reference)
-            or reference.startswith(("/", "\\"))
-            or ".." in reference.split("/")
-        ):
+        self._raise_if_abandoned()
+        if not is_safe_artifact_reference(reference):
             raise ValueError("Artifact reference must be a safe relative identifier")
         with self._sessions.transaction() as session:
             updated = JobRepository(session).add_artifact_reference(
@@ -94,6 +128,10 @@ class PersistentJobExecutionContext:
             )
         if not updated:
             raise JobCancellationAcknowledged()
+
+    def _raise_if_abandoned(self) -> None:
+        if self._lifecycle.is_abandoned():
+            raise JobExecutionAbandoned()
 
 
 class JobExecutor:
@@ -108,7 +146,6 @@ class JobExecutor:
         self._sessions = sessions
         self._audit = audit
         self._handlers = MappingProxyType(dict(handlers or {}))
-        self._shutdown_requested = threading.Event()
 
     @property
     def registered_types(self) -> frozenset[JobType]:
@@ -116,14 +153,6 @@ class JobExecutor:
 
     def can_handle(self, job_type: JobType) -> bool:
         return job_type in self._handlers
-
-    def prepare_start(self) -> None:
-        """Allow executions for a newly started local worker lifecycle."""
-        self._shutdown_requested.clear()
-
-    def begin_shutdown(self) -> None:
-        """Prevent a still-running handler from being reported as newly succeeded."""
-        self._shutdown_requested.set()
 
     def recover_interrupted(self) -> tuple[str, ...]:
         """Fail prior-process RUNNING work and return safe QUEUED work eligible to enqueue."""
@@ -177,15 +206,18 @@ class JobExecutor:
             queued = JobRepository(session).list_queued_for_types(self.registered_types)
             return tuple(record.job_id for record in queued)
 
-    def execute(self, job_id: str) -> None:
-        with self._sessions.transaction() as session:
-            repository = JobRepository(session)
-            record = repository.get_by_job_id(job_id)
-            if record is None or record.status != JobStatus.QUEUED.value:
+    def execute(self, job_id: str, lifecycle: JobExecutionLifecycle) -> None:
+        with lifecycle.starting_allowed() as allowed:
+            if not allowed:
                 return
-            snapshot = snapshot_from_record(record)
-            if not repository.mark_running(job_id, datetime.now(UTC)):
-                return
+            with self._sessions.transaction() as session:
+                repository = JobRepository(session)
+                record = repository.get_by_job_id(job_id)
+                if record is None or record.status != JobStatus.QUEUED.value:
+                    return
+                snapshot = snapshot_from_record(record)
+                if not repository.mark_running(job_id, datetime.now(UTC)):
+                    return
         handler = self._handlers.get(snapshot.job_type)
         if handler is None:
             self._fail_without_exception(
@@ -201,9 +233,14 @@ class JobExecutor:
             resource_type="job",
             resource_id=job_id,
         ):
-            self._run_handler(snapshot, handler)
+            self._run_handler(snapshot, handler, lifecycle)
 
-    def _run_handler(self, snapshot: JobSnapshot, handler: JobHandler) -> None:
+    def _run_handler(
+        self,
+        snapshot: JobSnapshot,
+        handler: JobHandler,
+        lifecycle: JobExecutionLifecycle,
+    ) -> None:
         job_id = snapshot.job_id
         started = time.perf_counter()
         logger.info(
@@ -220,49 +257,56 @@ class JobExecutor:
             job_id=job_id,
             job_type=snapshot.job_type,
             attempt=snapshot.attempt_count,
+            lifecycle=lifecycle,
         )
         try:
             context.raise_if_cancelled()
             handler(context)
             context.raise_if_cancelled()
+        except JobExecutionAbandoned:
+            return
         except JobCancellationAcknowledged:
-            self._mark_cancelled(job_id, started)
+            with lifecycle.completion_allowed() as allowed:
+                if allowed:
+                    self._mark_cancelled(job_id, started)
         except Exception:
-            if self._shutdown_requested.is_set():
-                return
-            logger.exception(
-                "Job execution failed",
-                extra={
-                    "ipsp_action": "job.failed",
-                    "ipsp_stream": "errors",
-                    "ipsp_component": "jobs",
-                    "ipsp_status": "failure",
-                    "ipsp_error_code": "JOB-EXECUTION-FAILED",
-                    "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
-                },
-            )
-            self._fail_without_exception(
-                job_id,
-                JobError("JOB-EXECUTION-FAILED", "Job execution failed.", snapshot.retryable),
-            )
-        else:
-            if self._shutdown_requested.is_set():
-                return
-            with self._sessions.transaction() as session:
-                succeeded = JobRepository(session).mark_succeeded(job_id, datetime.now(UTC))
-            if succeeded:
-                logger.info(
-                    "Job execution succeeded",
+            with lifecycle.completion_allowed() as allowed:
+                if not allowed:
+                    return
+                logger.exception(
+                    "Job execution failed",
                     extra={
-                        "ipsp_action": "job.succeeded",
-                        "ipsp_stream": "application",
+                        "ipsp_action": "job.failed",
+                        "ipsp_stream": "errors",
                         "ipsp_component": "jobs",
-                        "ipsp_status": "success",
+                        "ipsp_status": "failure",
+                        "ipsp_error_code": "JOB-EXECUTION-FAILED",
                         "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
                     },
                 )
-            else:
-                self._mark_cancelled(job_id, started)
+                self._fail_without_exception(
+                    job_id,
+                    JobError("JOB-EXECUTION-FAILED", "Job execution failed.", snapshot.retryable),
+                )
+        else:
+            with lifecycle.completion_allowed() as allowed:
+                if not allowed:
+                    return
+                with self._sessions.transaction() as session:
+                    succeeded = JobRepository(session).mark_succeeded(job_id, datetime.now(UTC))
+                if succeeded:
+                    logger.info(
+                        "Job execution succeeded",
+                        extra={
+                            "ipsp_action": "job.succeeded",
+                            "ipsp_stream": "application",
+                            "ipsp_component": "jobs",
+                            "ipsp_status": "success",
+                            "ipsp_duration_ms": round((time.perf_counter() - started) * 1000, 3),
+                        },
+                    )
+                else:
+                    self._mark_cancelled(job_id, started)
 
     def _mark_cancelled(self, job_id: str, started: float) -> None:
         with self._sessions.transaction() as session:

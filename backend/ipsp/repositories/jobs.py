@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
+from typing import Any, TypeGuard
 
 from sqlalchemy import Result, Select, func, select, update
 from sqlalchemy.orm import Session
@@ -13,22 +14,44 @@ from sqlalchemy.orm import Session
 from ipsp.database.models import JobRecord
 from ipsp.jobs.contracts import JobError, JobProgress, JobSnapshot
 from ipsp.jobs.enums import JobStatus, JobType
-from ipsp.security.redaction import sanitize_structured_data
+from ipsp.security.redaction import JsonSafeValue, sanitize_structured_data
+
+_ARTIFACT_REFERENCE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,254}$")
 
 
 def _updated_one(result: Result[Any]) -> bool:
     return int(getattr(result, "rowcount", 0)) == 1
 
 
+def is_safe_artifact_reference(value: object) -> TypeGuard[str]:
+    """Return whether a value is one bounded safe relative artifact identifier."""
+    segments = value.split("/") if isinstance(value, str) else []
+    return (
+        isinstance(value, str)
+        and _ARTIFACT_REFERENCE.fullmatch(value) is not None
+        and not value.startswith(("/", "\\"))
+        and all(segment not in {"", ".", ".."} for segment in segments)
+    )
+
+
 def decode_artifact_references(value: str) -> tuple[str, ...]:
-    """Decode only valid persisted string references without Python object reconstruction."""
+    """Decode and revalidate persisted artifact references, omitting unsafe entries."""
     try:
         decoded = json.loads(value)
     except (TypeError, ValueError):
         return ()
-    if not isinstance(decoded, list) or not all(isinstance(item, str) for item in decoded):
+    if not isinstance(decoded, list):
         return ()
-    return tuple(decoded)
+    return tuple(item for item in decoded if is_safe_artifact_reference(item))
+
+
+def decode_job_metadata(value: str) -> JsonSafeValue:
+    """Safely decode persisted job metadata without object reconstruction or repr."""
+    try:
+        decoded = json.loads(value)
+    except (TypeError, ValueError):
+        return {}
+    return sanitize_structured_data(decoded)
 
 
 def snapshot_from_record(record: JobRecord) -> JobSnapshot:
