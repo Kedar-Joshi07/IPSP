@@ -30,7 +30,7 @@ def test_liveness_returns_minimal_safe_response(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "alive"
-    assert response.json()["checks"] == {}
+    assert set(response.json()) == {"status", "timestamp_utc"}
 
 
 def test_readiness_reports_only_active_and_deferred_checks(client: TestClient) -> None:
@@ -46,8 +46,10 @@ def test_readiness_reports_only_active_and_deferred_checks(client: TestClient) -
         "database": "ready",
         "foreign_keys": "ready",
         "migration": "ready",
+        "runtime_logs": "ready",
+        "job_worker": "ready",
     }
-    assert body["deferred_checks"] == ["analytical_storage", "job_worker"]
+    assert body["deferred_checks"] == ["analytical_storage"]
 
 
 def test_trace_and_request_ids_are_propagated(client: TestClient) -> None:

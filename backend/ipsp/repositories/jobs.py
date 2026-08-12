@@ -118,6 +118,16 @@ class JobRepository:
     def list_by_status(self, status: JobStatus) -> list[JobRecord]:
         return list(self._session.scalars(self._status_statement(status)))
 
+    def get_latest_by_type(self, job_type: JobType) -> JobRecord | None:
+        """Return the deterministic latest job of one frozen generic type."""
+        statement = (
+            select(JobRecord)
+            .where(JobRecord.job_type == job_type.value)
+            .order_by(JobRecord.updated_at.desc(), JobRecord.id.desc())
+            .limit(1)
+        )
+        return self._session.scalar(statement)
+
     def list_queued_for_types(self, job_types: Iterable[JobType]) -> list[JobRecord]:
         values = tuple(item.value for item in job_types)
         if not values:

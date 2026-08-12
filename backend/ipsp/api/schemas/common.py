@@ -28,6 +28,13 @@ class HealthResponse(BaseModel):
     deferred_checks: list[str] = Field(default_factory=list)
 
 
+class LivenessResponse(BaseModel):
+    """Process-only infrastructure response with no dependency fields."""
+
+    status: Literal["alive"] = "alive"
+    timestamp_utc: datetime
+
+
 class ApiInfoResponse(BaseModel):
     """Versioned API-root metadata without business or simulation output."""
 

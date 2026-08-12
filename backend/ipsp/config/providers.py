@@ -24,6 +24,7 @@ from ipsp.observability.audit import AuditService
 from ipsp.security.outbound import OutboundPolicy
 from ipsp.security.secrets import EnvironmentSecretProvider, SecretProvider
 from ipsp.services.readiness import ReadinessService
+from ipsp.services.system_health import SystemHealthService
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ class FoundationServices:
     database_sessions: DatabaseSessionFactory
     migration_state: MigrationStateService
     readiness_service: ReadinessService
+    system_health_service: SystemHealthService
     password_service: PasswordService
     audit_service: AuditService
     auth_service: AuthService
@@ -69,7 +71,6 @@ def build_foundation_services(
     database_engine = create_database_engine(settings.database)
     database_sessions = DatabaseSessionFactory(database_engine)
     migration_state = MigrationStateService(database_engine, canonical_migrations_path())
-    readiness_service = ReadinessService(settings, database_engine, migration_state)
     password_service = PasswordService()
     audit_service = AuditService(database_sessions)
     auth_service = AuthService(settings.auth, database_sessions, password_service, audit_service)
@@ -78,6 +79,21 @@ def build_foundation_services(
     job_executor = JobExecutor(database_sessions, audit_service, job_handlers)
     job_backend = LocalJobBackend(job_executor)
     job_service = JobService(database_sessions, job_backend, audit_service)
+    readiness_service = ReadinessService(
+        settings,
+        database_engine,
+        migration_state,
+        job_backend,
+    )
+    system_health_service = SystemHealthService(
+        settings,
+        database_engine,
+        database_sessions,
+        migration_state,
+        readiness_service,
+        job_backend,
+        outbound_policy,
+    )
     return FoundationServices(
         settings=settings,
         feature_flags=settings.features,
@@ -87,6 +103,7 @@ def build_foundation_services(
         database_sessions=database_sessions,
         migration_state=migration_state,
         readiness_service=readiness_service,
+        system_health_service=system_health_service,
         password_service=password_service,
         audit_service=audit_service,
         auth_service=auth_service,

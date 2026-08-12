@@ -4,15 +4,15 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Request, Response, status
 
-from ipsp.api.schemas.common import HealthResponse
+from ipsp.api.schemas.common import HealthResponse, LivenessResponse
 
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health/live", response_model=HealthResponse)
-def liveness() -> HealthResponse:
+@router.get("/health/live", response_model=LivenessResponse)
+def liveness() -> LivenessResponse:
     """Confirm only that the process and application router are alive."""
-    return HealthResponse(status="alive", timestamp_utc=datetime.now(UTC))
+    return LivenessResponse(timestamp_utc=datetime.now(UTC))
 
 
 @router.get("/health/ready", response_model=HealthResponse)

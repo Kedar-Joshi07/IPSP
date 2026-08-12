@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 
@@ -12,11 +13,14 @@ from starlette.concurrency import run_in_threadpool
 from ipsp.api.router import build_router
 from ipsp.config.providers import build_foundation_services
 from ipsp.config.settings import Settings
+from ipsp.errors.exceptions import IPSPError
 from ipsp.errors.handlers import register_exception_handlers
 from ipsp.jobs.contracts import JobHandler
 from ipsp.jobs.enums import JobType
 from ipsp.observability.context import RequestContextMiddleware
 from ipsp.observability.logging import configure_logging
+
+logger = logging.getLogger("ipsp.system")
 
 
 def create_app(
@@ -31,13 +35,38 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        readiness = await run_in_threadpool(foundation_services.readiness_service.check)
-        if readiness.ready:
-            await run_in_threadpool(foundation_services.job_backend.start)
+        preconditions = await run_in_threadpool(
+            foundation_services.readiness_service.check_startup_preconditions
+        )
+        if preconditions.ready:
+            try:
+                await run_in_threadpool(foundation_services.job_backend.start)
+            except IPSPError:
+                logger.warning(
+                    "Job worker startup unavailable",
+                    extra={
+                        "ipsp_action": "system.job_worker_start",
+                        "ipsp_stream": "system",
+                        "ipsp_component": "system",
+                        "ipsp_status": "failure",
+                        "ipsp_error_code": "SYS-JOB-WORKER-NOT-READY",
+                    },
+                )
+            except Exception:
+                logger.exception(
+                    "Job worker startup failed",
+                    extra={
+                        "ipsp_action": "system.job_worker_start",
+                        "ipsp_stream": "errors",
+                        "ipsp_component": "system",
+                        "ipsp_status": "failure",
+                        "ipsp_error_code": "SYS-JOB-WORKER-NOT-READY",
+                    },
+                )
         try:
             yield
         finally:
-            foundation_services.job_backend.shutdown()
+            await run_in_threadpool(foundation_services.job_backend.shutdown)
 
     app = FastAPI(
         title=app_settings.app_name,

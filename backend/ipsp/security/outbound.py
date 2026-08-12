@@ -99,6 +99,18 @@ class PolicyDecision:
     allowed_transmission_level: RemoteTransmissionLevel | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class OutboundPolicyState:
+    """Non-secret immutable diagnostics for the active outbound policy."""
+
+    internet_enabled: bool
+    remote_llm_enabled: bool
+    model_download_enabled: bool
+    update_check_enabled: bool
+    default_transmission_level: RemoteTransmissionLevel
+    allowed_remote_provider_count: int
+
+
 class OutboundPolicy:
     """Evaluate all outbound layers with deny-by-default behavior."""
 
@@ -199,3 +211,14 @@ class OutboundPolicy:
                 },
             )
         return decision
+
+    def diagnostics(self) -> OutboundPolicyState:
+        """Return safe policy facts without provider identifiers or mutation."""
+        return OutboundPolicyState(
+            internet_enabled=self._internet_enabled,
+            remote_llm_enabled=self._remote_llm_enabled,
+            model_download_enabled=self._model_download_enabled,
+            update_check_enabled=self._update_check_enabled,
+            default_transmission_level=self._default_transmission_level,
+            allowed_remote_provider_count=len(self._allowed_remote_providers),
+        )

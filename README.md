@@ -108,4 +108,8 @@ python -m ruff format --check .
 python -m mypy backend/ipsp
 ```
 
-Infrastructure probes are intentionally unversioned at `/health/live` and `/health/ready`. Application APIs begin under `/api/v1`.
+Infrastructure probes are intentionally unversioned: `/health/live` reports only process liveness,
+while `/health/ready` reports minimal required runtime readiness including structured-log storage and
+the local worker. Rich sanitized diagnostics are separate at `/api/v1/admin/system/health` and require
+the server-side `system.configure` permission. Analytical storage remains deferred, and the health
+document does not perform remote LLM or Internet reachability calls.

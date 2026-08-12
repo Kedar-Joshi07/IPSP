@@ -154,12 +154,13 @@ def test_readiness_rejects_connection_without_foreign_key_enforcement(
     monkeypatch.setenv("IPSP_DATABASE__URL", settings.database.url)
     command.upgrade(_alembic_config(), "head")
     unsafe_engine = create_engine(settings.database.url, hide_parameters=True)
+    app = create_app(settings)
     readiness_service = ReadinessService(
         settings,
         unsafe_engine,
         MigrationStateService(unsafe_engine, canonical_migrations_path()),
+        app.state.foundation_services.job_backend,
     )
-    app = create_app(settings)
     original_services = app.state.foundation_services
     app.state.foundation_services = SimpleNamespace(readiness_service=readiness_service)
     try:

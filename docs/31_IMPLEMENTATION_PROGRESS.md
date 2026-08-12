@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1H.2 atomic worker-generation authority hardening complete. Phase 1I blocked pending independent review.**
+Application implementation: **Phase 1I readiness and authorized system health complete. Phase 1J blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1H.2 PASS)** | Atomic generation authority and abandoned-generation restart safety passed; Phase 1I not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1I PASS)** | Runtime readiness and authorized rich system health passed; Phase 1J not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,47 @@ Application implementation: **Phase 1H.2 atomic worker-generation authority hard
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1I — Readiness & Authorized System Health
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; ready for independent review before Phase 1J
+- **Health Separation:** `/health/live` remains an unauthenticated process-only response with only
+  status and timestamp. `/health/ready` remains unauthenticated and minimal. Rich typed diagnostics
+  live only at `/api/v1/admin/system/health` behind `system.configure`
+- **Startup and Runtime Readiness:** Startup preconditions check application/configuration, SQLite,
+  foreign keys, migration head, and required runtime-log storage before worker start. Full runtime
+  readiness additionally requires the local worker to be running and accepting work, avoiding the
+  previous startup dependency cycle. Worker start and bounded shutdown run through the threadpool;
+  safe startup failures leave liveness available and runtime readiness unavailable
+- **Active and Deferred Dependencies:** Readiness now reports application, configuration, database,
+  foreign keys, migration, runtime logs, and job worker. `analytical_storage` is the sole deferred
+  check because ingestion and Parquet storage are not implemented
+- **Rich Diagnostics:** `SystemHealthService` reports sanitized SQLite connectivity/FK/migration/
+  quick-check/size, data/artifact/log storage and free space, local-worker and persisted-queue state,
+  honest unimplemented local/remote LLM states, outbound policy facts, model-artifact storage,
+  latest persisted backup-job summary, bounded CRITICAL runtime-event summaries, and portable CPU/
+  memory fields
+- **Privacy and Network Boundary:** Display paths are basename-only; no DB URL, absolute path,
+  secret, token, raw exception, SQL, message, metadata, or raw log line is returned. LLM diagnostics
+  perform no DNS, HTTP, socket, provider, model-loading, or download operation
+- **Authorization:** The Admin route uses the existing `CorePermission.SYSTEM_CONFIGURE` dependency.
+  Tests prove 401 anonymous, 403 without mapping, 200 for a non-Admin mapped role, and denial for an
+  `Admin`-named role after its mapping is removed
+- **Unchanged Contracts:** No ORM model, table, migration, dependency, permission catalog, job state,
+  public job API, authentication/CSRF/RBAC authority, frontend, provider, backup, or Phase 1J feature
+  was added
+- **Test Evidence:** `pytest` — 191 passed, 0 failed, 0 skipped, 0 warnings, including public/Admin
+  separation, startup degradation, permission-only access, SQLite/storage safety, bounded critical
+  history, backup selection, honest LLM/policy diagnostics, and all Phase 1E–1H.2 regressions
+- **Quality Evidence:** Compileall, Ruff lint/format for 93 files, strict mypy for 67 source files,
+  `pip check`, `git diff --check`, isolated Alembic heads/current/check, seven-table ORM inspection,
+  architecture/privacy scans, and runtime-artifact checks passed
+- **Architecture Decisions Added:** None; Phase 1I implements the frozen health architecture without
+  introducing a new architecture
+
+Phase 1 and v0.1.0 remain in progress. Phase 1J has not begun and remains blocked pending independent
+review of Phase 1I.
 
 ## Phase 1H.2 — Atomic worker-generation authority hardening
 

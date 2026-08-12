@@ -152,6 +152,46 @@ def test_phase1h1_local_worker_is_bounded_daemon_and_documented_single_process()
     assert "Do not run multiple active local worker" in readme
 
 
+def test_phase1i_health_surfaces_are_canonical_authorized_and_non_networked() -> None:
+    route_sources = {
+        path: path.read_text(encoding="utf-8")
+        for path in (BACKEND / "api" / "routes").rglob("*.py")
+    }
+    health_source = route_sources[BACKEND / "api" / "routes" / "health.py"]
+    admin_source = route_sources[BACKEND / "api" / "routes" / "admin_system.py"]
+    service_source = (BACKEND / "services" / "system_health.py").read_text(encoding="utf-8")
+    main_source = (BACKEND / "main.py").read_text(encoding="utf-8")
+
+    assert sum(source.count('"/health/live"') for source in route_sources.values()) == 1
+    assert sum(source.count('"/health/ready"') for source in route_sources.values()) == 1
+    assert sum(source.count('"/health"') for source in route_sources.values()) == 1
+    assert 'prefix="/admin/system"' in admin_source
+    assert "CorePermission.SYSTEM_CONFIGURE" in admin_source
+    assert "require_permission" in admin_source
+    assert '== "Admin"' not in admin_source
+    assert "role_name" not in admin_source
+    assert "sqlalchemy" not in admin_source.lower()
+    assert "safe_snapshot" not in admin_source + service_source
+    assert "psutil" not in service_source.lower()
+    assert "import requests" not in service_source.lower()
+    assert "import httpx" not in service_source.lower()
+    assert "import socket" not in service_source.lower()
+    assert "check_startup_preconditions" in main_source
+    assert main_source.count("run_in_threadpool") >= 3
+    assert '"/health/live"' in health_source and '"/health/ready"' in health_source
+
+    tree = ast.parse(service_source)
+    assert not any(
+        isinstance(node, ast.ExceptHandler) and node.type is None for node in ast.walk(tree)
+    )
+    assert not any(
+        isinstance(node, ast.ExceptHandler)
+        and isinstance(node.type, ast.Name)
+        and node.type.id == "Exception"
+        for node in ast.walk(tree)
+    )
+
+
 def test_phase1g_audit_ownership_is_append_only_and_canonical() -> None:
     repository_files = [
         path
