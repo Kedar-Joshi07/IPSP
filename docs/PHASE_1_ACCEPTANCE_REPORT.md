@@ -8,16 +8,16 @@
 - Audit date: 2026-08-13
 - Scope: Phase 1A through Phase 1K foundation behavior, the original Phase 1L audit, and the
   Phase 1L.1 acceptance-reproducibility hardening and re-audit.
-- Current gate result: **PASS**
-- Release recommendation: **Accept the v0.1.0 foundation pending independent final review.**
+- Phase 1L.1 gate result: **PASS**
+- Current acceptance decision: **FORMALLY ACCEPTED — independent Phase 1L.1 final review PASS.**
   Phase 1L.1 traced the former `PHASE1L-B001` blocker to an aggregate test-harness deadline rather
   than a confirmed production shutdown defect. The regression now measures normal setup/cleanup
   and post-cleanup process exit separately, and every planned stability gate passed.
-- Next milestone: `v0.2 ingestion/storage/provenance — pending independent review`
+- Next milestone: `v0.2 ingestion/storage/provenance — AUTHORIZED, NOT STARTED`
 
 The original Phase 1L audit correctly failed after its mandatory full suite produced 215 passes and
 one load-sensitive subprocess timeout. That historical evidence is preserved below; Phase 1L.1 is
-the current decision. The implemented product boundary is the local-first foundation: configuration, SQLite and
+the successful re-audit result subsequently confirmed by independent final review. The implemented product boundary is the local-first foundation: configuration, SQLite and
 migrations, authentication, sessions, CSRF, permission-mapping RBAC, structured observability,
 durable audit, the single-process persistent job service, health surfaces, and the static
 HTML/CSS/Vanilla-JS workspace. Ingestion, dataset ACLs, semantic discovery, modelling, simulation,
@@ -41,7 +41,7 @@ claim that IPSP v1.0 is complete, and no v0.2 implementation was started.
 | K. Frontend foundation | PASS | Static ES modules, semantic dark/light themes, System/Dark/Light preference, safe DOM construction, centralized same-origin API/CSRF handling, route generation/abort cleanup, truthful states, and no fake later-domain features are covered by deterministic tests and live QA. |
 | L. Integration / security proof | PASS | The Phase 1K integration/security proof passed 3/3, including migration/startup, auth/jobs/health/audit, offline operation, containment, and safe error boundaries. Both planned full-suite invocations and live browser acceptance also passed. |
 | M. Architecture / anti-contamination | PASS | Static sweeps and architecture tests found no benchmark fields/KPIs, RdF/BF/BF6 production logic, Streamlit, async SQLAlchemy, Redis/Celery, duplicate ORM/Alembic ownership, role-name authorization, or remote runtime dependency. CampaignSim remains branding only. |
-| N. Documentation / operational usability | PASS | README retains local setup, localhost cookie warning, Admin bootstrap, quality commands, single-process backend warning, offline behavior, and future-engine boundaries. It now states that Phase 1/v0.1.0 is accepted pending independent final review and that v0.2 remains not started and blocked pending that acceptance. |
+| N. Documentation / operational usability | PASS | README retains local setup, localhost cookie warning, Admin bootstrap, quality commands, single-process backend warning, offline behavior, and future-engine boundaries. At the Phase 1L.1 re-audit, it recorded that Phase 1/v0.1.0 awaited independent final review and that v0.2 had not started. |
 
 ## V1 Acceptance Criteria — Phase 1 Classification
 
@@ -232,11 +232,22 @@ All stability invocations were predeclared. No rerun-until-green loop was used.
   architecture change was made.
 - Prior-phase regression conclusion: Phase 1A–1K remain green under two planned 216-test full-suite
   runs plus focused Phase 1K and complete job-lifecycle reruns.
-- README and `docs/31_IMPLEMENTATION_PROGRESS.md` now state that Phase 1/v0.1.0 is accepted pending
-  independent final review and that v0.2 has not started and remains blocked pending that review.
+- At the conclusion of the Phase 1L.1 re-audit, README and
+  `docs/31_IMPLEMENTATION_PROGRESS.md` recorded that Phase 1/v0.1.0 awaited independent final
+  review and that v0.2 had not started.
 - The isolated browser database, logs, server output, QA users, and server processes were removed.
   No Git tag or release was created.
 - The user-owned Phase 1L.1 prompt remains unmodified and untracked. Retained changes are the
   deterministic lifecycle regression plus acceptance documentation only.
 
 **Phase 1L.1: PASS — v0.1.0 foundation ready for independent final acceptance; v0.2 remains blocked**
+
+## Independent Final Review
+
+- **Phase 1L.1 independent review:** PASS
+- **v0.1.0 foundation:** FORMALLY ACCEPTED
+- **Accepted foundation code SHA:** `cd0dca48ded8d68f18e861f2427dfeb746d52ea7`
+- **v0.2.0 ingestion/storage/provenance:** AUTHORIZED, NOT STARTED
+- **Release state:** No tag or release was created.
+- **Change boundary:** Later governance and README commits contain documentation only and do not
+  change the accepted production foundation.

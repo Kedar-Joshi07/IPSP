@@ -3,9 +3,9 @@
 **Initial experience:** CampaignSim — Powered by IPSP  
 **Target specification:** v1.0
 
-**Current accepted implementation:** v0.1.0 foundation, pending independent final review
+**Current accepted implementation:** Phase 1 / v0.1.0 foundation — **FORMALLY ACCEPTED** (independent Phase 1L.1 final review: **PASS**)
 
-**Next planned milestone:** v0.2.0 ingestion/storage/provenance — not started; blocked until independent Phase 1L.1 acceptance
+**Next milestone:** v0.2.0 ingestion/storage/provenance — **AUTHORIZED, NOT STARTED**
 
 IPSP is a local-first, dataset-agnostic platform intended to turn previously unseen structured business data into evidence-backed analytical, predictive, and simulation capabilities. Instead of forcing every dataset into a fixed schema or preselected model, IPSP is designed to profile the data, establish its meaning and relationships, ask focused questions where evidence is insufficient, validate what the data can responsibly support, and build the user experience from those validated capabilities. The current v0.1.0 release is the secure application foundation for that target product; it does not yet ingest or model datasets.
 
@@ -435,8 +435,8 @@ The Phase 1L.1 acceptance audit recorded two clean planned full-suite runs of 21
 
 | Version | Milestone | Status |
 |---|---|---|
-| v0.1.0 | Foundation/security/repository shell | **COMPLETE — accepted pending independent final review** |
-| v0.2.0 | Ingestion/storage/provenance | Not started; blocked pending v0.1.0 review |
+| v0.1.0 | Foundation/security/repository shell | **FORMALLY ACCEPTED — independent Phase 1L.1 final review PASS** |
+| v0.2.0 | Ingestion/storage/provenance | **AUTHORIZED — NOT STARTED** |
 | v0.3.0 | Data understanding/relationships | Not started |
 | v0.4.0 | Semantic manifest/clarification | Not started |
 | v0.5.0 | Capability/model validation | Not started |

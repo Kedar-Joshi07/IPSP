@@ -1,14 +1,17 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1/v0.1.0 foundation accepted pending independent final review after Phase 1L.1 reproducibility hardening.**
+Application implementation: **Phase 1 / v0.1.0: FORMALLY ACCEPTED — independent final review PASS.**
+
+Next milestone: **v0.2.0: AUTHORIZED — NOT STARTED.** Authorization permits contract-freeze
+preparation; it does not mean implementation or contract freeze has started.
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 COMPLETE — v0.1.0 foundation accepted pending independent final review** | Phase 1L.1 resolved the test-harness reproducibility blocker; v0.2 remains not started and blocked pending independent acceptance |
-| Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
+| Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
+| Ingestion/storage/provenance | v0.2.0 | **AUTHORIZED — NOT STARTED** | Contract freeze not started; authorization is not implementation start |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
 | Capability/model validation | v0.5.0 | NOT STARTED | Baseline/model gates |
@@ -17,6 +20,18 @@ Application implementation: **Phase 1/v0.1.0 foundation accepted pending indepen
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Independent final review
+
+- **Phase 1L.1 independent review:** PASS
+- **Phase 1 / v0.1.0:** FORMALLY ACCEPTED — independent final review PASS
+- **Accepted foundation code SHA:** `cd0dca48ded8d68f18e861f2427dfeb746d52ea7`
+- **v0.2.0 ingestion/storage/provenance:** AUTHORIZED — NOT STARTED
+- **Change boundary:** Subsequent governance and README commits contain documentation only and do
+  not change the accepted production foundation.
+
+The Phase 1L and Phase 1L.1 sections below preserve the status, failure, correction, and re-audit
+evidence recorded at each historical audit point.
 
 ## Phase 1L.1 — Acceptance Reproducibility Hardening
 

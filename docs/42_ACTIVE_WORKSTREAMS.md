@@ -28,8 +28,9 @@ CLOSED
 ```text
 Accepted version: v0.1.0
 Accepted foundation code baseline SHA: cd0dca48ded8d68f18e861f2427dfeb746d52ea7
-Current governance/main baseline SHA: 362d1d5618bd6f72bb31f95ba81c592fa99f6fe7
+Parallel-governance baseline SHA: 362d1d5618bd6f72bb31f95ba81c592fa99f6fe7
 Next milestone: v0.2.0 — ingestion / storage / provenance
+Next milestone state: AUTHORIZED — workstreams still PLANNED; contract freeze not started
 ```
 
 ## Planned v0.2 workstream split
