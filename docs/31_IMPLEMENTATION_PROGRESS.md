@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1K foundation integration and security consolidation complete. Phase 1L blocked pending independent review.**
+Application implementation: **Phase 1K foundation integration and security consolidation complete. Phase 1L final acceptance audit failed; Phase 1/v0.1.0 remains in progress.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1K PASS)** | Foundation integration/security consolidation passed; Phase 1L not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1K PASS; 1L FAIL)** | Final acceptance blocked by a load-sensitive permanent-blocked-worker regression timeout in the mandatory full suite |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,31 @@ Application implementation: **Phase 1K foundation integration and security conso
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1L — Final Phase 1 Acceptance Audit
+
+- **Audit Status:** COMPLETE (2026-08-13)
+- **Gate Result:** FAIL; v0.1.0 not accepted and v0.2 remains blocked
+- **Audited SHA:** `33a5901c67c706290c5f05087555dc315eff4cf4`
+- **Acceptance Blocker:** The mandatory 216-test suite produced 215 passes and one failure in
+  `test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers`: its child process did
+  not terminate within `communicate(timeout=10)`. The complete job lifecycle file then passed all
+  18 tests independently, demonstrating a load-sensitive, non-reproducibly-green acceptance gate
+- **Focused Evidence:** Both Phase 1K proof modules passed all 3 tests; the isolated job lifecycle
+  module passed all 18 tests; compileall, Ruff lint/format, strict mypy, `pip check`, diff check,
+  Alembic heads/current/check, exact seven-table/FK checks, static architecture/privacy sweeps, and
+  live browser journeys passed their application assertions
+- **Browser Evidence:** Admin, ordinary-user permission denial, and required-password journeys
+  completed with local-only assets and no desktop overflow. Three Chrome extension message-channel
+  closure errors were recorded as tooling noise rather than application exceptions
+- **Production Defects / Changes:** No production defect was confirmed and no production source,
+  API, schema, migration, dependency, frontend, or architecture change was made
+- **Audit Artifact:** `docs/PHASE_1_ACCEPTANCE_REPORT.md` contains the complete Phase 1 matrix, all
+  37 V1 criteria exactly once, evidence, constraints, blocker, and release recommendation
+- **Documentation Result:** README remains unchanged because the gate failed. Phase 1/v0.1.0 stays
+  in progress; no tag/release was created and v0.2 was not started
+
+Phase 1 and v0.1.0 remain in progress. Phase 1L failed final acceptance; v0.2 is blocked.
 
 ## Phase 1K — Foundation Integration & Security Test Consolidation
 
