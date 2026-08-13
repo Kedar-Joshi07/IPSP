@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1J.2 authentication-transition hardening complete. Phase 1K blocked pending independent review.**
+Application implementation: **Phase 1K foundation integration and security consolidation complete. Phase 1L blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J.2 PASS)** | Authentication-transition hardening passed; Phase 1K not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1K PASS)** | Foundation integration/security consolidation passed; Phase 1L not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,49 @@ Application implementation: **Phase 1J.2 authentication-transition hardening com
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1K — Foundation Integration & Security Test Consolidation
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; ready for independent review before Phase 1L
+- **Consolidated Proof Layer:** Two cohesive Phase 1K test modules add three isolated cross-layer
+  regressions rather than duplicating focused subsystem tests. They join startup/migration/worker
+  lifecycle; first-Admin bootstrap/auth/cookies/jobs/health/audit/runtime logs/outbound policy; and
+  static-host containment/API/error/privacy boundaries
+- **Fresh Lifecycle Evidence:** An absent isolated database leaves liveness and the frontend/API
+  roots available, readiness safely returns `SYS-MIGRATION-REQUIRED`, and the worker does not start.
+  At migration head `20260812_05`, readiness and all active dependencies are ready, analytical
+  storage remains explicitly deferred, and two successive application lifespans start and stop the
+  local daemon worker without a non-daemon worker leak
+- **Integrated Security Evidence:** The canonical bootstrap creates one active Argon2id-backed
+  Admin with all 13 permission mappings and a durable audit event; a second bootstrap is denied.
+  Real HTTPS TestClients prove secure separated cookies, hash-only session persistence, explicit
+  trace/request correlation, owner-hidden jobs, safe metadata/artifact handling, offline operation,
+  deny-by-default outbound policy, server-side logout invalidation, and marker-free runtime logs
+- **Static/Error Boundary Evidence:** A temporary frontend serves only its intended index/CSS/JS;
+  API and health routes retain precedence; relative, encoded, slash, backslash, hidden-file,
+  SQLite, and log-path attempts cannot expose parent markers. Readiness retains its minimal 503
+  contract and central authentication errors retain the safe trace-correlated envelope
+- **Browser Evidence:** Live same-origin in-app browser QA passed Admin login, Overview, Jobs,
+  Profile, authorized System Health, light-theme selection, logout, an ordinary user's permission
+  state, and a required-password user's blocked navigation and Sign out. Desktop and 390-pixel
+  mobile layouts had no horizontal overflow; all page assets were same-origin; browser
+  warnings/errors were zero
+- **Prior-Phase Regression:** The full Phase 1A through Phase 1J.2 suite remains green, including
+  cookie/session/CSRF/password/lockout/RBAC matrices, job cancel/retry/recovery and permanent-blocked
+  worker proofs, observability correlation, health degradation, secret/outbound safety, frontend
+  lifecycle guards, and architecture/anti-contamination scans
+- **Test Evidence:** `pytest` — 216 passed, 0 failed, 0 skipped, 0 warnings in 125.09 seconds
+- **Quality Evidence:** Compileall passed; Ruff lint passed; Ruff format passed for 95 files; strict
+  mypy passed for 67 source files; `pip check` and `git diff --check` passed; isolated Alembic
+  heads/current/check passed at `20260812_05`; exactly seven application ORM tables were present
+- **Unchanged Contracts:** No production source, ORM table/model, migration, Python/npm dependency,
+  API, authentication/session/CSRF/RBAC authority, job state, health contract, frontend asset, or
+  architecture changed. Phase 1L and all later-domain implementation remain unstarted
+- **Architecture Decisions Added:** None; Phase 1K verifies the frozen Phase 1 architecture
+
+Phase 1 and v0.1.0 remain in progress. Phase 1L has not begun and remains blocked pending independent
+review of Phase 1K.
 
 ## Phase 1J.2 — Authentication Transition Hardening
 
