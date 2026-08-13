@@ -1,55 +1,57 @@
 const STORAGE_KEY = "ipsp.theme";
 const VALID_THEMES = new Set(["system", "dark", "light"]);
+let preference = "system";
+let configuredDefault = "system";
+let mediaQuery = null;
 
-export function getStoredTheme() {
+function storedPreference() {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return VALID_THEMES.has(stored) ? stored : "system";
+    return VALID_THEMES.has(stored) ? stored : null;
   } catch {
-    return "system";
+    return null;
   }
 }
 
-export function resolveTheme(preference) {
-  if (preference === "dark" || preference === "light") {
-    return preference;
-  }
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+function resolveTheme(value) {
+  const effective = value === "system" && configuredDefault !== "system" ? configuredDefault : value;
+  if (effective === "dark" || effective === "light") return effective;
+  return mediaQuery?.matches ? "light" : "dark";
 }
 
-export function applyTheme(preference) {
-  const resolved = resolveTheme(preference);
-  document.documentElement.dataset.theme = resolved;
-  const toggle = document.querySelector("#theme-toggle");
-  if (toggle) {
-    toggle.setAttribute("aria-pressed", String(resolved === "light"));
-    toggle.setAttribute("title", `Using ${resolved} theme`);
-  }
-}
-
-function persistTheme(preference) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, preference);
-  } catch {
-    // The visual theme still works when storage is unavailable.
-  }
-}
-
-export function initTheme() {
-  let preference = getStoredTheme();
-  applyTheme(preference);
-
-  const toggle = document.querySelector("#theme-toggle");
-  toggle?.addEventListener("click", () => {
-    const current = resolveTheme(preference);
-    preference = current === "dark" ? "light" : "dark";
-    persistTheme(preference);
-    applyTheme(preference);
+function updateControls() {
+  document.querySelectorAll("[data-theme-control], #topbar-theme").forEach((control) => {
+    control.value = preference;
   });
+}
 
-  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
-    if (preference === "system") {
-      applyTheme(preference);
-    }
+function apply() {
+  document.documentElement.dataset.theme = resolveTheme(preference);
+  updateControls();
+}
+
+export function getThemePreference() { return preference; }
+
+export function setThemePreference(value) {
+  if (!VALID_THEMES.has(value)) return;
+  preference = value;
+  try { window.localStorage.setItem(STORAGE_KEY, value); } catch { /* Visual selection remains active without storage. */ }
+  apply();
+}
+
+export function bindThemeControl(control) {
+  control.value = preference;
+  control.addEventListener("change", () => setThemePreference(control.value));
+}
+
+export function initTheme(defaultTheme = "system") {
+  configuredDefault = VALID_THEMES.has(defaultTheme) ? defaultTheme : "system";
+  mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+  preference = storedPreference() ?? configuredDefault;
+  apply();
+  mediaQuery.addEventListener("change", () => {
+    if (preference === "system") apply();
   });
+  const topbar = document.querySelector("#topbar-theme");
+  if (topbar) bindThemeControl(topbar);
 }

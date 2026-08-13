@@ -2,20 +2,28 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --color-bg: #0a0b0e;
+  --color-grid: rgb(99 102 241 / 4%);
   --color-surface: #0f1115;
-  --color-surface-raised: #151821;
-  --color-surface-strong: #1b1f2a;
+  --color-surface-raised: #14161c;
+  --color-surface-strong: #1a1d26;
+  --color-overlay: rgb(4 5 8 / 72%);
   --color-text: #e8e9ef;
-  --color-text-muted: #89909f;
+  --color-text-muted: #969cab;
+  --color-text-subtle: #6b7280;
   --color-border: rgb(255 255 255 / 8%);
   --color-border-strong: rgb(255 255 255 / 15%);
   --color-accent: #6d70f7;
   --color-accent-strong: #8b5cf6;
+  --color-accent-soft: rgb(99 102 241 / 14%);
+  --color-secondary: #14b8a6;
   --color-success: #4ade80;
   --color-warning: #f59e0b;
   --color-danger: #f87171;
+  --color-info: #60a5fa;
   --color-focus: #a5b4fc;
+  --color-on-accent: #ffffff;
   --shadow-card: 0 18px 52px rgb(0 0 0 / 22%);
+  --shadow-dialog: 0 28px 90px rgb(0 0 0 / 52%);
   --glow-accent: rgb(99 102 241 / 18%);
   --glow-secondary: rgb(20 184 166 / 10%);
 }

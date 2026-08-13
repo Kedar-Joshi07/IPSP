@@ -35,9 +35,18 @@ class LivenessResponse(BaseModel):
     timestamp_utc: datetime
 
 
+class BrowserConfigResponse(BaseModel):
+    """Public, non-secret browser bootstrap configuration."""
+
+    default_theme: Literal["system", "dark", "light"]
+    csrf_cookie_name: str
+    csrf_header_name: str
+
+
 class ApiInfoResponse(BaseModel):
     """Versioned API-root metadata without business or simulation output."""
 
     name: str
     version: str
     status: Literal["foundation"] = "foundation"
+    browser: BrowserConfigResponse

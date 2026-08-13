@@ -1,22 +1,30 @@
-@media (max-width: 48rem) {
-  .topbar {
-    padding-inline: var(--space-4);
-  }
-
-  .brand__qualifier,
-  .icon-button__label {
-    display: none;
-  }
-
-  .foundation-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .empty-state {
-    align-items: flex-start;
-  }
-
-  .footer {
-    flex-direction: column;
-  }
+@media (max-width: 68.6875rem) {
+  .grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar { padding-inline: var(--space-4); }
+  .identity-summary { display: none; }
+}
+@media (max-width: 47.9375rem) {
+  .topbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-2); }
+  .mobile-menu-button { display: inline-flex !important; width: var(--touch-target); padding: 0; }
+  .brand__qualifier, .topbar__context, #logout-button { display: none; }
+  .sidebar { position: fixed; top: var(--topbar-height); bottom: 0; left: 0; z-index: 45; height: auto; transform: translateX(-105%); transition: transform var(--duration-normal) var(--ease-standard); }
+  .app-shell[data-navigation-open="true"] .sidebar { transform: translateX(0); }
+  .app-shell[data-navigation-open="true"] .navigation-scrim { position: fixed; inset: var(--topbar-height) 0 0; z-index: 40; display: block; background: var(--color-overlay); }
+  .main { padding: var(--space-5) var(--space-4); }
+  .footer { flex-direction: column; padding-inline: var(--space-4); }
+  .grid--2, .grid--3, .grid--4, .form-grid, .health-grid { grid-template-columns: 1fr; }
+  .page-header { align-items: flex-start; flex-direction: column; }
+  .page-header .action-row { width: 100%; margin-top: 0; justify-content: flex-start; }
+  .detail-list { grid-template-columns: 1fr; gap: var(--space-1); }
+  .detail-list dd { margin-bottom: var(--space-3); }
+}
+@media (max-width: 29.9375rem) {
+  .brand__name { font-size: 0.82rem; }
+  .topbar__actions { gap: var(--space-1); }
+  .theme-selector { max-width: 6.25rem; }
+  .grid--4 { grid-template-columns: 1fr; }
+  .health-values { grid-template-columns: 1fr; }
+  .card { padding: var(--space-4); }
+  .action-row, .dialog__actions { align-items: stretch; flex-direction: column; }
+  .action-row .button, .dialog__actions .button { width: 100%; }
 }

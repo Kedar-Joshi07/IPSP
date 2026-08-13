@@ -4,85 +4,88 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark light">
-    <title>IPSP — Intelligent Predictive Simulation Platform</title>
+    <meta name="description" content="CampaignSim, powered by the Intelligent Predictive Simulation Platform.">
+    <title>CampaignSim — Powered by IPSP</title>
     <link rel="stylesheet" href="/css/tokens.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
     <link rel="stylesheet" href="/css/theme-light.css">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/navigation.css">
     <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/tables.css">
+    <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/print.css" media="print">
     <script type="module" src="/js/app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="background-grid" aria-hidden="true"></div>
     <div class="ambient ambient--primary" aria-hidden="true"></div>
     <div class="ambient ambient--secondary" aria-hidden="true"></div>
 
-    <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="/" aria-label="IPSP home">
-          <span class="brand__mark" aria-hidden="true">I</span>
-          <span>IPSP</span>
-          <span class="brand__qualifier">Platform foundation</span>
-        </a>
-        <button class="icon-button" id="theme-toggle" type="button" aria-pressed="false">
-          <span class="icon-button__glyph" aria-hidden="true">◐</span>
-          <span class="icon-button__label">Theme</span>
+    <div class="app-shell" id="app-root">
+      <header class="topbar" id="app-header">
+        <button class="icon-button mobile-menu-button" id="mobile-menu-button" type="button" aria-controls="primary-navigation" aria-expanded="false">
+          <span aria-hidden="true">☰</span><span class="sr-only">Open navigation</span>
         </button>
+        <a class="brand" href="#/overview" aria-label="CampaignSim overview">
+          <span class="brand__mark" aria-hidden="true">◇</span>
+          <span class="brand__name">CampaignSim</span>
+          <span class="brand__qualifier">Powered by IPSP</span>
+        </a>
+        <p class="topbar__context" id="page-context">Platform workspace</p>
+        <div class="topbar__actions">
+          <label class="sr-only" for="topbar-theme">Theme preference</label>
+          <select class="theme-selector" id="topbar-theme" aria-label="Theme preference">
+            <option value="system">System</option>
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+          <span class="identity-summary" id="identity-summary"></span>
+          <button class="button button--ghost" id="logout-button" type="button">Logout</button>
+        </div>
       </header>
 
-      <main class="main" id="main-content">
-        <section class="hero" aria-labelledby="hero-title">
-          <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Local-first foundation</div>
-          <h1 id="hero-title">Understand first.<br><span>Simulate responsibly.</span></h1>
-          <p>
-            IPSP is the dataset-agnostic foundation for evidence-backed understanding,
-            prediction, and what-if simulation. Analytical workflows arrive in later phases.
-          </p>
-        </section>
-
-        <section class="foundation-grid" aria-label="Application foundation status">
-          <article class="card card--status">
-            <div class="card__header">
-              <div>
-                <p class="card__kicker">Service readiness</p>
-                <h2>Application foundation</h2>
-              </div>
-              <span class="badge badge--neutral" id="service-badge">Checking</span>
-            </div>
-            <div class="status-panel" id="service-status" role="status" aria-live="polite">
-              <span class="spinner" aria-hidden="true"></span>
-              <span>Checking the local service…</span>
-            </div>
-          </article>
-
-          <article class="card">
-            <p class="card__kicker">Foundation principles</p>
-            <h2>Built for trustworthy extension</h2>
-            <ul class="principle-list">
-              <li><span aria-hidden="true">01</span> Schema and dataset agnostic</li>
-              <li><span aria-hidden="true">02</span> Evidence before capability</li>
-              <li><span aria-hidden="true">03</span> Offline by default</li>
-              <li><span aria-hidden="true">04</span> Reproducible and traceable</li>
-            </ul>
-          </article>
-        </section>
-
-        <section class="empty-state" aria-labelledby="empty-title">
-          <div class="empty-state__icon" aria-hidden="true">◇</div>
-          <div>
-            <p class="card__kicker">Workspace</p>
-            <h2 id="empty-title">No project selected</h2>
-            <p>Project and dataset onboarding are intentionally reserved for the next implementation phase.</p>
+      <div class="workspace">
+        <aside class="sidebar" id="sidebar">
+          <nav class="primary-navigation" id="primary-navigation" aria-label="Primary navigation">
+            <p class="navigation-label">Workspace</p>
+            <a class="navigation-item" href="#/overview" data-route="overview"><span aria-hidden="true">⌂</span>Overview</a>
+            <a class="navigation-item" href="#/jobs" data-route="jobs"><span aria-hidden="true">≋</span>Jobs</a>
+            <a class="navigation-item" href="#/profile" data-route="profile"><span aria-hidden="true">○</span>Profile</a>
+            <p class="navigation-label">Operations</p>
+            <a class="navigation-item" href="#/admin/system" data-route="admin-system"><span aria-hidden="true">◇</span>System Health</a>
+          </nav>
+          <div class="sidebar__status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>IPSP v0.1.0 foundation</span>
           </div>
-        </section>
-      </main>
+        </aside>
+
+        <div class="navigation-scrim" id="navigation-scrim" aria-hidden="true"></div>
+        <main class="main" id="main-content" tabindex="-1" aria-live="polite" aria-busy="true">
+          <section class="route-state" aria-labelledby="initial-title">
+            <span class="spinner" aria-hidden="true"></span>
+            <h1 id="initial-title">Starting secure workspace</h1>
+            <p>Loading local application configuration and session state.</p>
+          </section>
+        </main>
+      </div>
 
       <footer class="footer">
-        <span>IPSP v0.1.0</span>
-        <span>Local mode · No external assets</span>
+        <span>Intelligent Predictive Simulation Platform</span>
+        <span>Local-first · Same-origin APIs · No external assets</span>
       </footer>
     </div>
+
+    <noscript>
+      <section class="no-script" id="no-js-content">
+        <h1>JavaScript is required</h1>
+        <p>CampaignSim uses local JavaScript modules to provide its authenticated IPSP workspace. No external browser assets are loaded.</p>
+      </section>
+    </noscript>
   </body>
 </html>

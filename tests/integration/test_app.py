@@ -22,7 +22,60 @@ def test_factory_builds_application_and_versioned_api(settings: Settings) -> Non
         response = client.get("/api/v1")
 
     assert response.status_code == 200
-    assert response.json() == {"name": "IPSP", "version": "0.1.0", "status": "foundation"}
+    assert response.json() == {
+        "name": "IPSP",
+        "version": "0.1.0",
+        "status": "foundation",
+        "browser": {
+            "default_theme": "system",
+            "csrf_cookie_name": "ipsp_csrf",
+            "csrf_header_name": "X-CSRF-Token",
+        },
+    }
+
+
+def test_api_root_returns_only_custom_safe_browser_configuration(tmp_path) -> None:
+    settings = Settings(
+        _env_file=None,
+        default_theme="light",
+        frontend_dir=tmp_path / "missing-frontend",
+        data_dir=tmp_path / "data",
+        artifacts_dir=tmp_path / "artifacts",
+        log_dir=tmp_path / "logs",
+        database={"url": f"sqlite:///{(tmp_path / 'browser-config.db').as_posix()}"},
+        auth={
+            "csrf_cookie_name": "custom_csrf_cookie",
+            "csrf_header_name": "X-Custom-CSRF",
+        },
+    )
+    app = create_app(settings)
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "name": "IPSP",
+        "version": "0.1.0",
+        "status": "foundation",
+        "browser": {
+            "default_theme": "light",
+            "csrf_cookie_name": "custom_csrf_cookie",
+            "csrf_header_name": "X-Custom-CSRF",
+        },
+    }
+    rendered = response.text.lower()
+    for private_term in (
+        "session_cookie",
+        "session_token",
+        "csrf_token",
+        "password",
+        "secret",
+        "database",
+        "sqlite",
+        "environment",
+    ):
+        assert private_term not in rendered
 
 
 def test_liveness_returns_minimal_safe_response(client: TestClient) -> None:

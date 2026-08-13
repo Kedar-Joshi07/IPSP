@@ -1,0 +1,11 @@
+@page { margin: 1.2cm; }
+html, body { background: #ffffff !important; color: #000000 !important; }
+.background-grid, .ambient, .topbar, .sidebar, .navigation-scrim, .footer, .theme-selector, .action-row, .table-actions, dialog { display: none !important; }
+.workspace, .main { display: block; width: 100%; max-width: none; margin: 0; padding: 0; }
+.card, .table-wrapper, .health-group { break-inside: avoid; border-color: #777777; background: #ffffff !important; box-shadow: none; }
+.data-table { min-width: 0; }
+.data-table th, .data-table td { color: #000000; border-color: #aaaaaa; background: #ffffff !important; }
+.badge { color: #000000 !important; }
+.progress__track { border: 1px solid #777777; background: #ffffff; }
+.progress__bar { background: #333333 !important; box-shadow: none; }
+a { text-decoration: none; }

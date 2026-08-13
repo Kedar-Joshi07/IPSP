@@ -1,0 +1,11 @@
+.health-stack { display: grid; gap: var(--space-4); }
+.health-group { min-width: 0; }
+.health-group__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.health-group__header h2 { margin: 0; }
+.health-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.health-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.health-value { min-width: 0; padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-surface-raised); }
+.health-value__label { display: block; margin-bottom: var(--space-1); color: var(--color-text-subtle); font-size: 0.66rem; text-transform: uppercase; }
+.health-value__content { font-family: var(--font-mono); font-size: 0.74rem; overflow-wrap: anywhere; }
+.critical-list { display: grid; gap: var(--space-2); padding: 0; list-style: none; }
+.critical-list li { padding: var(--space-3); border-left: 3px solid var(--color-danger); background: var(--color-surface-raised); overflow-wrap: anywhere; }

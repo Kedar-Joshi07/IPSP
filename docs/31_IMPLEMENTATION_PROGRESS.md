@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1I readiness and authorized system health complete. Phase 1J blocked pending independent review.**
+Application implementation: **Phase 1J frontend design-system expansion complete. Phase 1K blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1I PASS)** | Runtime readiness and authorized rich system health passed; Phase 1J not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J PASS)** | Authenticated foundation workspace and expanded frontend design system passed; Phase 1K not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,50 @@ Application implementation: **Phase 1I readiness and authorized system health co
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1J — Frontend Design-System Expansion
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; ready for independent review before Phase 1K
+- **Browser Bootstrap:** The public typed `/api/v1` response retains name/version/foundation status
+  and adds only default theme plus configured CSRF cookie/header names. Custom safe settings and
+  privacy exclusions are tested; no token values, session-cookie name, database URL, environment,
+  password, or secret configuration is returned
+- **Authenticated Workspace:** A static hash-routed Vanilla-JS shell provides login, session
+  bootstrap, required password change, Overview, owner-only Jobs, read-only Profile, authorized
+  System Health, logout, and safe not-found/empty/loading/error/permission states. Identity remains
+  in memory and server state remains authoritative
+- **API and Browser Security:** One same-origin client owns fetch and CSRF-cookie access, handles
+  JSON/204 and safe errors, includes credentials, and applies configured CSRF only to logout,
+  password change, cancel, and retry. Production JS uses safe DOM construction and contains no
+  unsafe HTML/code-execution sinks, session-token access, role-name authorization, payload logging,
+  unsafe artifact links, or non-theme browser storage
+- **Design System:** Matching semantic dark/light token sets, System/Dark/Light preference,
+  compact layered cards, badges, alerts, forms, buttons, progress, tables, tabs, stepper, dialog,
+  trust meter, responsive shell/navigation, reduced motion, and Jobs/System Health print styling
+  extend the canonical near-black indigo/violet visual language without copying demo behavior
+- **Truthful Pages:** Overview uses `/api/v1`, `/health/ready`, `/auth/me`, and a bounded recent-jobs
+  request; future projects/datasets/semantics/models/simulation are disabled roadmap states. Jobs
+  exposes list/detail/cancel/retry with confirmation and no submission path. Rich diagnostics use
+  only the permission-protected Admin endpoint and preserve every honest Phase 1I state
+- **Responsive/Runtime Evidence:** In-app browser verification passed for login, authenticated
+  Overview, authorized diagnostics, desktop layout, a 390-pixel mobile drawer, no page overflow,
+  and zero browser warnings/errors. No Node/npm install, build pipeline, CDN, remote font, analytics,
+  or runtime browser dependency was introduced
+- **Test Evidence:** `pytest` — 198 passed, 0 failed, 0 skipped, 0 warnings, including frontend
+  architecture/security/anti-contamination, custom browser bootstrap, auth/session/CSRF/RBAC,
+  owner-only jobs/local-worker concurrency, observability/audit, readiness, and system health
+- **Quality Evidence:** Compileall, Ruff lint, Ruff format for 93 files, strict mypy for 67 source
+  files, `pip check`, `git diff --check`, isolated Alembic heads/current/check, seven-table ORM
+  inspection, browser runtime QA, dependency/schema diff, and runtime-residue checks passed
+- **Unchanged Contracts:** No table, ORM model, migration, Python/npm dependency, permission,
+  backend auth/jobs/health authority, remote call, ingestion, analytics, modelling, simulation,
+  reports, or LLM-provider behavior was added
+- **Architecture Decisions Added:** None; Phase 1J implements the frozen FastAPI/static
+  HTML/CSS/Vanilla-JS architecture without beginning Phase 1K
+
+Phase 1 and v0.1.0 remain in progress. Phase 1K has not begun and remains blocked pending independent
+review of Phase 1J.
 
 ## Phase 1I — Readiness & Authorized System Health
 

@@ -1,0 +1,13 @@
+.form { display: grid; gap: var(--space-4); }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.form-group { display: grid; gap: var(--space-2); }
+.form-group label { color: var(--color-text-muted); font-size: 0.72rem; font-weight: 650; letter-spacing: 0.02em; }
+.form-control, .theme-selector { width: 100%; min-height: var(--touch-target); padding: 0.55rem 0.75rem; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); outline: none; background: var(--color-surface-raised); color: var(--color-text); transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
+.form-control:focus, .theme-selector:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-soft); }
+.theme-selector { width: auto; min-height: 2.35rem; padding-block: 0.35rem; font-size: 0.74rem; }
+.form-hint { margin: 0; color: var(--color-text-subtle); font-size: 0.7rem; }
+.login-panel { width: min(100%, 29rem); }
+.login-panel .brand { margin-bottom: var(--space-6); }
+.login-panel h1 { margin-bottom: var(--space-2); }
+.login-panel > p { margin-bottom: var(--space-6); color: var(--color-text-muted); }
+.login-readiness { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-5); color: var(--color-text-subtle); font-family: var(--font-mono); font-size: 0.67rem; }

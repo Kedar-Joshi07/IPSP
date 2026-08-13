@@ -281,10 +281,14 @@ def test_phase1d_security_schema_has_no_authorization_bypass_columns() -> None:
 
 
 def test_generic_core_has_no_benchmark_specific_output_terms() -> None:
-    lowered = _read_production_source().lower()
+    backend_and_schema = "\n".join(
+        path.read_text(encoding="utf-8")
+        for root in (BACKEND, MIGRATIONS)
+        for path in root.rglob("*.py")
+    ).lower()
 
     for term in ("campaignsim", "campaign", "funnel_stage", "roas", "cpa", "faiss", "xgboost"):
-        assert term not in lowered
+        assert term not in backend_and_schema
 
 
 def test_frontend_has_no_runtime_cdn_reference() -> None:

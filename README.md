@@ -3,15 +3,17 @@
 **Product:** Intelligent Predictive Simulation Platform (IPSP)  
 **Initial experience:** CampaignSim — Powered by IPSP  
 **Specification status:** v1.0 architecture frozen
-**Implementation status:** Phase 1B / v0.1.0 configuration and security-policy foundation
+**Implementation status:** Phase 1J / v0.1.0 authenticated foundation workspace; Phase 1 remains in progress
 **Implementation releases:** v0.1.0 → v1.0.0
 
 This repository contains the frozen specifications and the local-first IPSP application foundation.
-The current implementation provides the FastAPI factory, safe error/trace scaffolding, typed nested
-configuration and feature flags, environment-backed secret resolution, backend outbound policy,
-job contracts, health probes, and an offline dark/light frontend shell. Network adapters,
-analytical workflows, persistence, and authentication remain intentionally unimplemented until
-their scheduled phases.
+The current implementation provides typed configuration, environment-backed secret resolution,
+deny-by-default outbound policy, synchronous SQLite/Alembic control-plane persistence,
+Argon2id authentication with opaque server sessions and CSRF, permission-mapped RBAC, structured
+observability and durable audit, persistent jobs with a local single-process worker, separated
+liveness/readiness/authorized diagnostics, and an offline responsive dark/light authenticated
+frontend workspace. Ingestion, profiling, semantic discovery, modelling, simulation, reports, and
+LLM provider execution remain intentionally unimplemented until their scheduled phases.
 
 ## Core product statement
 
@@ -74,6 +76,11 @@ python -m uvicorn ipsp.main:create_app --factory --reload
 
 Open `http://127.0.0.1:8000`. The UI and API foundation require no Internet connection at runtime.
 
+Authentication cookies are Secure by default and production requires HTTPS. For plain-HTTP
+localhost development only, set `IPSP_AUTH__COOKIE_SECURE=false`; never use that override in
+production. Bootstrap the first administrator against a migrated database with
+`ipsp-create-admin`, then sign in through the local UI.
+
 ### Local job-worker deployment constraint
 
 `LocalJobBackend` is a single-process execution provider. Do not run multiple active local worker
@@ -106,6 +113,8 @@ python -m pytest
 python -m ruff check .
 python -m ruff format --check .
 python -m mypy backend/ipsp
+python -m pip check
+git diff --check
 ```
 
 Infrastructure probes are intentionally unversioned: `/health/live` reports only process liveness,
