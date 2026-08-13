@@ -55,3 +55,6 @@ Production browser assets are pinned and vendored locally. The v0.1.0 foundation
 
 ### D-018 — Secure opaque server sessions and fail-closed secrets
 Browser authentication uses opaque server-side sessions with token rotation, hashed storage, lifecycle invalidation, expiry, CSRF protection, and no raw token logging. Required production secrets are stable and startup fails closed when they are absent.
+
+### D-019 — Same-version parallel development with owner-controlled integration
+Parallel implementation is organized as same-milestone, different-module workstreams behind explicit frozen contracts and path ownership. `main` contains accepted milestone states only. Feature branches merge through a milestone `integration/vX.Y.Z` branch. Kedar is the integration owner and final merge authority; contributors push only to assigned feature branches. Each milestone has one migration owner at a time, shared/integration-sensitive files require explicit ownership, and branch-level PASS does not replace post-merge integration and milestone acceptance gates.

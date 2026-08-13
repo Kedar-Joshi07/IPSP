@@ -22,3 +22,4 @@ These Mermaid flow files are implementation references for Copilot and reviewers
 18. Journey/stage metric graph
 19. Workspace hierarchy
 20. End-to-end lifecycle
+21. Parallel development workflow

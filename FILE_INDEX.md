@@ -51,6 +51,9 @@
 - `docs/38_GLOSSARY.md`
 - `docs/39_BENCHMARK_CATALOG.md`
 - `docs/40_ANTI_CONTAMINATION.md`
+- `docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md`
+- `docs/42_ACTIVE_WORKSTREAMS.md`
+- `docs/43_WORKSTREAM_CONTRACT_TEMPLATE.md`
 - `flows/01_SYSTEM_ARCHITECTURE.md`
 - `flows/02_DATASET_ONBOARDING.md`
 - `flows/03_DATA_INTELLIGENCE_PACKET.md`
@@ -71,6 +74,7 @@
 - `flows/18_JOURNEY_STAGE_METRIC_GRAPH.md`
 - `flows/19_WORKSPACE_HIERARCHY.md`
 - `flows/20_END_TO_END_LIFECYCLE.md`
+- `flows/21_PARALLEL_DEVELOPMENT.md`
 - `flows/README.md`
 - `prompts/CODE_REVIEW_PROMPTS.md`
 - `prompts/FIRST_COPILOT_PROMPT.md`
@@ -78,4 +82,4 @@
 - `prompts/TESTING_PROMPTS.md`
 - `reference/README.md`
 
-**Markdown files:** 77
+This index lists the repository's Markdown documentation and agent-guidance entry points. Generated implementation prompts under `prompts/` may add further files over time.

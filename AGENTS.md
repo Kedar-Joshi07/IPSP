@@ -44,7 +44,31 @@ If documents conflict, stop and record the conflict in `docs/33_OPEN_QUESTIONS.m
 - Update `docs/31_IMPLEMENTATION_PROGRESS.md` after every completed implementation phase.
 - Add architecture-changing decisions to `docs/32_DECISION_LOG.md`.
 
-## Required verification before declaring a phase complete
+## Parallel development behavior
+
+IPSP uses **same-version, different-module parallel development**.
+
+Before coding on a parallel branch:
+
+1. read `docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md`;
+2. read `docs/42_ACTIVE_WORKSTREAMS.md`;
+3. read the assigned workstream contract;
+4. verify branch name, exact base SHA, merge target, owner, migration owner, owned paths, shared paths, and forbidden paths.
+
+Rules:
+
+- work only inside the assigned workstream scope;
+- do not modify a shared/integration-sensitive path unless explicitly authorized;
+- do not create migrations unless the workstream is the current Migration Owner;
+- do not modify `pyproject.toml` or `requirements.lock` without explicit Kedar authorization;
+- do not independently redesign a frozen shared contract;
+- if a shared contract must change, stop and report `CONTRACT CHANGE REQUIRED`;
+- if a dependency, migration, shared-file, security-authority, or architecture change is required but not authorized, stop and report it;
+- a contributor never merges to `integration/*` or `main`;
+- Kedar is the integration owner and resolves conflicts, integration ordering, finalization, and milestone promotion;
+- a branch PASS is not a milestone PASS; merged integration must be retested and independently reviewed.
+
+## Required verification before declaring a phase/workstream complete
 
 - Unit tests pass.
 - Relevant integration tests pass.
@@ -52,4 +76,5 @@ If documents conflict, stop and record the conflict in `docs/33_OPEN_QUESTIONS.m
 - No benchmark-specific production constants were introduced.
 - Logging/trace IDs are present for meaningful operations.
 - Error messages are safe and actionable.
-- Documentation and progress log are updated.
+- Documentation required by the workstream is updated.
+- The final report includes the exact branch, base SHA, current SHA, merge target, shared-file changes, migration state, dependency state, tests, and deviations.

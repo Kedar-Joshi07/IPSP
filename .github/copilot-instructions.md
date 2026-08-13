@@ -49,6 +49,39 @@ Cross-cutting: permissions, privacy, outbound policy, secrets, jobs, versioning,
 
 A capability is enabled only after semantic validity, data support, model/engine validation, and trust checks. Correctly refusing unsupported simulation is a product feature.
 
+## Parallel workstream behavior
+
+IPSP uses same-version, different-module parallel development.
+
+Before changing code:
+
+- read `docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md`;
+- read `docs/42_ACTIVE_WORKSTREAMS.md`;
+- obey the assigned workstream contract;
+- verify exact base SHA, branch, merge target, owned paths, shared paths, forbidden paths, migration owner, and dependency owner.
+
+Do not broaden scope because another active branch is implementing adjacent functionality.
+
+Do not:
+- merge to `integration/*` or `main`;
+- create migrations unless assigned migration ownership;
+- modify `pyproject.toml` or `requirements.lock` unless explicitly authorized;
+- reinterpret a frozen shared contract;
+- resolve semantic conflicts between parallel branches by guessing;
+- edit repository-wide progress/status/governance files unless assigned.
+
+When blocked by coordination, return a structured stop reason such as:
+- `CONTRACT CHANGE REQUIRED`
+- `MIGRATION OWNERSHIP REQUIRED`
+- `DEPENDENCY CHANGE REQUIRED`
+- `SHARED FILE OWNERSHIP REQUIRED`
+- `ARCHITECTURE CHANGE REQUIRED`
+- `SECURITY AUTHORITY CHANGE REQUIRED`
+
+Kedar is the integration owner and final merge authority.
+
 ## Testing
 
 Every feature must include tests for normal behavior, unsafe/invalid behavior, and benchmark contamination risk when relevant.
+
+A feature-branch PASS means only that the workstream is ready for Kedar review. It is not permission to merge and does not establish milestone acceptance.
