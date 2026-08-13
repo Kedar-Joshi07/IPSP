@@ -26,10 +26,14 @@ function safeError(error, fallback) {
   return `${error.message} (${error.code})`;
 }
 
+function transitionAfterAuth(target) {
+  if (!navigate(target)) router?.refresh();
+}
+
 function showLogin(message = null) {
   clearIdentity();
   if (message) setFlash("warning", message);
-  navigate("#/login");
+  transitionAfterAuth("#/login");
 }
 
 function handleAuthError(error) {
@@ -51,7 +55,7 @@ async function performLogout() {
   logoutButton.disabled = true;
   try { await logout(); }
   catch (error) { if (!(error instanceof ApiError && error.status === 401)) setFlash("warning", "The server could not confirm logout. Local identity was cleared."); }
-  finally { loggingOut = false; logoutButton.disabled = false; clearIdentity(); navigate("#/login"); }
+  finally { loggingOut = false; logoutButton.disabled = false; clearIdentity(); transitionAfterAuth("#/login"); }
 }
 
 function viewContext(lifecycle) {
@@ -70,13 +74,12 @@ function viewContext(lifecycle) {
     onAuthenticated: (identity) => {
       setIdentity(identity);
       identitySummary.textContent = identity.display_name;
-      const changed = navigate(identity.must_change_password ? "#/profile" : "#/overview");
-      if (!changed) router?.refresh();
+      transitionAfterAuth(identity.must_change_password ? "#/profile" : "#/overview");
     },
     onPasswordChanged: () => {
       clearIdentity();
       setFlash("success", "Password changed successfully. Sign in again with your new password.");
-      navigate("#/login");
+      transitionAfterAuth("#/login");
     },
     onLogout: performLogout,
   };

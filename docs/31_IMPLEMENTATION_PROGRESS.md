@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1J.1 frontend lifecycle and state hardening complete. Phase 1K blocked pending independent review.**
+Application implementation: **Phase 1J.2 authentication-transition hardening complete. Phase 1K blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J.1 PASS)** | Frontend lifecycle and state hardening passed; Phase 1K not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J.2 PASS)** | Authentication-transition hardening passed; Phase 1K not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,41 @@ Application implementation: **Phase 1J.1 frontend lifecycle and state hardening 
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1J.2 — Authentication Transition Hardening
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; ready for independent review before Phase 1K
+- **Canonical Auth Transition:** One application helper now navigates to the required authentication
+  destination and refreshes through the canonical router only when the target hash is already
+  active. Login/session-expiry redirection, local or server-confirmed logout, successful
+  authentication, and successful password change all use this helper
+- **Same-Hash Correctness:** A required-password identity at `#/login` continues to render the
+  blocked password-change view. Sign out and successful password change clear local identity and
+  force an actual Login render even when the URL already equals `#/login`
+- **Password 401 Handling:** Password-change failures first reject stale or aborted route work, then
+  pass HTTP 401 through the centralized session-expiry handler. Handled 401 responses clear local
+  identity and render Login without adding a password-form error; ordinary validation/password 4xx
+  errors remain safely on the form
+- **Lifecycle Preservation:** The helper performs either hash navigation or one router refresh,
+  never both. No direct route rendering was reintroduced, so Phase 1J.1 generation, abort, and
+  exactly-once cleanup behavior remains authoritative
+- **Regression Evidence:** Deterministic frontend contracts cover a required-password identity at an
+  already-active Login hash, actual Login rendering after sign out and password-change success,
+  centralized handling order for password-change 401, and absence of duplicate route rendering or
+  cleanup. All prior Phase 1J.1 frontend/security contracts remain green
+- **Test Evidence:** `pytest` — 213 passed, 0 failed, 0 skipped, 0 warnings
+- **Quality Evidence:** Compileall, Ruff lint, Ruff format for 93 files, strict mypy for 67 source
+  files, `pip check`, `git diff --check`, isolated Alembic upgrade/heads/current/check at
+  `20260812_05`, and exactly seven ORM tables passed
+- **Unchanged Contracts:** No schema, ORM model, migration, Python/npm dependency, backend API,
+  authentication/session/CSRF authority, permission, frontend architecture, or Phase 1K behavior
+  changed
+- **Architecture Decisions Added:** None; this correction stays within the existing canonical
+  router and centralized authentication boundaries
+
+Phase 1 and v0.1.0 remain in progress. Phase 1K has not begun and remains blocked pending independent
+review of Phase 1J.2.
 
 ## Phase 1J.1 — Frontend Lifecycle & State Hardening
 

@@ -47,6 +47,7 @@ function passwordForm(context, required) {
       context.onPasswordChanged();
     } catch (error) {
       if (context.isRouteAbort(error) || !active || !context.isActive()) return;
+      if (context.handleAuthError(error)) return;
       notices.append(alertBox(context.safeError(error, "The password could not be changed."), "danger"));
       current.value = "";
       current.focus();

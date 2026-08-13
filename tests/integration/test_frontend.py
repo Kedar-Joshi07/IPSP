@@ -337,6 +337,61 @@ def test_required_password_view_has_centralized_duplicate_safe_signout() -> None
     assert "onLogout: performLogout" in app
 
 
+def test_auth_transitions_use_one_same_hash_aware_helper() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+    helper = app[app.index("function transitionAfterAuth") : app.index("function showLogin")]
+
+    assert "if (!navigate(target)) router?.refresh()" in helper
+    assert helper.count("navigate(") == 1
+    assert helper.count("router?.refresh()") == 1
+    assert app.count("transitionAfterAuth(") == 5
+    assert "const changed = navigate(" not in app
+
+
+def test_required_password_identity_renders_when_url_is_already_login() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+    render = app[app.index("async function renderRoute") : app.index("async function bootstrap")]
+
+    required_branch = "if (identity?.must_change_password)"
+    authenticated_login_branch = 'else if (identity && route.key === "login")'
+    assert render.index(required_branch) < render.index(authenticated_login_branch)
+    assert "renderRequiredPassword" in render
+
+
+def test_logout_and_successful_password_change_force_actual_login_render() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+    logout = app[app.index("async function performLogout") : app.index("function viewContext")]
+    password_changed = app[app.index("onPasswordChanged:") : app.index("onLogout: performLogout")]
+
+    for transition in (logout, password_changed):
+        assert "clearIdentity()" in transition
+        assert 'transitionAfterAuth("#/login")' in transition
+        assert transition.index("clearIdentity()") < transition.index("transitionAfterAuth")
+
+
+def test_change_password_401_uses_centralized_auth_transition_before_form_error() -> None:
+    profile = (FRONTEND / "js" / "views" / "profile.js").read_text(encoding="utf-8")
+    catch = profile[
+        profile.index("} catch (error) {") : profile.index(
+            "} finally {", profile.index("} catch (error) {")
+        )
+    ]
+
+    stale_guard = "context.isRouteAbort(error) || !active || !context.isActive()"
+    auth_guard = "if (context.handleAuthError(error)) return"
+    form_error = "notices.append(alertBox"
+    assert catch.index(stale_guard) < catch.index(auth_guard) < catch.index(form_error)
+
+
+def test_auth_transitions_do_not_duplicate_route_render_or_cleanup() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+
+    assert "void renderRoute(" not in app
+    assert "renderRoute({" not in app
+    assert "router?.refresh();\n  navigate(" not in app
+    assert "const changed = navigate(" not in app
+
+
 def test_frontend_is_offline_framework_free_and_not_demo_contaminated() -> None:
     source = _production_text()
     lowered = source.lower()
