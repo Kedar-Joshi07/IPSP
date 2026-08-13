@@ -25,11 +25,11 @@ export function renderLogin(container, context) {
   container.setAttribute("aria-busy", "false");
 
   let active = true;
-  getReadiness().then((result) => {
-    if (!active) return;
+  getReadiness(context.signal).then((result) => {
+    if (!active || !context.isActive()) return;
     readiness.replaceChildren(element("span", { className: "status-dot", attributes: { "aria-hidden": "true" } }), element("span", { text: result.status === "ready" ? "Local service ready" : "Local service not ready" }));
-  }).catch(() => {
-    if (active) readiness.replaceChildren(element("span", { text: "Local readiness unavailable" }));
+  }).catch((error) => {
+    if (active && context.isActive() && !context.isRouteAbort(error)) readiness.replaceChildren(element("span", { text: "Local readiness unavailable" }));
   });
 
   form.addEventListener("submit", async (event) => {
@@ -38,16 +38,20 @@ export function renderLogin(container, context) {
     submit.disabled = true;
     submit.textContent = "Signing in…";
     try {
-      const identity = await login(username.value, password.value);
+      const identity = await login(username.value, password.value, context.signal);
+      if (!active || !context.isActive()) return;
       form.reset();
       context.onAuthenticated(identity);
     } catch (error) {
+      if (context.isRouteAbort(error) || !active || !context.isActive()) return;
       password.value = "";
       notices.append(alertBox(context.safeError(error, "Sign-in failed. Check your credentials and try again."), "danger"));
       password.focus();
     } finally {
-      submit.disabled = false;
-      submit.textContent = "Sign in";
+      if (active && context.isActive()) {
+        submit.disabled = false;
+        submit.textContent = "Sign in";
+      }
     }
   });
   username.focus();

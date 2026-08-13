@@ -4,8 +4,12 @@ import { button, clear, element, formatDate, humanize } from "../dom.js";
 
 const JOB_STATUSES = new Set(["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"]);
 
-function canCancel(job) { return job.status === "QUEUED" || job.status === "RUNNING"; }
-function canRetry(job) { return job.retryable === true && (job.status === "FAILED" || job.status === "CANCELLED"); }
+function canCancel(job) { return job.status === "QUEUED" || (job.status === "RUNNING" && job.cancel_requested !== true); }
+function canRetry(job) {
+  return job.retryable === true
+    && (job.status === "FAILED" || job.status === "CANCELLED")
+    && job.attempt_count < job.max_attempts;
+}
 
 function confirmationDialog(job, confirmAction) {
   const dialog = element("dialog", { attributes: { "aria-labelledby": "cancel-dialog-title" } });
@@ -18,6 +22,7 @@ function confirmationDialog(job, confirmAction) {
   document.body.append(dialog);
   dialog.showModal();
   cancel.focus();
+  return dialog;
 }
 
 function detailPanel(job) {
@@ -45,9 +50,17 @@ export async function renderJobs(container, context) {
   let busyId = null;
   let disposed = false;
   let loading = false;
+  const dialogs = new Set();
+  const isActive = () => !disposed && context.isActive();
+
+  const confirmCancellation = (job) => {
+    const dialog = confirmationDialog(job, () => mutate(job, "cancel"));
+    dialogs.add(dialog);
+    dialog.addEventListener("close", () => dialogs.delete(dialog), { once: true });
+  };
 
   const draw = () => {
-    if (disposed) return;
+    if (!isActive()) return;
     clear(container);
     const refresh = button("Refresh", "button button--ghost");
     refresh.addEventListener("click", load);
@@ -63,7 +76,7 @@ export async function renderJobs(container, context) {
       view.disabled = busyId === job.job_id;
       view.addEventListener("click", () => loadDetail(job.job_id));
       actions.append(view);
-      if (canCancel(job)) { const cancel = button("Cancel", "button button--danger"); cancel.disabled = busyId === job.job_id; cancel.addEventListener("click", () => confirmationDialog(job, () => mutate(job, "cancel"))); actions.append(cancel); }
+      if (canCancel(job)) { const cancel = button("Cancel", "button button--danger"); cancel.disabled = busyId === job.job_id; cancel.addEventListener("click", () => confirmCancellation(job)); actions.append(cancel); }
       if (canRetry(job)) { const retry = button("Retry", "button button--ghost"); retry.disabled = busyId === job.job_id; retry.addEventListener("click", () => mutate(job, "retry")); actions.append(retry); }
       body.append(element("tr", {}, [
         element("td", {}, [element("strong", { text: humanize(job.job_type) }), element("div", { className: "mono", text: job.job_id })]),
@@ -77,28 +90,35 @@ export async function renderJobs(container, context) {
   };
 
   const load = async () => {
-    if (loading) return;
+    if (loading || !isActive()) return;
     loading = true;
     clear(container); container.append(loadingState("Loading jobs")); container.setAttribute("aria-busy", "true");
-    try { const result = await listJobs(50, 0); jobs = result.jobs; selected = null; draw(); }
-    catch (error) { if (context.handleAuthError(error)) return; clear(container); container.append(errorState("Jobs unavailable", context.safeError(error, "Jobs could not be loaded."), load)); }
-    finally { loading = false; container.setAttribute("aria-busy", "false"); }
+    try { const result = await listJobs(50, 0, context.signal); if (!isActive()) return; jobs = result.jobs; selected = null; draw(); }
+    catch (error) { if (context.isRouteAbort(error) || !isActive()) return; if (context.handleAuthError(error)) return; clear(container); container.append(errorState("Jobs unavailable", context.safeError(error, "Jobs could not be loaded."), load)); }
+    finally { loading = false; if (isActive()) container.setAttribute("aria-busy", "false"); }
   };
   const loadDetail = async (jobId) => {
+    if (!isActive()) return;
     busyId = jobId; draw();
-    try { selected = await getJob(jobId); draw(); }
-    catch (error) { if (context.handleAuthError(error)) return; selected = null; clear(container); container.append(errorState(error?.status === 404 ? "Job not found" : "Job unavailable", context.safeError(error, "The selected job could not be loaded."), load)); }
-    finally { busyId = null; }
+    let shouldDraw = true;
+    try { const result = await getJob(jobId, context.signal); if (!isActive()) return; selected = result; }
+    catch (error) { shouldDraw = false; if (context.isRouteAbort(error) || !isActive()) return; if (context.handleAuthError(error)) return; selected = null; clear(container); container.append(errorState(error?.status === 404 ? "Job not found" : "Job unavailable", context.safeError(error, "The selected job could not be loaded."), load)); }
+    finally { busyId = null; if (shouldDraw && isActive()) draw(); }
   };
   const mutate = async (job, action) => {
+    if (!isActive()) return;
     busyId = job.job_id; draw();
     let mutationError = null;
-    try { const updated = action === "cancel" ? await cancelJob(job.job_id) : await retryJob(job.job_id); jobs = jobs.map((item) => item.job_id === updated.job_id ? updated : item); selected = updated; }
-    catch (error) { if (context.handleAuthError(error)) return; mutationError = error; }
+    try { const updated = action === "cancel" ? await cancelJob(job.job_id, context.signal) : await retryJob(job.job_id, context.signal); if (!isActive()) return; jobs = jobs.map((item) => item.job_id === updated.job_id ? updated : item); selected = updated; }
+    catch (error) { if (context.isRouteAbort(error) || !isActive()) return; if (context.handleAuthError(error)) return; mutationError = error; }
     finally { busyId = null; }
     draw();
-    if (mutationError) container.prepend(alertBox(context.safeError(mutationError, `The job ${action} request could not be completed.`), "danger"));
+    if (mutationError && isActive()) container.prepend(alertBox(context.safeError(mutationError, `The job ${action} request could not be completed.`), "danger"));
   };
   await load();
-  return () => { disposed = true; document.querySelectorAll("dialog").forEach((dialog) => dialog.close()); };
+  return () => {
+    disposed = true;
+    dialogs.forEach((dialog) => { if (dialog.open) dialog.close(); });
+    dialogs.clear();
+  };
 }

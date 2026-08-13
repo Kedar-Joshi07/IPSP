@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1J frontend design-system expansion complete. Phase 1K blocked pending independent review.**
+Application implementation: **Phase 1J.1 frontend lifecycle and state hardening complete. Phase 1K blocked pending independent review.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J PASS)** | Authenticated foundation workspace and expanded frontend design system passed; Phase 1K not started |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1J.1 PASS)** | Frontend lifecycle and state hardening passed; Phase 1K not started |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,61 @@ Application implementation: **Phase 1J frontend design-system expansion complete
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1J.1 — Frontend Lifecycle & State Hardening
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; ready for independent review before Phase 1K
+- **Route Lifecycle:** The canonical hash router now owns an AbortController and monotonically
+  increasing generation for every dispatch. A new route immediately aborts and invalidates the old
+  route, invokes the active cleanup exactly once, and safely invokes a late cleanup returned by a
+  stale pending route without installing it. Only the winning route may focus its heading
+- **Cleanup Wiring:** Application rendering now returns Login, Jobs, Profile, required-password,
+  Overview, System Health, and not-found cleanup values to the router. Login readiness/login
+  callbacks detach safely; password forms reset and deactivate; Jobs closes only its owned dialogs;
+  refresh uses the same router lifecycle; and the required-password same-route render shortcut was
+  removed
+- **Stale Result Suppression:** Async readiness, login, password, Jobs list/detail/mutation,
+  Overview, and System Health requests receive the active route signal and check current-route
+  authority before any post-await DOM, error, busy-state, navigation, title, or focus mutation.
+  Deterministic source regressions verify abort-before-await and stale-generation rejection before
+  cleanup installation
+- **Theme Correction:** A stored preference remains authoritative over the configured initial
+  default. `System` now always resolves through the operating-system media preference and continues
+  responding to OS changes; configured dark/light defaults no longer override a stored `System`
+  choice
+- **Jobs Corrections:** Detail completion clears its busy ID before the final redraw. Cancel remains
+  available for QUEUED jobs and for RUNNING jobs only before cancellation is requested. Retry is
+  offered only for retryable FAILED/CANCELLED jobs whose attempt count remains below the maximum;
+  mutation responses remain server-authoritative
+- **Readiness Semantics:** The browser client validates minimal readiness documents and accepts both
+  HTTP 200 `ready` and HTTP 503 `not_ready`. Malformed, unexpected-status, non-JSON, and network
+  failures remain safe errors. Login distinguishes ready/not-ready/unavailable, and Overview renders
+  a valid `not_ready` result while the independent Jobs request succeeds
+- **Required-Password Sign-Out:** The blocked password-change view now includes a duplicate-safe
+  Sign out action that uses the centralized protected logout flow. It remains visible at the mobile
+  breakpoint while normal navigation remains unavailable
+- **Browser Evidence:** Live local QA passed a rapid Jobs-to-Profile route change with the completed
+  old request unable to overwrite Profile, Jobs detail control restoration, route-owned dialog
+  disposal, configured default dark plus stored System plus light OS resolving to light, a real 503
+  readiness response displayed as not ready while Jobs succeeded, and 390-pixel required-password
+  Sign out returning to Login with normal navigation hidden. Browser warnings/errors: 0
+- **Security Regression:** Unsafe DOM/code sinks, non-theme storage, cookie ownership, session-token
+  access, external resources/CDNs, role-name authorization, job submission, raw logs, benchmark
+  contamination, and fake later-phase features remain absent under the architecture/security tests
+- **Test Evidence:** `pytest` — 208 passed, 0 failed, 0 skipped, 0 warnings, including all Phase
+  1E–1J behavior and the new lifecycle/state regressions
+- **Quality Evidence:** Compileall, Ruff lint, Ruff format for 93 files, strict mypy for 67 source
+  files, `pip check`, `git diff --check`, Alembic heads/current/check at `20260812_05`, exactly seven
+  ORM tables, browser runtime QA, dependency/schema diff, and runtime-residue checks passed
+- **Unchanged Contracts:** No ORM table/model, migration, Python/npm dependency, permission, backend
+  authentication/session/CSRF, job state/API, system-health authority, preference persistence,
+  external resource, or Phase 1K behavior was added or changed
+- **Architecture Decisions Added:** None; this hardening remains within the frozen FastAPI/static
+  HTML/CSS/Vanilla-JS architecture
+
+Phase 1 and v0.1.0 remain in progress. Phase 1K has not begun and remains blocked pending independent
+review of Phase 1J.1.
 
 ## Phase 1J — Frontend Design-System Expansion
 

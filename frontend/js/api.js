@@ -23,7 +23,7 @@ function getCookie(name) {
   return entry ? decodeURIComponent(entry.slice(prefix.length)) : null;
 }
 
-async function parseResponse(response) {
+async function parseResponse(response, allowedStatuses = []) {
   if (response.status === 204) return null;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -36,7 +36,7 @@ async function parseResponse(response) {
   } catch {
     throw new ApiError(response.status, "SYS-RESPONSE-INVALID", "The service returned an invalid response.");
   }
-  if (!response.ok) {
+  if (!response.ok && !allowedStatuses.includes(response.status)) {
     const code = typeof payload?.error_code === "string" ? payload.error_code : "SYS-REQUEST-FAILED";
     const message = typeof payload?.message === "string" ? payload.message : "The request could not be completed.";
     throw new ApiError(response.status, code, message, payload?.recoverable === true);
@@ -59,8 +59,25 @@ async function request(path, options = {}) {
     credentials: "same-origin",
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    signal: options.signal,
   });
-  return parseResponse(response);
+  return parseResponse(response, options.allowedStatuses);
+}
+
+function isReadinessPayload(payload, responseStatus) {
+  const expectedStatus = responseStatus === 200 ? "ready" : "not_ready";
+  return payload !== null
+    && typeof payload === "object"
+    && payload.status === expectedStatus
+    && typeof payload.timestamp_utc === "string"
+    && !Number.isNaN(Date.parse(payload.timestamp_utc))
+    && (payload.error_code === null || typeof payload.error_code === "string")
+    && payload.checks !== null
+    && typeof payload.checks === "object"
+    && !Array.isArray(payload.checks)
+    && Object.values(payload.checks).every((value) => typeof value === "string")
+    && Array.isArray(payload.deferred_checks)
+    && payload.deferred_checks.every((value) => typeof value === "string");
 }
 
 export async function getBrowserConfig() {
@@ -69,13 +86,31 @@ export async function getBrowserConfig() {
   return payload;
 }
 
-export function getReadiness() { return request("/health/ready"); }
-export function login(username, password) { return request("/api/v1/auth/login", { method: "POST", body: { username, password } }); }
-export function getCurrentUser() { return request("/api/v1/auth/me"); }
+export async function getReadiness(signal) {
+  let response;
+  try {
+    response = await fetch(assertRelativePath("/health/ready"), {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+      signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") throw error;
+    throw new ApiError(0, "SYS-REQUEST-FAILED", "Local readiness could not be checked.");
+  }
+  const payload = await parseResponse(response, [503]);
+  if ((response.status !== 200 && response.status !== 503) || !isReadinessPayload(payload, response.status)) {
+    throw new ApiError(response.status, "SYS-RESPONSE-INVALID", "The service returned an invalid readiness response.");
+  }
+  return payload;
+}
+export function login(username, password, signal) { return request("/api/v1/auth/login", { method: "POST", body: { username, password }, signal }); }
+export function getCurrentUser(signal) { return request("/api/v1/auth/me", { signal }); }
 export function logout() { return request("/api/v1/auth/logout", { method: "POST", csrf: true }); }
-export function changePassword(currentPassword, newPassword) { return request("/api/v1/auth/change-password", { method: "POST", csrf: true, body: { current_password: currentPassword, new_password: newPassword } }); }
-export function listJobs(limit = 50, offset = 0) { return request(`/api/v1/jobs?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`); }
-export function getJob(jobId) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}`); }
-export function cancelJob(jobId) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}/cancel`, { method: "POST", csrf: true }); }
-export function retryJob(jobId) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}/retry`, { method: "POST", csrf: true }); }
-export function getSystemHealth() { return request("/api/v1/admin/system/health"); }
+export function changePassword(currentPassword, newPassword, signal) { return request("/api/v1/auth/change-password", { method: "POST", csrf: true, body: { current_password: currentPassword, new_password: newPassword }, signal }); }
+export function listJobs(limit = 50, offset = 0, signal) { return request(`/api/v1/jobs?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`, { signal }); }
+export function getJob(jobId, signal) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}`, { signal }); }
+export function cancelJob(jobId, signal) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}/cancel`, { method: "POST", csrf: true, signal }); }
+export function retryJob(jobId, signal) { return request(`/api/v1/jobs/${encodeURIComponent(jobId)}/retry`, { method: "POST", csrf: true, signal }); }
+export function getSystemHealth(signal) { return request("/api/v1/admin/system/health", { signal }); }

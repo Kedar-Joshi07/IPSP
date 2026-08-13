@@ -162,16 +162,16 @@ def test_api_client_uses_browser_config_and_correct_csrf_boundaries() -> None:
         'logout() { return request("/api/v1/auth/logout", { method: "POST", csrf: true })' in source
     )
     assert (
-        "changePassword(currentPassword, newPassword) { return "
+        "changePassword(currentPassword, newPassword, signal) { return "
         'request("/api/v1/auth/change-password", { method: "POST", csrf: true'
     ) in source
     assert (
-        "cancelJob(jobId) { return request(`"
-        '/api/v1/jobs/${encodeURIComponent(jobId)}/cancel`, { method: "POST", csrf: true })'
+        "cancelJob(jobId, signal) { return request(`"
+        '/api/v1/jobs/${encodeURIComponent(jobId)}/cancel`, { method: "POST", csrf: true'
     ) in source
     assert (
-        "retryJob(jobId) { return request(`"
-        '/api/v1/jobs/${encodeURIComponent(jobId)}/retry`, { method: "POST", csrf: true })'
+        "retryJob(jobId, signal) { return request(`"
+        '/api/v1/jobs/${encodeURIComponent(jobId)}/retry`, { method: "POST", csrf: true'
     ) in source
     for get_function in ("getReadiness", "getCurrentUser", "listJobs", "getJob", "getSystemHealth"):
         line = next(line for line in source.splitlines() if f"function {get_function}" in line)
@@ -192,7 +192,7 @@ def test_jobs_and_system_health_ui_match_current_server_contracts() -> None:
     assert "submitJob" not in jobs and "createJob" not in jobs
     assert "Job submission is not available" in jobs
     assert "getJob(" in jobs and "cancelJob(" in jobs and "retryJob(" in jobs
-    assert "if (loading) return" in jobs
+    assert "if (loading || !isActive()) return" in jobs
     assert set(
         re.findall(
             r'"(healthy|degraded|unhealthy|not_configured|not_implemented|not_available|not_initialized|never_run)"',
@@ -210,9 +210,131 @@ def test_jobs_and_system_health_ui_match_current_server_contracts() -> None:
     }
     assert "error?.status === 403" in health
     assert "role_name" not in health and '"Admin"' not in health
-    assert "getSystemHealth()" in health
+    assert "getSystemHealth(context.signal)" in health
     assert "getReadiness()" not in health
-    assert "if (loading) return" in health
+    assert "if (loading || !isActive()) return" in health
+
+
+def test_router_has_one_abortable_generation_guarded_lifecycle() -> None:
+    router = (FRONTEND / "js" / "router.js").read_text(encoding="utf-8")
+
+    assert "new AbortController()" in router
+    assert "const routeGeneration = ++generation" in router
+    assert "generation === routeGeneration" in router
+    assert "activeController.abort()" in router
+    assert "cleanupActiveRoute()" in router
+    assert "const once = (callback)" in router
+    assert "if (called) return" in router
+    assert "if (cleanup) cleanup()" in router
+    dispatch = router[router.index("const dispatch") : router.index("const onHashChange")]
+    assert dispatch.index("activeController.abort()") < dispatch.index("await onRoute")
+    stale_guard = "generation !== routeGeneration || controller.signal.aborted"
+    assert dispatch.index("await onRoute") < dispatch.index(stale_guard)
+    assert dispatch.index(stale_guard) < dispatch.index("activeCleanup = cleanup")
+
+
+def test_app_preserves_view_cleanup_and_never_bypasses_router_for_refresh() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+
+    assert "cleanup = await renderOverview" in app
+    assert "cleanup = await renderJobs" in app
+    assert "cleanup = await renderSystemHealth" in app
+    assert "return cleanup" in app
+    assert "refresh: () => router?.refresh()" in app
+    assert "void renderRoute(" not in app
+    assert "window.render" not in app
+
+
+def test_stale_async_views_use_route_signal_and_activity_guards() -> None:
+    views = FRONTEND / "js" / "views"
+    login = (views / "login.js").read_text(encoding="utf-8")
+    overview = (views / "overview.js").read_text(encoding="utf-8")
+    jobs = (views / "jobs.js").read_text(encoding="utf-8")
+    health = (views / "system-health.js").read_text(encoding="utf-8")
+
+    assert "getReadiness(context.signal)" in login
+    assert "login(username.value, password.value, context.signal)" in login
+    assert "!active || !context.isActive()" in login
+    assert "getReadiness(context.signal)" in overview
+    assert "listJobs(5, 0, context.signal)" in overview
+    assert "if (!isActive()) return" in overview
+    for source in (jobs, health):
+        assert "context.signal" in source
+        assert "context.isRouteAbort(error)" in source
+        assert "if (isActive())" in source
+
+
+def test_system_theme_always_tracks_operating_system_preference() -> None:
+    theme = (FRONTEND / "js" / "theme.js").read_text(encoding="utf-8")
+
+    assert "preference = storedPreference() ?? configuredDefault" in theme
+    assert 'if (value === "dark" || value === "light") return value' in theme
+    assert 'value === "system" && configuredDefault' not in theme
+    assert 'if (preference === "system") apply()' in theme
+
+
+def test_readiness_accepts_only_valid_ready_or_not_ready_documents() -> None:
+    api = (FRONTEND / "js" / "api.js").read_text(encoding="utf-8")
+
+    assert "parseResponse(response, [503])" in api
+    assert 'responseStatus === 200 ? "ready" : "not_ready"' in api
+    assert "Date.parse(payload.timestamp_utc)" in api
+    assert "response.status !== 200 && response.status !== 503" in api
+    assert "isReadinessPayload(payload, response.status)" in api
+    assert 'new ApiError(0, "SYS-REQUEST-FAILED"' in api
+    assert '"SYS-RESPONSE-INVALID"' in api
+
+
+def test_login_and_overview_distinguish_valid_not_ready_from_failure() -> None:
+    login = (FRONTEND / "js" / "views" / "login.js").read_text(encoding="utf-8")
+    overview = (FRONTEND / "js" / "views" / "overview.js").read_text(encoding="utf-8")
+
+    assert "Local service ready" in login
+    assert "Local service not ready" in login
+    assert "Local readiness unavailable" in login
+    assert "The platform reports that it is not ready." in overview
+    assert "Promise.all" in overview
+
+
+def test_job_actions_match_authoritative_retry_and_cancel_boundaries() -> None:
+    jobs = (FRONTEND / "js" / "views" / "jobs.js").read_text(encoding="utf-8")
+
+    assert 'job.status === "QUEUED"' in jobs
+    assert 'job.status === "RUNNING" && job.cancel_requested !== true' in jobs
+    assert 'job.status === "FAILED" || job.status === "CANCELLED"' in jobs
+    assert "job.retryable === true" in jobs
+    assert "job.attempt_count < job.max_attempts" in jobs
+
+
+def test_job_detail_clears_busy_state_before_final_redraw() -> None:
+    jobs = (FRONTEND / "js" / "views" / "jobs.js").read_text(encoding="utf-8")
+    load_detail = jobs[jobs.index("const loadDetail") : jobs.index("const mutate")]
+
+    assert "busyId = null" in load_detail
+    assert "if (shouldDraw && isActive()) draw()" in load_detail
+    final_draw = load_detail.index("draw()", load_detail.index("finally"))
+    assert load_detail.index("busyId = null") < final_draw
+
+
+def test_jobs_cleanup_owns_and_closes_only_its_dialogs() -> None:
+    jobs = (FRONTEND / "js" / "views" / "jobs.js").read_text(encoding="utf-8")
+
+    assert "const dialogs = new Set()" in jobs
+    assert "dialogs.add(dialog)" in jobs
+    assert "dialogs.delete(dialog)" in jobs
+    assert "if (dialog.open) dialog.close()" in jobs
+    assert 'document.querySelectorAll("dialog")' not in jobs
+
+
+def test_required_password_view_has_centralized_duplicate_safe_signout() -> None:
+    app = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
+    profile = (FRONTEND / "js" / "views" / "profile.js").read_text(encoding="utf-8")
+
+    assert 'button("Sign out"' in profile
+    assert "await context.onLogout()" in profile
+    assert "if (signOut.disabled) return" in profile
+    assert "if (loggingOut) return" in app
+    assert "onLogout: performLogout" in app
 
 
 def test_frontend_is_offline_framework_free_and_not_demo_contaminated() -> None:

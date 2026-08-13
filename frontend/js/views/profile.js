@@ -17,6 +17,7 @@ function detailList(identity) {
 }
 
 function passwordForm(context, required) {
+  let active = true;
   const notices = element("div", { attributes: { "aria-live": "polite" } });
   const form = element("form", { className: "form", attributes: { autocomplete: "off" } });
   const current = element("input", { className: "form-control", id: "current-password", attributes: { type: "password", autocomplete: "current-password", required: "" } });
@@ -40,28 +41,38 @@ function passwordForm(context, required) {
     }
     submit.disabled = true;
     try {
-      await changePassword(current.value, next.value);
+      await changePassword(current.value, next.value, context.signal);
+      if (!active || !context.isActive()) return;
       form.reset();
       context.onPasswordChanged();
     } catch (error) {
+      if (context.isRouteAbort(error) || !active || !context.isActive()) return;
       notices.append(alertBox(context.safeError(error, "The password could not be changed."), "danger"));
       current.value = "";
       current.focus();
     } finally {
-      submit.disabled = false;
+      if (active && context.isActive()) submit.disabled = false;
     }
   });
-  return { node: element("div", {}, [notices, form]), cleanup: () => form.reset(), focus: () => current.focus() };
+  return { node: element("div", {}, [notices, form]), cleanup: () => { active = false; form.reset(); }, focus: () => current.focus() };
 }
 
 export function renderRequiredPassword(container, context) {
   clear(container);
   container.append(pageHeader("Password change required", "Your account requires a password change before the workspace can be used."));
   const password = passwordForm(context, true);
-  container.append(card("Secure your account", password.node, { kicker: "Required action" }));
+  const signOut = button("Sign out", "button button--ghost");
+  let active = true;
+  signOut.addEventListener("click", async () => {
+    if (signOut.disabled) return;
+    signOut.disabled = true;
+    try { await context.onLogout(); }
+    finally { if (active && context.isActive()) signOut.disabled = false; }
+  });
+  container.append(card("Secure your account", element("div", {}, [password.node, element("div", { className: "action-row" }, signOut)]), { kicker: "Required action" }));
   container.setAttribute("aria-busy", "false");
   password.focus();
-  return password.cleanup;
+  return () => { active = false; password.cleanup(); };
 }
 
 export function renderProfile(container, context) {

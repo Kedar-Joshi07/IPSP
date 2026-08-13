@@ -14,8 +14,7 @@ function storedPreference() {
 }
 
 function resolveTheme(value) {
-  const effective = value === "system" && configuredDefault !== "system" ? configuredDefault : value;
-  if (effective === "dark" || effective === "light") return effective;
+  if (value === "dark" || value === "light") return value;
   return mediaQuery?.matches ? "light" : "dark";
 }
 

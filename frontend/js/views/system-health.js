@@ -50,17 +50,21 @@ function renderDiagnostics(container, health, refresh) {
 
 export async function renderSystemHealth(container, context) {
   let loading = false;
+  let disposed = false;
+  const isActive = () => !disposed && context.isActive();
   const load = async () => {
-    if (loading) return;
+    if (loading || !isActive()) return;
     loading = true;
     clear(container); container.append(loadingState("Loading system diagnostics")); container.setAttribute("aria-busy", "true");
-    try { renderDiagnostics(container, await getSystemHealth(), load); }
+    try { const health = await getSystemHealth(context.signal); if (isActive()) renderDiagnostics(container, health, load); }
     catch (error) {
+      if (context.isRouteAbort(error) || !isActive()) return;
       if (context.handleAuthError(error)) return;
       clear(container);
       if (error?.status === 403) container.append(context.permissionState());
       else container.append(errorState("System diagnostics unavailable", context.safeError(error, "System diagnostics could not be loaded."), load));
-    } finally { loading = false; container.setAttribute("aria-busy", "false"); }
+    } finally { loading = false; if (isActive()) container.setAttribute("aria-busy", "false"); }
   };
   await load();
+  return () => { disposed = true; };
 }

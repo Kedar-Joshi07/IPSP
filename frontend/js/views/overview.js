@@ -35,11 +35,14 @@ function roadmapCard() {
 }
 
 export async function renderOverview(container, context) {
+  let disposed = false;
+  const isActive = () => !disposed && context.isActive();
   clear(container);
   container.append(loadingState("Loading platform overview"));
   container.setAttribute("aria-busy", "true");
   try {
-    const [readiness, jobResult] = await Promise.all([getReadiness(), listJobs(5, 0)]);
+    const [readiness, jobResult] = await Promise.all([getReadiness(context.signal), listJobs(5, 0, context.signal)]);
+    if (!isActive()) return () => { disposed = true; };
     clear(container);
     const identity = context.identity;
     const activeChecks = Object.keys(readiness.checks ?? {}).length;
@@ -70,10 +73,12 @@ export async function renderOverview(container, context) {
     container.append(element("section", { className: "grid grid--2" }, [card("Platform readiness", readinessBody, { kicker: "Live foundation state", trailing: badge(readiness.status) }), card("Session", sessionBody, { kicker: "Current identity" })]));
     container.append(element("section", { className: "grid grid--2" }, [recentJobsCard(jobResult.jobs, context), element("div", { className: "grid" }, [capabilitiesCard(), roadmapCard()])]));
   } catch (error) {
+    if (context.isRouteAbort(error) || !isActive()) return () => { disposed = true; };
     if (context.handleAuthError(error)) return;
     clear(container);
     container.append(errorState("Overview unavailable", context.safeError(error, "The platform overview could not be loaded."), () => context.refresh()));
   } finally {
-    container.setAttribute("aria-busy", "false");
+    if (isActive()) container.setAttribute("aria-busy", "false");
   }
+  return () => { disposed = true; };
 }

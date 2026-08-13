@@ -17,8 +17,8 @@ const identitySummary = document.querySelector("#identity-summary");
 const logoutButton = document.querySelector("#logout-button");
 const mobileMenu = document.querySelector("#mobile-menu-button");
 const navigationScrim = document.querySelector("#navigation-scrim");
-let renderingRoute = null;
 let loggingOut = false;
+let router = null;
 
 function safeError(error, fallback) {
   if (!(error instanceof ApiError)) return fallback;
@@ -54,7 +54,7 @@ async function performLogout() {
   finally { loggingOut = false; logoutButton.disabled = false; clearIdentity(); navigate("#/login"); }
 }
 
-function viewContext() {
+function viewContext(lifecycle) {
   return {
     identity: getState().identity,
     apiInfo: getState().apiInfo,
@@ -63,12 +63,15 @@ function viewContext() {
     handleAuthError,
     permissionState,
     takeFlash,
-    refresh: () => renderingRoute && void renderRoute(renderingRoute),
+    signal: lifecycle.signal,
+    isActive: lifecycle.isCurrent,
+    isRouteAbort: (error) => lifecycle.signal.aborted || error?.name === "AbortError",
+    refresh: () => router?.refresh(),
     onAuthenticated: (identity) => {
       setIdentity(identity);
       identitySummary.textContent = identity.display_name;
-      navigate(identity.must_change_password ? "#/profile" : "#/overview");
-      if (window.location.hash === "#/profile") void renderRoute({ key: "profile", title: "Profile" });
+      const changed = navigate(identity.must_change_password ? "#/profile" : "#/overview");
+      if (!changed) router?.refresh();
     },
     onPasswordChanged: () => {
       clearIdentity();
@@ -92,28 +95,30 @@ function updateShell(route) {
   closeNavigation();
 }
 
-async function renderRoute(route) {
-  renderingRoute = route;
+async function renderRoute(route, lifecycle) {
   const identity = getState().identity;
   if (!identity && route.key !== "login") { navigate("#/login"); return; }
+  let cleanup;
   if (identity?.must_change_password) {
     updateShell({ key: "profile", title: "Password change required" });
-    await renderRequiredPassword(main, viewContext());
+    cleanup = renderRequiredPassword(main, viewContext(lifecycle));
   } else if (identity && route.key === "login") {
     navigate("#/overview");
     return;
   } else {
     updateShell(route);
-    const context = viewContext();
-    if (route.key === "login") renderLogin(main, context);
-    else if (route.key === "overview") await renderOverview(main, context);
-    else if (route.key === "jobs") await renderJobs(main, context);
-    else if (route.key === "profile") renderProfile(main, context);
-    else if (route.key === "admin-system") await renderSystemHealth(main, context);
-    else renderNotFound(main, context);
+    const context = viewContext(lifecycle);
+    if (route.key === "login") cleanup = renderLogin(main, context);
+    else if (route.key === "overview") cleanup = await renderOverview(main, context);
+    else if (route.key === "jobs") cleanup = await renderJobs(main, context);
+    else if (route.key === "profile") cleanup = renderProfile(main, context);
+    else if (route.key === "admin-system") cleanup = await renderSystemHealth(main, context);
+    else cleanup = renderNotFound(main, context);
   }
+  if (!lifecycle.isCurrent()) return cleanup;
   const heading = main.querySelector("h1, h2");
   if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+  return cleanup;
 }
 
 async function bootstrap() {
@@ -127,7 +132,7 @@ async function bootstrap() {
   }
   try { setIdentity(await getCurrentUser()); }
   catch (error) { if (!(error instanceof ApiError && error.status === 401)) setFlash("warning", "The current session could not be checked safely."); }
-  startRouter(renderRoute);
+  router = startRouter(renderRoute);
 }
 
 logoutButton.addEventListener("click", performLogout);

@@ -9,4 +9,5 @@ export function renderNotFound(container, context) {
   state.append(action);
   container.append(state);
   container.setAttribute("aria-busy", "false");
+  return () => {};
 }
