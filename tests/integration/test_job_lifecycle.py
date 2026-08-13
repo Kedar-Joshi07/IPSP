@@ -10,8 +10,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from queue import Empty, Queue
 from threading import Barrier, Event, Lock, Thread, current_thread
 from threading import enumerate as enumerate_threads
+from typing import TextIO
 from uuid import uuid4
 
 import pytest
@@ -83,8 +85,13 @@ shutdown_started = time.monotonic()
 backend.shutdown()
 elapsed = time.monotonic() - shutdown_started
 snapshot = service.get_internal(job.job_id)
-print(json.dumps({"job_id": job.job_id, "status": snapshot.status.value, "elapsed": elapsed}))
 services.database_engine.dispose()
+print(json.dumps({
+    "job_id": job.job_id,
+    "status": snapshot.status.value,
+    "elapsed": elapsed,
+    "stage": "normal_cleanup_complete",
+}), flush=True)
 """
 
 _RECOVERY_CHILD = """
@@ -243,6 +250,91 @@ def _add_user(app: FastAPI, username: str) -> int:
         session.add(user)
         session.flush()
         return user.id
+
+
+def _read_pipe(
+    pipe: TextIO,
+    lines: list[str],
+    marker_queue: Queue[dict[str, object]] | None = None,
+) -> None:
+    for line in pipe:
+        lines.append(line)
+        if marker_queue is None:
+            continue
+        try:
+            candidate = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict) and candidate.get("stage") == "normal_cleanup_complete":
+            marker_queue.put(candidate)
+
+
+def _start_pipe_readers(
+    process: subprocess.Popen[str],
+    marker_queue: Queue[dict[str, object]],
+) -> tuple[list[str], list[str], tuple[Thread, Thread]]:
+    assert process.stdout is not None
+    assert process.stderr is not None
+    stdout_lines: list[str] = []
+    stderr_lines: list[str] = []
+    readers = (
+        Thread(
+            target=_read_pipe,
+            args=(process.stdout, stdout_lines, marker_queue),
+            name="blocked-worker-stdout-reader",
+            daemon=True,
+        ),
+        Thread(
+            target=_read_pipe,
+            args=(process.stderr, stderr_lines),
+            name="blocked-worker-stderr-reader",
+            daemon=True,
+        ),
+    )
+    for reader in readers:
+        reader.start()
+    return stdout_lines, stderr_lines, readers
+
+
+def _reap_with_pipe_readers(
+    process: subprocess.Popen[str],
+    readers: tuple[Thread, Thread],
+) -> None:
+    if process.poll() is None:
+        process.kill()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+    for reader in readers:
+        reader.join(timeout=2)
+    if process.stdout is not None:
+        process.stdout.close()
+    if process.stderr is not None:
+        process.stderr.close()
+
+
+def _communicate_and_reap(
+    process: subprocess.Popen[str],
+    *,
+    timeout: float,
+    timeout_message: str,
+) -> tuple[str, str]:
+    try:
+        return process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        stdout, stderr = process.communicate()
+        pytest.fail(f"{timeout_message}\nstdout:\n{stdout}\nstderr:\n{stderr}")
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
 
 
 def test_jobs_schema_is_exact_bounded_indexed_and_utc(
@@ -406,16 +498,29 @@ def test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers(
         stderr=subprocess.PIPE,
         text=True,
     )
+    marker_queue: Queue[dict[str, object]] = Queue(maxsize=1)
+    stdout_lines, stderr_lines, readers = _start_pipe_readers(blocked, marker_queue)
     try:
-        stdout, stderr = blocked.communicate(timeout=10)
-    except subprocess.TimeoutExpired:
-        blocked.kill()
-        blocked.communicate()
-        pytest.fail("Non-cooperative daemon worker prevented child process termination")
-    assert blocked.returncode == 0, stderr
-    blocked_result = json.loads(stdout.strip().splitlines()[-1])
+        try:
+            blocked_result = marker_queue.get(timeout=30)
+        except Empty:
+            pytest.fail(
+                "Blocked-worker child did not complete setup and normal cleanup within 30 seconds"
+            )
+        assert blocked_result["stage"] == "normal_cleanup_complete"
+        assert blocked_result["status"] == JobStatus.RUNNING.value
+        assert isinstance(blocked_result["elapsed"], (int, float))
+        assert blocked_result["elapsed"] < 0.5
+        try:
+            blocked.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            pytest.fail("Blocked daemon worker prevented process exit after normal cleanup")
+    finally:
+        _reap_with_pipe_readers(blocked, readers)
+    assert blocked.returncode == 0, "".join(stderr_lines)
+    assert stdout_lines
     assert blocked_result["status"] == JobStatus.RUNNING.value
-    assert blocked_result["elapsed"] < 0.5
+    assert isinstance(blocked_result["job_id"], str)
 
     recovered = subprocess.Popen(
         [
@@ -423,19 +528,18 @@ def test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers(
             "-c",
             _RECOVERY_CHILD,
             str(database_path),
-            blocked_result["job_id"],
+            str(blocked_result["job_id"]),
         ],
         cwd=PROJECT_ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
-    try:
-        recovery_stdout, recovery_stderr = recovered.communicate(timeout=10)
-    except subprocess.TimeoutExpired:
-        recovered.kill()
-        recovered.communicate()
-        pytest.fail("Fresh worker recovery child did not terminate")
+    recovery_stdout, recovery_stderr = _communicate_and_reap(
+        recovered,
+        timeout=10,
+        timeout_message="Fresh worker recovery child did not terminate",
+    )
     assert recovered.returncode == 0, recovery_stderr
     recovery_result = json.loads(recovery_stdout.strip().splitlines()[-1])
     assert recovery_result == {

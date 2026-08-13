@@ -3,8 +3,9 @@
 **Product:** Intelligent Predictive Simulation Platform (IPSP)  
 **Initial experience:** CampaignSim — Powered by IPSP  
 **Specification status:** v1.0 architecture frozen
-**Implementation status:** Phase 1J / v0.1.0 authenticated foundation workspace; Phase 1 remains in progress
+**Implementation status:** Phase 1 / v0.1.0 foundation accepted pending independent final review
 **Implementation releases:** v0.1.0 → v1.0.0
+**Next planned milestone:** v0.2.0 ingestion/storage/provenance — not started; blocked until independent Phase 1L.1 acceptance
 
 This repository contains the frozen specifications and the local-first IPSP application foundation.
 The current implementation provides typed configuration, environment-backed secret resolution,

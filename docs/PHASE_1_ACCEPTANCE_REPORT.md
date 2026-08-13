@@ -2,19 +2,22 @@
 
 ## Audit identity and decision
 
-- Audited SHA: `33a5901c67c706290c5f05087555dc315eff4cf4`
+- Original Phase 1L audited SHA: `33a5901c67c706290c5f05087555dc315eff4cf4`
+- Phase 1L.1 re-audit starting SHA: `d8c4db477f7d213516589658435be142a9dc9e89`
 - Target release: `v0.1.0`
 - Audit date: 2026-08-13
-- Scope: Phase 1A through Phase 1K foundation behavior, with Phase 1L limited to audit,
-  verification, and documentation.
-- Gate result: **FAIL**
-- Release recommendation: **Do not accept or release v0.1.0.** The mandatory full test suite
-  exposed a load-sensitive failure in the permanent-blocked-worker regression. The same complete
-  job-lifecycle module passed when run independently, so this is an acceptance-reproducibility
-  blocker rather than a confirmed production defect.
+- Scope: Phase 1A through Phase 1K foundation behavior, the original Phase 1L audit, and the
+  Phase 1L.1 acceptance-reproducibility hardening and re-audit.
+- Current gate result: **PASS**
+- Release recommendation: **Accept the v0.1.0 foundation pending independent final review.**
+  Phase 1L.1 traced the former `PHASE1L-B001` blocker to an aggregate test-harness deadline rather
+  than a confirmed production shutdown defect. The regression now measures normal setup/cleanup
+  and post-cleanup process exit separately, and every planned stability gate passed.
 - Next milestone: `v0.2 ingestion/storage/provenance — pending independent review`
 
-The implemented product boundary is the local-first foundation: configuration, SQLite and
+The original Phase 1L audit correctly failed after its mandatory full suite produced 215 passes and
+one load-sensitive subprocess timeout. That historical evidence is preserved below; Phase 1L.1 is
+the current decision. The implemented product boundary is the local-first foundation: configuration, SQLite and
 migrations, authentication, sessions, CSRF, permission-mapping RBAC, structured observability,
 durable audit, the single-process persistent job service, health surfaces, and the static
 HTML/CSS/Vanilla-JS workspace. Ingestion, dataset ACLs, semantic discovery, modelling, simulation,
@@ -33,12 +36,12 @@ claim that IPSP v1.0 is complete, and no v0.2 implementation was started.
 | F. CSRF | PASS | Logout, password change, job cancel, and job retry require the session-bound CSRF value; missing, mismatched, and cross-session values are rejected. GET routes remain CSRF-free, and raw values are excluded from responses/logs. |
 | G. RBAC | PASS | Server-side Role → RolePermission → Permission resolution is authoritative. Tests prove a mapped non-Admin can authorize, an Admin-named role without mapping is denied, DB authority is current, and the catalog is exactly 13 permissions. |
 | H. Observability / durable audit | PASS | Rotating structured JSONL logs and SQLite audit events preserve trace/request/session correlation and optional user/resolved-role context. Redaction, literal-message guards, safe exception handling, and request-to-log-to-audit correlation are tested. |
-| I. Persistent Job Service | BLOCKED | The exact status/type contracts, single jobs table, owner APIs, recovery, cancellation, retry, authority revocation, and shutdown behavior passed all 18 tests in `tests/integration/test_job_lifecycle.py` when isolated. In the mandatory full suite, `test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers` timed out waiting for its child process, so the required reproducible proof is blocked. |
+| I. Persistent Job Service | PASS | The exact status/type contracts, single jobs table, owner APIs, recovery, cancellation, retry, authority revocation, and shutdown behavior passed. The hardened blocked-worker regression passed 3/3 independently, all 18 lifecycle tests passed, and both planned 216-test suites passed. |
 | J. Health / operational diagnostics | PASS | Liveness, readiness, and permission-protected Admin diagnostics are distinct. Readiness covers the seven active dependencies with only analytical storage deferred. Admin health is sanitized, performs no remote probes, and truthfully reports backup as `never_run`. |
 | K. Frontend foundation | PASS | Static ES modules, semantic dark/light themes, System/Dark/Light preference, safe DOM construction, centralized same-origin API/CSRF handling, route generation/abort cleanup, truthful states, and no fake later-domain features are covered by deterministic tests and live QA. |
-| L. Integration / security proof | BLOCKED | The focused Phase 1K integration/security proof passed 3/3, including migration/startup, auth/jobs/health/audit, offline operation, containment, and safe error boundaries. The overall Phase 1 integration gate remains blocked because the mandatory full suite was not green. |
+| L. Integration / security proof | PASS | The Phase 1K integration/security proof passed 3/3, including migration/startup, auth/jobs/health/audit, offline operation, containment, and safe error boundaries. Both planned full-suite invocations and live browser acceptance also passed. |
 | M. Architecture / anti-contamination | PASS | Static sweeps and architecture tests found no benchmark fields/KPIs, RdF/BF/BF6 production logic, Streamlit, async SQLAlchemy, Redis/Celery, duplicate ORM/Alembic ownership, role-name authorization, or remote runtime dependency. CampaignSim remains branding only. |
-| N. Documentation / operational usability | PASS | README retains local setup, localhost cookie warning, Admin bootstrap, quality commands, single-process backend warning, offline behavior, and future-engine boundaries. Because this audit failed, README correctly remains at the pre-acceptance Phase 1 status. |
+| N. Documentation / operational usability | PASS | README retains local setup, localhost cookie warning, Admin bootstrap, quality commands, single-process backend warning, offline behavior, and future-engine boundaries. It now states that Phase 1/v0.1.0 is accepted pending independent final review and that v0.2 remains not started and blocked pending that acceptance. |
 
 ## V1 Acceptance Criteria — Phase 1 Classification
 
@@ -59,7 +62,7 @@ Every criterion from `docs/30_ACCEPTANCE_CRITERIA.md` appears exactly once below
 | 11 | Candidate grain, roles, relationships, hierarchies, lineage, sampling provenance produced. | DEFERRED_BY_ROADMAP | Profiling, provenance, and relationship discovery are later milestones. |
 | 12 | Unsafe joins are detected. | DEFERRED_BY_ROADMAP | Join analysis is not part of the foundation release. |
 | 13 | Semantic conflicts produce questions instead of silent assumptions. | DEFERRED_BY_ROADMAP | Semantic clarification is planned after data understanding. |
-| 14 | Unsupported capabilities are visibly disabled with reasons. | PASS | The workspace labels future capabilities as not implemented and exposes no fake actions. |
+| 14 | Unsupported capabilities are visibly disabled with reasons. | DEFERRED_BY_ROADMAP | Capability refusal/disablement belongs to the capability-discovery engine; static roadmap cards are not implementation evidence. |
 | 15 | At least one regression/classification/forecast or other predictive path can be validated on suitable data. | DEFERRED_BY_ROADMAP | Predictive validation is a later capability/model milestone. |
 | 16 | Deterministic what-if works without ML where formula semantics are confirmed. | DEFERRED_BY_ROADMAP | Simulation is not implemented in v0.1.0. |
 | 17 | Similarity/look-alike path is available only when appropriate. | DEFERRED_BY_ROADMAP | Capability discovery/modelling is later work. |
@@ -76,7 +79,7 @@ Every criterion from `docs/30_ACCEPTANCE_CRITERIA.md` appears exactly once below
 | 28 | Dynamic controls and results are metadata-driven. | DEFERRED_BY_ROADMAP | Metadata-driven product UI is later-roadmap work. |
 | 29 | Trace IDs propagate. | PASS | Middleware, error, log, audit, job, and integration tests preserve trace/request identifiers. |
 | 30 | Audit events use a non-secret `session_correlation_id` and high-volume runtime logs use an appropriate structured sink. | PASS | SQLite audit plus rotating JSONL runtime logging and correlation tests pass. |
-| 31 | Foundation job interfaces/schema cover status, progress, cancellation, retry, and safe errors without requiring Redis/Celery. | BLOCKED | Functional evidence passed in isolation, but the mandatory full suite exposed the load-sensitive permanent-blocked-worker timeout. |
+| 31 | Foundation job interfaces/schema cover status, progress, cancellation, retry, and safe errors without requiring Redis/Celery. | PASS | Functional, shutdown, recovery, owner/API, three-run blocker stability, lifecycle, and two-run full-suite evidence passed without Redis/Celery. |
 | 32 | Liveness, readiness, and authorized Admin diagnostics are separate and safe. | PASS | Distinct route/service contracts and permission/privacy tests pass. |
 | 33 | Audit/security/ML/LLM/simulation/export errors are logged safely. | DEFERRED_BY_ROADMAP | Foundation audit/security error safety exists; future ML/LLM/simulation/export paths do not yet exist. |
 | 34 | Run history supports re-run/reproduce. | DEFERRED_BY_ROADMAP | Run history belongs to later simulation/trust work. |
@@ -84,8 +87,8 @@ Every criterion from `docs/30_ACCEPTANCE_CRITERIA.md` appears exactly once below
 | 36 | PDF and Excel export from persisted Run Result Object. | DEFERRED_BY_ROADMAP | Export and the Run Result Object are later-roadmap work. |
 | 37 | Basic health and backup/restore are functional. | DEFERRED_BY_ROADMAP | Basic health is implemented; executable backup/restore remains intentionally deferred, with `never_run` reported truthfully. |
 
-Classification totals: **PASS 15**, **DEFERRED_BY_ROADMAP 21**, **NOT_APPLICABLE 0**,
-**BLOCKED 1**. Total: **37**.
+Classification totals: **PASS 15**, **DEFERRED_BY_ROADMAP 22**, **NOT_APPLICABLE 0**,
+**BLOCKED 0**. Total: **37**.
 
 ## Version and API inventory
 
@@ -145,20 +148,25 @@ runtime volume remains in rotating JSONL rather than being warehoused in SQLite.
 - One `DeclarativeBase`, one Alembic history root, synchronous SQLAlchemy, and no `create_all`
   runtime path were confirmed.
 - `pyproject.toml`, `requirements.lock`, migration files, ORM models, and the no-npm frontend state
-  were unchanged by Phase 1L. `pip check` reported no broken requirements.
-- A disposable clean install was not attempted after the mandatory suite had already blocked the
-  gate. The current locked environment passed dependency consistency checks; earlier phase evidence
-  remains historical rather than being represented as a new Phase 1L clean-install result.
+  were unchanged by Phase 1L.1. Current-environment `pip check` reported no broken requirements.
+- A disposable environment outside the repository installed the exact `requirements.lock`, then
+  installed IPSP with `--no-deps`; `ipsp` import, Settings/application construction at `0.1.0`, and
+  clean-environment `pip check` passed. The environment was removed afterward. The initial
+  sandboxed attempt lacked package-index candidates; the authorized network attempt passed.
 
 ## Jobs, health, and operational constraints
 
 The exact statuses remain `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`, and `CANCELLED`. The exact job
 types remain upload processing, profiling, relationship analysis, model training, synthetic
 fitting, simulation, report generation, backup, and restore. There is exactly one jobs table and no
-public generic submit API. Isolated lifecycle tests passed persistence, owner scoping, cancellation,
-retry, startup recovery, interrupted work, stale authority revocation, generation non-overlap, and
-bounded shutdown. `LocalJobBackend` remains a single-process constraint; distributed workers are
-future work.
+public generic submit API. Lifecycle tests passed persistence, owner scoping, cancellation, retry,
+startup recovery, interrupted work, stale authority revocation, generation non-overlap, and bounded
+shutdown. The blocked-worker child now flushes a `normal_cleanup_complete` JSON marker only after
+the persisted snapshot is read and the database engine is disposed. The parent allows 30 seconds
+for setup/protocol completion, preserves `backend.shutdown() < 0.5` seconds, then requires process
+exit within a dedicated 2-second post-marker bound. Reader threads, pipes, and both child processes
+are killed/reaped in failure-safe cleanup. `LocalJobBackend` remains a single-process constraint;
+distributed workers are future work.
 
 Liveness is minimal, readiness reports application/configuration/database/FK/migration/runtime-log/
 worker state, and rich diagnostics require `system.configure`. Live QA showed healthy sanitized
@@ -172,58 +180,63 @@ history/export, and no executable backup/restore workflow.
 
 ## Frontend and browser acceptance
 
-Live same-origin Chrome QA on an isolated migrated database verified:
+Live same-origin in-app browser QA on an isolated migrated database verified:
 
 - Admin login, Overview, Jobs empty state, Profile, and authorized System Health.
 - System, Dark, and Light choices resolving to light, dark, and light under the observed OS state.
 - An ordinary user receiving the safe `Permission required` state for System Health.
 - A required-password user remaining in `Password change required`; route navigation could not
   escape the guard, and Sign out returned to Login.
-- All 13 stylesheet/script assets loaded from `127.0.0.1`; desktop width had no horizontal
-  overflow. Existing Phase 1K browser evidence covers the 390-pixel layout, while deterministic
-  frontend tests cover responsive and route lifecycle contracts.
+- All 13 stylesheet/script assets loaded from `127.0.0.1`; desktop and 390-pixel layouts had no
+  horizontal overflow.
+- A rapid Jobs-to-Profile transition remained on Profile with no stale-route overwrite.
+- Application-origin browser warnings/errors: zero.
 
-Chrome reported three identical extension message-channel closure errors generated by the browser
-control extension. They contained no application exception, response data, stack trace, or secret;
-the application UI and requests completed normally. This tooling noise is recorded rather than
-misrepresented as a zero-console finding.
+The browser-control safety policy prohibits direct inspection of cookies and localStorage. Their
+boundaries remain proven by deterministic source/security tests: only the theme preference uses
+localStorage, identity remains memory-only, and the session cookie is HttpOnly/unavailable to
+application JavaScript. System-theme behavior also remains covered by deterministic tests.
 
 ## Test and quality evidence
 
 | Gate | Result |
 |---|---|
-| Full `pytest` suite | **FAIL** — 216 collected; 215 passed, 1 failed, 0 skipped, no warnings reported; 215.36 s. Failure: `tests/integration/test_job_lifecycle.py::test_noncooperative_daemon_worker_cannot_hold_child_process_and_recovers`; child `communicate(timeout=10)` expired. |
-| Complete job lifecycle module | PASS — 18 passed in 50.48 s. |
-| Focused Phase 1K modules | PASS — 3 passed in 11.96 s. |
+| Original Phase 1L full suite | **Historical FAIL** — 216 collected; 215 passed, 1 failed, 0 skipped, no warnings reported; 215.36 s. The blocked-worker child exceeded aggregate `communicate(timeout=10)`. |
+| Phase 1L.1 exact blocker run 1 | PASS — 1 passed in 16.75 s. |
+| Phase 1L.1 exact blocker run 2 | PASS — 1 passed in 9.35 s. |
+| Phase 1L.1 exact blocker run 3 | PASS — 1 passed in 9.54 s. |
+| Complete job lifecycle module | PASS — 18 passed in 22.67 s. |
+| Full suite run 1 | PASS — 216 passed, 0 failed, 0 skipped, 0 warnings in 130.17 s. |
+| Full suite run 2 | PASS — 216 passed, 0 failed, 0 skipped, 0 warnings in 93.01 s. |
+| Focused Phase 1K modules | PASS — 3 passed in 3.14 s. |
 | Compileall | PASS. |
 | Ruff lint | PASS. |
 | Ruff format check | PASS — 95 files already formatted. |
 | Strict mypy | PASS — 67 source files. |
 | `pip check` | PASS — no broken requirements. |
-| `git diff --check` before documentation | PASS. |
+| `git diff --check` | PASS. |
 | Alembic heads/current/check | PASS at `20260812_05`; no drift. |
-| Browser acceptance | Functional journeys PASS; extension-only console noise recorded above. |
-| Disposable clean install | Not attempted in Phase 1L after the blocking mandatory test result. |
+| Browser acceptance | PASS — required journeys, responsive layouts, same-origin assets, route freshness, zero application warnings/errors, and full cleanup. |
+| Disposable clean install | PASS — exact lock, project `--no-deps`, import/app construction, and `pip check`; temporary environment removed. |
 
-The isolated passes do not override the mandatory full-suite failure. Repeated execution merely to
-obtain a green run was intentionally avoided.
+All stability invocations were predeclared. No rerun-until-green loop was used.
 
 ## Blockers, defects, boundaries, and residue
 
-- Acceptance blocker `PHASE1L-B001`: under full-suite load, the non-cooperative daemon-worker child
-  process did not terminate within the regression's 10-second bound. The complete module passed
-  independently, making the evidence load-sensitive and non-reproducibly green.
+- Resolved acceptance blocker `PHASE1L-B001`: the prior aggregate 10-second deadline measured
+  interpreter startup, imports, construction, SQLite work, scheduling, shutdown, disposal, and
+  interpreter exit together. The two-stage protocol proved bounded shutdown and prompt process exit
+  after normal cleanup directly; 3/3 targeted runs and both full suites passed.
 - Production defects found: **None confirmed.** No production repair was authorized or made.
 - Production source changes: **None.** No API, schema, migration, dependency, frontend, or
   architecture change was made.
-- Prior-phase regression conclusion: Phase 1A–1K cannot be declared wholly green in this audit
-  because their aggregate full-suite gate failed once, notwithstanding 215 passing tests and green
-  focused Phase 1K/job reruns.
-- README remains unchanged. `docs/31_IMPLEMENTATION_PROGRESS.md` records Phase 1L as failed and
-  Phase 1/v0.1.0 as in progress.
+- Prior-phase regression conclusion: Phase 1A–1K remain green under two planned 216-test full-suite
+  runs plus focused Phase 1K and complete job-lifecycle reruns.
+- README and `docs/31_IMPLEMENTATION_PROGRESS.md` now state that Phase 1/v0.1.0 is accepted pending
+  independent final review and that v0.2 has not started and remains blocked pending that review.
 - The isolated browser database, logs, server output, QA users, and server processes were removed.
   No Git tag or release was created.
-- The user-owned untracked prompt remains unmodified. The only retained Phase 1L changes are this
-  report and the progress-log entry.
+- The user-owned Phase 1L.1 prompt remains unmodified and untracked. Retained changes are the
+  deterministic lifecycle regression plus acceptance documentation only.
 
-**Phase 1L: FAIL — v0.1.0 foundation not accepted; v0.2 blocked**
+**Phase 1L.1: PASS — v0.1.0 foundation ready for independent final acceptance; v0.2 remains blocked**

@@ -1,13 +1,13 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1K foundation integration and security consolidation complete. Phase 1L final acceptance audit failed; Phase 1/v0.1.0 remains in progress.**
+Application implementation: **Phase 1/v0.1.0 foundation accepted pending independent final review after Phase 1L.1 reproducibility hardening.**
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
-| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 IN PROGRESS (1K PASS; 1L FAIL)** | Final acceptance blocked by a load-sensitive permanent-blocked-worker regression timeout in the mandatory full suite |
+| Foundation/security/repo skeleton | v0.1.0 | **PHASE 1 COMPLETE — v0.1.0 foundation accepted pending independent final review** | Phase 1L.1 resolved the test-harness reproducibility blocker; v0.2 remains not started and blocked pending independent acceptance |
 | Ingestion/storage/provenance | v0.2.0 | NOT STARTED | Supported uploads + versioning tests |
 | Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
 | Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
@@ -17,6 +17,48 @@ Application implementation: **Phase 1K foundation integration and security conso
 | Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
 | Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
 | Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+
+## Phase 1L.1 — Acceptance Reproducibility Hardening
+
+- **Implementation Status:** COMPLETE (2026-08-13)
+- **Gate Result:** PASS; v0.1.0 foundation ready for independent final acceptance, with v0.2 not
+  started and still blocked pending that review
+- **Starting SHA:** `d8c4db477f7d213516589658435be142a9dc9e89`
+- **Original Blocker:** Phase 1L correctly failed when the blocked-worker subprocess exceeded one
+  aggregate `communicate(timeout=10)` deadline even though its complete lifecycle file subsequently
+  passed. No production defect had been confirmed
+- **Protocol Diagnosis:** The aggregate deadline combined Python startup, imports, service
+  construction, SQLite access, worker scheduling, handler start, bounded backend shutdown, normal
+  database disposal, and interpreter exit. It therefore did not isolate whether an abandoned daemon
+  worker could hold the process after cleanup
+- **Harness Correction:** The child now emits a flushed `normal_cleanup_complete` JSON marker only
+  after shutdown, persisted snapshot read, and database disposal. The parent permits 30 seconds for
+  setup/protocol completion, preserves the product assertion `backend.shutdown() < 0.5` seconds,
+  then applies a dedicated 2-second process-exit bound. Daemon pipe readers prevent blocking reads;
+  both subprocesses and their pipes are killed/reaped/closed in failure-safe cleanup
+- **Targeted Stability:** Three separately invoked exact blocker tests passed: 1/1 in 16.75 seconds,
+  1/1 in 9.35 seconds, and 1/1 in 9.54 seconds
+- **Lifecycle / Full-Suite Evidence:** The complete lifecycle module passed 18/18 in 22.67 seconds.
+  Planned full-suite run 1 passed 216/216 with zero failures/skips/warnings in 130.17 seconds; run 2
+  passed 216/216 with zero failures/skips/warnings in 93.01 seconds
+- **Focused / Security Evidence:** Phase 1K focused proof passed 3/3 in 3.14 seconds. Compileall,
+  Ruff lint/format, strict mypy, current `pip check`, diff check, and all prior auth/session/CSRF/
+  RBAC/redaction/outbound protections passed through the two complete suites
+- **Dependency / Schema Evidence:** A disposable environment installed the exact lock and project
+  `--no-deps`, imported IPSP, constructed Settings/application at `0.1.0`, and passed `pip check`
+  before removal. Alembic heads/current/check passed at `20260812_05`; FK enforcement and exactly
+  seven application/ORM tables were confirmed
+- **Browser / Hygiene Evidence:** Isolated live QA passed Admin, permission-denial,
+  required-password, themes, route freshness, desktop/390px overflow, same-origin assets, and zero
+  application warnings/errors. The Uvicorn process, port 8767 listener, QA database/logs, browser
+  tabs, and disposable environments were removed
+- **Classification Correction:** Criterion 14 is `DEFERRED_BY_ROADMAP`; criterion 31 is `PASS`.
+  Final totals are 15 PASS, 22 DEFERRED_BY_ROADMAP, 0 NOT_APPLICABLE, and 0 BLOCKED
+- **Production / Schema / Dependency Changes:** None. Only the lifecycle regression harness and
+  acceptance documentation changed; no architecture decision was added
+
+Phase 1/v0.1.0 is accepted pending independent final review. The next planned milestone remains
+v0.2.0 ingestion/storage/provenance, not started and blocked until that review accepts Phase 1L.1.
 
 ## Phase 1L — Final Phase 1 Acceptance Audit
 
