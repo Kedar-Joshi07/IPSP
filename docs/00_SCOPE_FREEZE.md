@@ -2,6 +2,17 @@
 
 This document freezes the architectural scope before implementation.
 
+## F-002 post-foundation authority
+
+For architecture and product-development decisions approved after formal acceptance of the v0.1.0
+foundation, [F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md) and the
+[Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
+are authoritative. Where older target-architecture wording conflicts, F-002 wins. Historical
+v0.1.0 implementation and acceptance facts remain unchanged.
+
+F-002 is frozen planned architecture until the relevant application milestones implement and
+accept it. It does not begin v0.2 or make any future capability operational.
+
 ## Product boundary
 
 IPSP v1.0 is a **structured-data understanding, predictive modelling, what-if simulation, validation, and explanation platform**. It is not a universal document AI system and not a domain-specific marketing simulator.

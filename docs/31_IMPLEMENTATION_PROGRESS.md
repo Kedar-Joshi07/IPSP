@@ -1,25 +1,54 @@
 # Implementation Progress
 
 Specification baseline: **IPSP v1.0 frozen**  
-Application implementation: **Phase 1 / v0.1.0: FORMALLY ACCEPTED — independent final review PASS.**
+Accepted application implementation: **Phase 1 / v0.1.0: FORMALLY ACCEPTED — independent final review PASS.**
 
-Next milestone: **v0.2.0: AUTHORIZED — NOT STARTED.** Authorization permits contract-freeze
-preparation; it does not mean implementation or contract freeze has started.
+Active reconciliation milestone: **v0.1.1: F-002 architecture authority and development roadmap
+freeze — IN PROGRESS.** F2-A is complete pending independent review; no F-002 runtime capability is
+implemented by this documentation milestone.
+
+Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
+authorize implementation start; the required v0.2 contract freeze has not started.
 
 | Milestone | Target app version | Status | Gate |
 |---|---|---|---|
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| Ingestion/storage/provenance | v0.2.0 | **AUTHORIZED — NOT STARTED** | Contract freeze not started; authorization is not implementation start |
-| Data understanding/relationships | v0.3.0 | NOT STARTED | Benchmark semantic profiles |
-| Semantic manifest/clarification | v0.4.0 | NOT STARTED | Versioned manifest + conflict workflow |
-| Capability/model validation | v0.5.0 | NOT STARTED | Baseline/model gates |
-| Simulation/trust/history | v0.6.0 | NOT STARTED | Reproducible runs + trust gate |
-| Dynamic frontend/light theme | v0.7.0 | NOT STARTED | UI acceptance |
-| Local LLM | v0.8.0 | NOT STARTED | Structured semantic provider tests |
-| Remote/hybrid LLM | v0.9.0 | NOT STARTED | Policy/privacy/budget tests |
-| Production-ready integration | v1.0.0 | NOT STARTED | Full acceptance suite |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-A COMPLETE, INDEPENDENT REVIEW PENDING** | Authority and roadmap frozen; implementation reconciliation not started |
+| Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
+| Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
+| Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
+| Metric & Formula Registry + Domain Experience foundation | v0.5.0 | NOT STARTED | Milestone contracts not frozen |
+| Capability Discovery + Engine/License Registry | v0.6.0 | NOT STARTED | Milestone contracts not frozen |
+| Core modelling + model lifecycle | v0.7.0 | NOT STARTED | Milestone contracts not frozen |
+| Simulation core + universal scenario/execution contracts | v0.8.0 | NOT STARTED | Milestone contracts not frozen |
+| Trust + Evidence + history + comparison | v0.9.0 | NOT STARTED | Milestone contracts not frozen |
+| Cross-Domain Composite intelligence | v0.10.0 | NOT STARTED | Milestone contracts not frozen |
+| Domain intelligence completion | v0.11.0 | NOT STARTED | Milestone contracts not frozen |
+| Learning + Outcome Reconciliation foundation | v0.12.0 | NOT STARTED | Milestone contracts not frozen |
+| Local AI | v0.13.0 | NOT STARTED | Milestone contracts not frozen |
+| Full dynamic product UI | v0.14.0 | NOT STARTED | Milestone contracts not frozen |
+| v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
+| First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
+
+## F2-A — Architecture Authority + Version / Development Roadmap Freeze
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** IN PROGRESS — F2-A authority/roadmap freeze
+- **Work package:** COMPLETE (2026-08-14), awaiting independent review
+- **Milestone state:** v0.1.1 IN PROGRESS; not accepted by completion of this work package alone
+- **Starting SHA:** `7fdfd1d97bc5d34ea29f2cb52e5c22bf2a7d5cfd`
+- **Architecture authority:** [`44_F002_ARCHITECTURE_FREEZE.md`](44_F002_ARCHITECTURE_FREEZE.md)
+- **Version and roadmap authority:**
+  [`45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md`](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
+- **Historical boundary:** Phase 1 / v0.1.0 remains formally accepted at foundation code SHA
+  `cd0dca48ded8d68f18e861f2427dfeb746d52ea7`; its audit evidence below is unchanged
+- **Change boundary:** documentation and agent-authority instructions only; no production code,
+  tests, migrations, schemas, or dependencies changed
+- **Following milestone:** v0.2.0 remains NOT STARTED; its contract freeze and implementation have
+  not begun
+- **Next gate:** independent review of F2-A before any F2-B reconciliation work
 
 ## Independent final review
 

@@ -23,13 +23,21 @@ Build the **Intelligent Predictive Simulation Platform (IPSP)** exactly as defin
 
 ## Source of truth priority
 
-1. Locked architectural decisions in `docs/00_SCOPE_FREEZE.md` and `docs/32_DECISION_LOG.md`.
-2. Explicit specifications under `docs/`.
-3. Structured contracts/schemas under future `schemas/`.
-4. Confirmed user/admin semantic metadata persisted by the application.
-5. Deterministic evidence from data profiling.
-6. LLM proposals.
-7. Benchmark narrative/commentary.
+1. `docs/44_F002_ARCHITECTURE_FREEZE.md` and
+   `docs/45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md` for post-v0.1.0 architecture and
+   product-development decisions.
+2. Locked architectural decisions in `docs/00_SCOPE_FREEZE.md` and `docs/32_DECISION_LOG.md`, with
+   accepted historical meanings preserved.
+3. Explicit specifications under `docs/`.
+4. Structured contracts/schemas under future `schemas/`.
+5. Confirmed user/admin semantic metadata persisted by the application.
+6. Deterministic evidence from data profiling.
+7. LLM proposals.
+8. Benchmark narrative/commentary.
+
+F-002 extends and supersedes conflicting older target-architecture wording. It does not make its
+planned capabilities implemented, does not rewrite the accepted v0.1.0 history, and does not
+authorize v0.2 implementation.
 
 If documents conflict, stop and record the conflict in `docs/33_OPEN_QUESTIONS.md` rather than guessing.
 

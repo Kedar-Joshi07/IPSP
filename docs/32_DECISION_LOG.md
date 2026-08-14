@@ -1,5 +1,17 @@
 # Architecture Decision Log
 
+## Post-v0.1.0 F-002 authority
+
+The [F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md) and
+[Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
+govern architecture and sequencing decisions approved after formal acceptance of the v0.1.0
+foundation. Where older target wording conflicts, F-002 wins. Existing D-001 through D-019 retain
+their historical meanings; F-002 decisions use distinct `F002-Dxxx` identifiers and do not rewrite
+accepted implementation history.
+
+F-002 capabilities remain planned until their owning milestones are implemented, tested,
+independently reviewed, and accepted.
+
 ## Locked decisions
 
 ### D-001 — Dataset-agnostic core

@@ -5,7 +5,14 @@ You are assisting with a production-oriented, dataset-agnostic predictive simula
 ## First principles
 
 - Read `AGENTS.md` and the relevant scoped instruction file before generating code.
-- Follow `docs/00_SCOPE_FREEZE.md`. Do not redesign locked architecture during implementation unless explicitly asked.
+- For post-v0.1.0 architecture and product-development decisions, read and follow
+  `docs/44_F002_ARCHITECTURE_FREEZE.md` and
+  `docs/45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md` before older target wording.
+- Continue to follow `docs/00_SCOPE_FREEZE.md` and `docs/32_DECISION_LOG.md` for their compatible
+  locked decisions and accepted history. Where older target wording conflicts, F-002 wins.
+- F-002 is planned architecture until implemented and accepted by its owning milestone; it does not
+  authorize v0.2 implementation or make a future capability operational.
+- Do not redesign locked architecture during implementation unless explicitly asked.
 - The backend package namespace is `ipsp`, never `campaign_*`, `marketing_*`, or benchmark-specific naming.
 - The frontend may use **CampaignSim — Powered by IPSP** as branding, but all behavior must be metadata driven.
 - The supplied `reference/Campaign_simulator_UI.html` is the canonical visual reference. Reuse its design language, not its hardcoded campaign assumptions.
