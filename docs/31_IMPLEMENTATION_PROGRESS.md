@@ -4,9 +4,10 @@ Specification baseline: **IPSP v1.0 frozen**
 Accepted application implementation: **Phase 1 / v0.1.0: FORMALLY ACCEPTED — independent final review PASS.**
 
 Active reconciliation milestone: **v0.1.1: F-002 Architecture Reconciliation — IN PROGRESS.** F2-A
-was independently accepted at SHA `2605325a357b372057bbf57fbab90be0f83ace1e`; F2-B core
-product/architecture reconciliation is complete pending independent review. No F-002 runtime
-capability is implemented by these documentation work packages.
+was independently accepted at SHA `2605325a357b372057bbf57fbab90be0f83ace1e`; F2-B was
+independently accepted at SHA `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`; F2-C semantic,
+metric, and Domain Experience contract freeze is complete pending independent review. No F-002
+runtime capability is implemented by these documentation work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -16,7 +17,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-B COMPLETE, INDEPENDENT REVIEW PENDING** | F2-A accepted at `2605325a357b372057bbf57fbab90be0f83ace1e`; F2-C must not begin before F2-B review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-C COMPLETE, INDEPENDENT REVIEW PENDING** | F2-B accepted at `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`; F2-D must not begin before F2-C review |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -33,10 +34,32 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
-## F2-B — Product / Core Architecture / Project Structure Reconciliation
+## F2-C — Data / Semantics / Metric & Formula / Domain Experience Contract Freeze
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
 - **Status:** COMPLETE (2026-08-14), awaiting independent review
+- **Starting and accepted F2-B SHA:** `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`
+- **Scope:** deterministic Data Intelligence Packet, Dataset Semantic Manifest, relationship/lineage
+  reconciliation, Metric & Formula Registry, Domain Experience Pack/Registry, and
+  CrossDomainSemanticGraph contracts
+- **New specifications:** [`46_METRIC_FORMULA_REGISTRY_SPEC.md`](46_METRIC_FORMULA_REGISTRY_SPEC.md)
+  and [`47_DOMAIN_EXPERIENCE_PACK_SPEC.md`](47_DOMAIN_EXPERIENCE_PACK_SPEC.md)
+- **Anti-contamination boundary:** registered Domain Experience knowledge is allowed only behind
+  versioned contracts; generic core and physical source schemas remain domain/benchmark agnostic
+- **Change boundary:** documentation only; no production code, tests, migrations, schemas,
+  dependencies, or lockfiles changed
+- **Validation evidence:** `git diff --check` PASS; 11 relative Markdown links resolve; tables and
+  fences PASS; no changed-file Mermaid block; exact nine-file scope PASS; fixed physical
+  domain-column requirement scan PASS; architecture conformance 13/13 PASS; full
+  unit/integration/security regression suite 216/216 PASS
+- **Following milestone:** v0.2.0 remains NOT STARTED
+- **Next gate:** independent review of F2-C before any F2-D work
+
+## F2-B — Product / Core Architecture / Project Structure Reconciliation
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** ACCEPTED (2026-08-14) — independent review PASS
+- **Accepted F2-B SHA:** `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`
 - **Starting and accepted F2-A SHA:** `2605325a357b372057bbf57fbab90be0f83ace1e`
 - **Scope:** project definition, product requirements, layered architecture, provider-neutral planned
   structure, glossary, open questions, and high-level SQLite/API ownership vocabulary
@@ -50,7 +73,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   tables and fences PASS; no changed-file Mermaid block; architecture conformance 13/13 PASS; full
   unit/integration/security regression suite 216/216 PASS
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent review of F2-B before any F2-C work
+- **Gate outcome:** F2-C authorized from accepted F2-B SHA
 
 ## F2-A — Architecture Authority + Version / Development Roadmap Freeze
 
