@@ -116,6 +116,8 @@ started, and a target requirement is not an implementation claim.
 - Exact evidence-access modes: `OFF`, `INTERNAL_ONLY`, `PUBLIC_WEB`, and `APPROVED_CONNECTORS`.
 - Internet/outbound policy, runtime consent, and SecretProvider references.
 - Engine/license registry policy and model lifecycle controls.
+- A factual runtime engine inventory that distinguishes architecture candidate, declared provider,
+  installed, available, healthy, and eligible states without fabricating package availability.
 - Logs, trace IDs, jobs, health, backup/retention, and safe actionable errors.
 
 ## Non-functional requirements
