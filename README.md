@@ -1,401 +1,585 @@
 # Intelligent Predictive Simulation Platform (IPSP)
 
-**Initial experience:** CampaignSim — Powered by IPSP  
-**Target specification:** v1.0
+IPSP is a domain-adaptive, dataset-agnostic, evidence-aware platform for responsible analysis, prediction, simulation, optimization, trust, and governed learning. Its purpose is to determine what structured data means; what can responsibly be analyzed, predicted, simulated, optimized, explained, compared, or learned from; and when a requested capability must be limited or refused.
 
-**Current accepted implementation:** Phase 1 / v0.1.0 foundation — **FORMALLY ACCEPTED** (independent Phase 1L.1 final review: **PASS**)
+| Status dimension | Current state |
+|---|---|
+| Current application implementation | **v0.1.0 — FORMALLY ACCEPTED** |
+| Development phase | **Phase 1 foundation complete** |
+| Independent review | **Phase 1L.1 final review: PASS** |
+| Accepted foundation code SHA | **cd0dca48ded8d68f18e861f2427dfeb746d52ea7** |
+| Latest architecture authority | **F-002 — FROZEN ARCHITECTURE / PLANNED, NOT IMPLEMENTED** |
+| Next planned application milestone | **v0.1.1 — F-002 Architecture Reconciliation, NOT STARTED** |
+| Following capability milestone | **v0.2.0 — Data Ingestion, Storage & Provenance, NOT STARTED** |
+| Target first General Availability release | **v1.0.0 — NOT RELEASED** |
 
-**Next milestone:** v0.2.0 ingestion/storage/provenance — **AUTHORIZED, NOT STARTED**
+> **Status boundary:** Labels such as **IMPLEMENTED** and **ACCEPTED** refer only to verified v0.1.0 foundation behavior. **FROZEN ARCHITECTURE / PLANNED** describes the owner-approved F-002 direction. It does not mean those capabilities exist in production. **DEFERRED** and **TENTATIVE POST-v1.0** identify work that is not required for the first General Availability release.
 
-IPSP is a local-first, dataset-agnostic platform intended to turn previously unseen structured business data into evidence-backed analytical, predictive, and simulation capabilities. Instead of forcing every dataset into a fixed schema or preselected model, IPSP is designed to profile the data, establish its meaning and relationships, ask focused questions where evidence is insufficient, validate what the data can responsibly support, and build the user experience from those validated capabilities. The current v0.1.0 release is the secure application foundation for that target product; it does not yet ingest or model datasets.
+## Product identity
 
-> **Status boundary:** Sections labeled **Implemented now — v0.1.0** describe production code that exists in this repository. Sections labeled **Target v1.0 architecture** describe frozen specifications and planned milestones, not current runtime functionality.
+The product and generic application identity is **Intelligent Predictive Simulation Platform (IPSP)**. CampaignSim is the historical prototype and visual reference: its card language, badges, navigation patterns, stepper, dark/light treatment, responsive behavior, and interaction style remain useful design inputs. It is not the platform identity, a source of analytical truth, or an owner of the core architecture. A future Marketing Domain Experience may use suitable marketing terminology without turning IPSP into a marketing-specific product.
+
+The shipped v0.1.0 static frontend still contains prototype-origin branding in its markup. Neutral IPSP shell reconciliation is planned for v0.1.1; this README does not claim that code change has already occurred.
+
+## Architecture and versioning status
+
+F-002 is an architecture-freeze identifier, not an application version and not shorthand for v2.0. Four kinds of version/status identifiers coexist:
+
+| Identifier | Meaning | Example |
+|---|---|---|
+| Architecture freeze | Owner-approved product and technical direction | F-002 |
+| Application version | Semantically versioned shipped application state | v0.1.0, v0.5.0, v1.0.0 |
+| Development phase/work package | A bounded implementation or review activity | Phase 1, milestone workstreams |
+| Contract version | Compatibility version of a specific interface or persisted contract | /api/v1, Semantic Manifest version, Domain Experience contract version |
+
+Before GA, v0.x.0 identifies an accepted capability milestone, while v0.x.y identifies a compatibility, correction, or reconciliation patch. After GA, v1.x represents backward-compatible capability growth. v2.0 is reserved for a meaningful breaking compatibility change and is not pre-assigned to a feature set.
+
+F-002 supersedes conflicting older wording for this README. The linked specifications remain useful predecessor authorities but have not all been reconciled to F-002 yet; links below do not imply otherwise. The current locked baseline is documented in [Scope Freeze](docs/00_SCOPE_FREEZE.md) and [Decision Log](docs/32_DECISION_LOG.md), with later reconciliation to occur in dedicated tasks.
 
 ## The problem IPSP solves
 
-Most analytics and simulation applications assume a known schema, fixed KPIs, predetermined controls, and one domain story. That approach breaks when a new dataset uses different grain, units, time semantics, identifiers, relationships, missing-value conventions, outcome definitions, or business rules. It can also create unsafe behavior: multiplying measures through a join, treating post-outcome fields as predictors, inventing a KPI definition, exposing an identifier as a scenario control, or presenting association as causation.
+Fixed-schema analytics and simulators begin with a domain story, predefined columns, static KPIs, fixed controls, and a preferred model. That approach fails when datasets differ in grain, time semantics, units, currencies, identifiers, relationships, missing-value conventions, outcome definitions, observation maturity, or business rules. It can multiply measures through unsafe joins, use post-outcome fields as predictors, invent formulas, expose identifiers as controls, treat assumptions as observations, or present prediction as causation.
 
-IPSP starts from a different question:
+IPSP begins with a different question:
 
 > Rather than asking “how do we make this dataset fit a simulator?”, IPSP asks “what can this dataset responsibly support?”
 
-The target product is useful when teams have structured data but do not yet have a trustworthy analytical contract. It is designed to discover semantics and capabilities from evidence, support safe modelling and simulation only after validation, refuse unsupported requests with reasons, and make every accepted result repeatable and governed. A previously unseen dataset should not require benchmark-specific production code.
+A previously unseen dataset should be understood through evidence and explicit contracts, not benchmark-specific production branches. Refusal is a product capability: when semantics, data support, licensing, evidence, or Trust gates fail, IPSP should explain why the capability is limited, disabled, blocked, or unavailable.
 
-## Product definition and non-goals
+## Product definition
 
-The target lifecycle is:
+IPSP targets structured/tabular data and a local-first operating model. It profiles and versions data, builds a semantic contract, activates relevant Domain Experiences, discovers supportable capabilities, selects valid models and providers, runs supported simulations, evaluates Trust and evidence, preserves results and lineage, and learns only through governed reconciliation.
 
-```text
-DATA → UNDERSTANDING → SEMANTIC CONTRACT → CAPABILITY DISCOVERY
-     → MODEL VALIDATION → DYNAMIC UI → SIMULATION → TRUST GATE
-     → RESULTS / HISTORY / EXPORT
-```
-
-IPSP v1.0 focuses on structured/tabular inputs: CSV/TSV, XLSX, Parquet, JSON/JSONL, and supported archives containing those formats. It is not:
-
-- a universal document, image, audio, or unstructured-corpus AI system;
-- a marketing-specific simulator—CampaignSim is the initial experience and visual identity only;
-- a guarantee of causal inference from observational data;
-- an autonomous system that invents or executes arbitrary joins without grain/cardinality checks;
-- a system that lets an LLM execute generated code against raw datasets;
-- a system where LLM prose becomes truth without schemas, deterministic evidence, and validation.
-
-The frozen product boundary is defined in [Scope Freeze](docs/00_SCOPE_FREEZE.md), [Project Specification](docs/01_PROJECT_SPEC.md), and [Product Requirements](docs/02_PRODUCT_REQUIREMENTS.md).
-
-## Current implementation versus target v1.0
-
-This table is the quickest way to distinguish repository reality from roadmap design.
-
-| Area | v0.1.0 status | Target v1.0 | Deep dive |
-|---|---|---|---|
-| Foundation/runtime | **Implemented:** Python 3.11+, FastAPI factory, typed settings, safe errors, offline static application | Portable local-first application foundation for all engines | [Architecture](docs/03_ARCHITECTURE.md) |
-| Authentication/RBAC | **Implemented:** users, roles, 13 permissions, Argon2id, opaque sessions, CSRF, lockout, bootstrap | Dataset/project/column-aware authorization and administration | [Security/RBAC](docs/18_SECURITY_RBAC_SPEC.md) |
-| Jobs | **Implemented:** persistent generic jobs and single-process daemon workers | Provider abstraction capable of later distributed execution | [Jobs](docs/24_JOB_PROCESSING_SPEC.md) |
-| Observability/audit | **Implemented:** structured rotating JSONL logs, trace/request/session correlation, durable audit events | Trace all data, ML, LLM, simulation, export, and security operations | [Observability](docs/22_OBSERVABILITY_AUDIT_SPEC.md) |
-| Health | **Implemented:** liveness, readiness, authorized rich diagnostics | Diagnostics spanning storage, engines, providers, models, and backup | [System Health](docs/37_SYSTEM_HEALTH_SPEC.md) |
-| Frontend shell | **Implemented:** Login, Overview, Jobs, Profile, System Health; System/Dark/Light themes | Full metadata-driven dataset and simulation workspace | [UI/UX](docs/05_UI_UX_SPEC.md) |
-| Ingestion/storage | **Not implemented** | Secure staging, validation, immutable originals, canonical Parquet, version metadata | [Ingestion](docs/20_INGESTION_STORAGE_SPEC.md) |
-| Data understanding | **Not implemented** | Deterministic profiles, grain/role/time/unit/sensitivity evidence | [Data Understanding](docs/07_DATA_UNDERSTANDING_SPEC.md) |
-| Semantics | **Not implemented** | Versioned Dataset Semantic Manifest plus clarification workflow | [Semantic Model](docs/08_SEMANTIC_MODEL_SPEC.md) |
-| Relationships/lineage | **Not implemented** | Structural, temporal, hierarchy, dependency, lineage, and join-safety analysis | [Relationships](docs/09_RELATIONSHIPS_HIERARCHY_LINEAGE_SPEC.md) |
-| Capability discovery | **Not implemented** | Discover, validate, enable, limit, disable, or refuse capabilities | [Capabilities](docs/11_CAPABILITY_DISCOVERY_SPEC.md) |
-| Modelling/model registry | **Not implemented** | Baselines, candidate routing, leakage-safe validation, champion/challenger registry | [Modelling](docs/12_MODELING_ENGINE_SPEC.md) |
-| Simulation | **Not implemented** | Predictive, deterministic, benchmark, Monte Carlo, and synthetic-context scenarios | [Simulation](docs/14_SIMULATION_ENGINE_SPEC.md) |
-| Trust | **Not implemented** | Independent data/semantic/model/support/constraint/privacy validation | [Trust](docs/15_TRUST_AND_VALIDATION_SPEC.md) |
-| LLM | **Policy/provider boundaries only; no LLM execution** | Optional ML-only, local, remote, and hybrid semantic assistance | [LLM Architecture](docs/16_LLM_ARCHITECTURE.md) |
-| History/reproducibility | **Not implemented** | Re-run, exact reproduce, compare, immutable lineage, seeds/configuration | [History](docs/26_SIMULATION_HISTORY_REPRODUCIBILITY.md) |
-| Reports/exports | **Not implemented** | PDF and Excel from persisted Run Result Objects | [Reporting](docs/25_REPORTING_EXPORT_SPEC.md) |
-| Backup/restore | **Health reports `never_run`; execution not implemented** | Audited, checksum-validated manual backup and restore | [Backup/Recovery](docs/36_BACKUP_RETENTION_RECOVERY.md) |
-
-## End-to-end target lifecycle
-
-The full product lifecycle is planned as one evidence-preserving chain:
+The canonical F-002 lifecycle is:
 
 ```mermaid
 flowchart TD
-  L[Login] --> W[Workspace]
-  W --> U[Upload + business context]
-  U --> SEC[Secure staging and validation]
-  SEC --> VER[Immutable dataset and version]
-  VER --> PROF[Deterministic profiling]
-  PROF --> DIP[Data Intelligence Packet]
-  DIP --> SEM[Semantic proposal]
-  SEM --> Q{Clarification required?}
-  Q -- Yes --> CONF[User/Admin confirmation]
-  Q -- No --> MAN[Versioned Semantic Manifest]
-  CONF --> MAN
-  MAN --> CAP[Capability discovery]
-  CAP --> VAL[Model or engine validation]
-  VAL --> UI[Dynamic controls and results contract]
-  UI --> SIM[Simulation job]
-  SIM --> TRUST[Trust validation]
-  TRUST --> RES[Persisted Run Result Object]
-  RES --> HIST[History / compare / re-run / reproduce]
-  RES --> EXP[PDF / Excel]
+  DATA[Data] --> UNDERSTAND[Understanding]
+  UNDERSTAND --> SEM[Semantic Contract]
+  SEM --> DOMAIN[Domain / Cross-Domain Activation]
+  DOMAIN --> CAP[Capability Discovery]
+  CAP --> ANALYZE[Analysis / Diagnosis]
+  ANALYZE --> SELECT[Model + Engine Selection]
+  SELECT --> SIM[Simulation / Optimization]
+  SIM --> TRUST[Trust + Evidence]
+  TRUST --> RESULT[Results / Comparison]
+  RESULT --> MEMORY[Scenario & Experience Memory]
+  MEMORY --> LEARN[Governed Learning]
+  LEARN --> FUTURE[Better Future Models / Local AI]
+  CAP -->|Unsupported| REFUSE[Limit / Disable / Block / Refuse]
 ```
 
-See [End-to-End Lifecycle](flows/20_END_TO_END_LIFECYCLE.md) and [Dataset Onboarding](flows/02_DATASET_ONBOARDING.md). Everything from upload onward is target functionality scheduled after v0.1.0.
+Not every dataset traverses every branch. Capability discovery may stop the path, request clarification, or expose only descriptive functions.
 
-## Architecture overview
+## Non-goals
 
-The locked architecture separates presentation, application services, data intelligence, quantitative engines, independent validation, and durable results:
+IPSP is not:
+
+- a dashboard generator;
+- a fixed Marketing or Finance simulator;
+- an AutoML wrapper;
+- an LLM chatbot;
+- a synthetic-data generator;
+- a financial calculator;
+- a tool that assumes every dataset matches a predefined schema;
+- a system that fabricates unsupported relationships or arbitrary joins;
+- a system where prediction is presented as causation;
+- a system where an LLM has numerical authority;
+- a system where simulated or synthetic outcomes automatically become empirical truth;
+- a universal raw document, image, audio, or unstructured-text platform;
+- a platform that permits arbitrary LLM-generated code to execute against raw datasets.
+
+## Implemented today versus target v1.0
+
+| Area | Current v0.1.0 evidence | F-002 target |
+|---|---|---|
+| Runtime/API | **IMPLEMENTED:** Python 3.11+, FastAPI factory, typed Pydantic settings, safe errors, static application | Full capability-driven API and application services |
+| Control plane | **IMPLEMENTED:** synchronous SQLAlchemy 2.x, SQLite, one Alembic history, seven application tables | Versioned project, dataset, semantic, metric, engine, model, run, evidence, and learning metadata |
+| Authentication/RBAC | **IMPLEMENTED:** Argon2id, opaque server sessions, CSRF, lockout, Admin/User roles backed by 13 permissions | Dataset/project/column policy and runtime-consent governance |
+| Secrets/outbound | **IMPLEMENTED:** SecretProvider boundary, environment provider, deny-by-default OutboundPolicy | Provider, evidence-access, consent, and transmission governance |
+| Jobs | **IMPLEMENTED:** generic persistent jobs, JobBackend abstraction, LocalJobBackend | Alternative provider implementations when justified |
+| Observability/audit | **IMPLEMENTED:** structured rotating JSONL, trace/request/session correlation, durable audit | End-to-end data, model, engine, evidence, simulation, export, and learning traces |
+| Health | **IMPLEMENTED:** liveness, readiness, authorized rich diagnostics | Diagnostics for analytical storage and registered engines/providers |
+| Frontend foundation | **IMPLEMENTED:** offline HTML/CSS/Vanilla-JS shell, Login, Overview, Jobs, Profile, System Health, themes | Neutral IPSP identity and full capability-driven workspace |
+| Ingestion/storage | **NOT IMPLEMENTED** | Structured upload, staging, validation, versioning, originals, canonical Parquet, provenance |
+| Understanding/semantics | **NOT IMPLEMENTED** | Deterministic profiling, Dataset Semantic Manifest, clarification, relationship/grain checks |
+| Metric & Formula Registry | **NOT IMPLEMENTED** | Versioned semantic metrics and formula computation with lineage |
+| Domain Experiences | **NOT IMPLEMENTED** | Registered domain-neutral experience packs and dynamic activation |
+| Cross-domain graph | **NOT IMPLEMENTED** | CrossDomainSemanticGraph with validated entity/time/grain/unit/currency relations |
+| Capability discovery | **NOT IMPLEMENTED** | Evidence-first enable/limit/disable/block/refuse decisions |
+| Engine/license resolution | **NOT IMPLEMENTED** | EngineRegistry, LicenseRegistry, and EngineResolver |
+| Modelling | **NOT IMPLEMENTED** | Baselines, leakage-safe validation, registry, champion/challenger lifecycle |
+| Simulation | **NOT IMPLEMENTED** | DATA_BASED, MIXED, and INTENT_BASED simulation using CompositeSimulationGraph |
+| Trust/evidence | **NOT IMPLEMENTED** | Independent Trust and Evidence Profile evaluation |
+| Results/learning | **NOT IMPLEMENTED** | History, compare, re-run, reproduce, exports, SimulationLearningStore, outcome reconciliation |
+| LLM providers | **NOT IMPLEMENTED:** policy boundaries only | Optional local assistance; remote/hybrid remain governed and are not required for v1.0 |
+
+The accepted foundation and historical evidence are recorded in [Implementation Progress](docs/31_IMPLEMENTATION_PROGRESS.md) and [Phase 1 Acceptance Report](docs/PHASE_1_ACCEPTANCE_REPORT.md).
+
+## F-002 architecture overview
 
 ```mermaid
 flowchart TD
-  UI[HTML / CSS / Vanilla JS] --> API[FastAPI API]
-  API --> AUTH[Authentication and permission-mapped RBAC]
-  AUTH --> APP[Application services]
-  APP --> JOB[Background jobs]
-  APP --> ING[Ingestion / Understanding / Semantics / Capability]
-  ING --> MOD[Models / Simulation / Explainability]
-  MOD --> TRUST[Trust and Validation]
-  TRUST --> RES[Results / History / Exports]
-  SQL[(SQLite control and knowledge plane)] --- AUTH
-  SQL --- JOB
-  SQL -. target metadata .- ING
-  DATA[(Source / Parquet analytical plane)] -. target .- ING
-  OBS[Permissions / privacy / outbound / secrets / versioning / observability / errors] -. cross-cutting .-> API
-  OBS -.-> ING
-  OBS -.-> MOD
+  UI[Adaptive Frontend] --> API[FastAPI / API]
+  API --> GOV[Authentication / RBAC / Policy / Consent]
+  GOV --> INGEST[Ingestion + Storage]
+  INGEST --> DU[Data Understanding]
+  DU --> SEM[Semantic + Metric Layer]
+  SEM --> DOMAIN[Domain Experience Activation]
+  DOMAIN --> CROSS[Cross-Domain Composition]
+  CROSS --> CAP[Capability Discovery]
+  CAP --> SCEN[Scenario + Evidence]
+  SCEN --> RESOLVE[Engine & License Resolver]
+  RESOLVE --> GRAPH[Composite Simulation Graph]
+  GRAPH --> TE[Trust + Evidence Profile]
+  TE --> OUT[Results / Compare / History / Export]
+  OUT --> LR[Learning / Reconciliation]
+  LR --> IMPROVE[Model & Local-AI Improvement]
+  CONTROL[(SQLite Control Plane)] --- GOV
+  CONTROL --- SEM
+  CONTROL --- RESOLVE
+  CONTROL --- OUT
+  DATA[(Source + Parquet Data Plane)] --- INGEST
+  DATA --- DU
+  DATA --- GRAPH
 ```
 
-FastAPI routers own HTTP concerns and remain thin. Services own policy and workflows, repositories own database access, SQLAlchemy models have one canonical home, and Pydantic models define API/provider contracts. Cross-cutting controls—permissions, privacy, outbound policy, secrets, versioning, background jobs, structured events, trace IDs, and safe error envelopes—apply across engine boundaries. See [System Architecture](docs/03_ARCHITECTURE.md) and [Architecture Flow](flows/01_SYSTEM_ARCHITECTURE.md).
+Security, privacy, outbound controls, secrets, jobs, observability, provenance, licensing, and reproducibility are cross-cutting. Production services depend on IPSP contracts rather than vendor implementations. See the predecessor [System Architecture](docs/03_ARCHITECTURE.md) and [System Flow](flows/01_SYSTEM_ARCHITECTURE.md).
 
 ## Storage architecture
 
-### SQLite control/knowledge plane
+The two-plane rule remains frozen:
 
-SQLite is the local control plane, not the warehouse for millions of analytical rows. In v0.1.0 it stores security identities and mappings, hashed session state, generic jobs, and durable audit events. The target schema extends it with project/dataset/version metadata, semantic manifests, capabilities, model registry records, run lineage, policies, configuration references, and backup metadata.
+- **SQLite control/governance/knowledge plane:** identities, permissions, configuration references, metadata, semantic and metric contracts, registry records, runs, jobs, evidence, audit, and learning eligibility.
+- **Source + Parquet analytical plane:** immutable originals, canonical structured datasets, analytical views, training references, and simulation artifacts.
 
-### Source/Parquet analytical plane
+SQLite is not the warehouse for millions of analytical rows. Target analytical views require versioned references and validated join plans. See [Architecture](docs/03_ARCHITECTURE.md), [SQLite Schema](docs/27_SQLITE_SCHEMA_SPEC.md), and [Storage Planes](flows/12_STORAGE_PLANES.md).
 
-The target analytical plane preserves immutable source uploads and canonical, versioned Parquet or source-backed analytical views. Profiling, training, and simulation operate from these references rather than copying full analytical datasets into SQLite. Multi-table data is not flattened by default; materialized views require a validated join plan and known output grain.
+## Data onboarding, versioning, and provenance
 
-This division keeps local governance simple while allowing columnar analytical workloads to scale. See [Storage Planes](flows/12_STORAGE_PLANES.md), [Ingestion and Storage](docs/20_INGESTION_STORAGE_SPEC.md), and [SQLite Schema](docs/27_SQLITE_SCHEMA_SPEC.md).
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** The planned pipeline is authorization → allowlist/limits → generated internal name → signature/archive/path checks → staging or quarantine → parser validation → canonicalization → immutable original → Parquet and metadata registration. CSV/TSV, XLSX, Parquet, JSON/JSONL, and supported archives are target structured inputs.
 
-## Dataset onboarding and versioning — target v0.2+
+Datasets and versions retain source identity, checksum, table/sheet structure, sampling role, original coverage where known, transformations, and artifact lineage. Multi-table data is not flattened by default. See [Ingestion and Storage](docs/20_INGESTION_STORAGE_SPEC.md), [Sampling and Provenance](docs/21_SAMPLING_PROVENANCE_SPEC.md), and [Dataset Onboarding](flows/02_DATASET_ONBOARDING.md).
 
-The planned onboarding pipeline performs authorization, size/type allowlisting, generated internal naming, signature/MIME checks where practical, archive traversal defense, staging or quarantine, parser validation, canonicalization, immutable original preservation, checksum capture, and metadata registration.
+The conceptual provenance families are:
 
-A logical dataset has immutable versions. Each version records its source artifact, checksum, source format, table/sheet structure, provenance, and canonical analytical references. CSV/TSV, XLSX, Parquet, JSON/JSONL, and ZIP containers of supported files are the v1.0 target formats. A workbook may contain several tables plus narrative; actual tabular regions must be detected, and commentary must not silently become records. Multi-table metadata preserves per-table grain and validated relationships rather than flattening everything by default.
+- OBSERVED_DATA
+- DERIVED_DATA
+- ORGANIZATION_CONFIG
+- DOMAIN_CATALOG
+- USER_ASSUMPTION
+- PRIOR_IPSP_RUN
+- OBSERVED_OUTCOME
+- CURATED_BENCHMARK
+- EXTERNAL_EVIDENCE
+- LOCAL_KNOWLEDGE_BASE
+- LLM_PROPOSAL
+- SYNTHETIC_DATA
 
-Sampling provenance distinguishes full data, random or stratified samples, time-window samples, filtered subsets, aggregated extracts, and unknown provenance. A small sample can reveal schema and semantic candidates without proving population balance, seasonality, or model sufficiency. See [Sampling and Provenance](docs/21_SAMPLING_PROVENANCE_SPEC.md).
+Synthetic datasets must identify generator, provider, version, seed, configuration, quality evaluation, and privacy evaluation. They may support privacy-safe development, augmentation, sparse-region exploration, stress testing, robustness analysis, or simulation, but synthetic records never automatically become observed truth.
 
-## Data Understanding Engine — target v0.3+
+## Data Understanding and semantic contracts
 
-Deterministic profiling comes before semantic or LLM interpretation. The target evidence packet includes:
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Deterministic profiling establishes physical and logical types, missingness and sentinels, cardinality, distributions, dates, candidate identifiers and grain, entity scope, dimensions/measures, units/currencies, sensitivity, time availability, functional dependencies, and sampling-aware evidence. Names are evidence, never sufficient authority.
 
-- physical and logical types, null/blank/sentinel behavior, cardinality, uniqueness, distributions, quantiles, outliers, date coverage, gaps, and minimal examples;
-- candidate grain, identifiers, entities, keys, dimensions, measures, targets, controls, context, time, units/currencies, and sensitive or quasi-identifying fields;
-- correlations or rank associations where meaningful, mutual information, categorical association, and functional-dependency candidates;
-- key/foreign-key and hierarchy proposals, temporal ordering, semantic redundancy, and feature lineage;
-- join cardinality and multiplication risk, observation maturity, prediction-horizon availability, and leakage candidates.
+The **Dataset Semantic Manifest** remains the versioned contract for fields, grain, entities, relationships, roles, time, units, lineage, constraints, metrics, capabilities, provenance, conflicts, and confirmations. The order is deterministic evidence → structured proposal → validation → targeted confirmation where ambiguous → persistence. LLM confidence alone never establishes semantics.
 
-Names are only one evidence source. IPSP must combine values, distributions, descriptions, related fields, temporal availability, lineage, and confirmations; it must never rely on a column name alone. The profiler produces a compact Data Intelligence Packet for rules and optional LLM review, not a wholesale copy of the raw dataset. See [Data Understanding](docs/07_DATA_UNDERSTANDING_SPEC.md) and [Data Intelligence Packet](flows/03_DATA_INTELLIGENCE_PACKET.md).
+See [Data Understanding](docs/07_DATA_UNDERSTANDING_SPEC.md), [Semantic Model](docs/08_SEMANTIC_MODEL_SPEC.md), [Data Intelligence Packet](flows/03_DATA_INTELLIGENCE_PACKET.md), and [Semantic Clarification](flows/04_SEMANTIC_CLARIFICATION.md).
 
-## Semantic Model Engine — target v0.4+
+## Relationships, grain, hierarchy, and lineage
 
-The Dataset Semantic Manifest is the versioned contract consumed downstream. It can describe entities, identifiers, dimensions, measure families, targets, controllable inputs, non-controllable context, time and calendars, events, states, hierarchies, relationships, KPIs, derived measures, constraints, attribution rules, provenance, sensitivity, lineage, and availability relative to a prediction horizon.
+Structural, identity, temporal, lifecycle, journey, hierarchy, measure-dependency, plan/actual, and commercial-flow relationships require explicit semantics. Each relationship carries direction, cardinality, time and selection rules, evidence, and support state. Feature lineage records derivation, transformation, binning, aggregation, canonicalization, and temporal availability.
 
-Semantic conclusions combine deterministic evidence, supplied descriptions, relationship consistency, prior confirmed metadata, and optional structured LLM proposals. Raw LLM confidence is never final confidence. When descriptions and data behavior conflict, IPSP creates a conflict and asks a targeted question; it does not silently reconcile them. Confirmed answers and evidence produce a new manifest version. See [Semantic Model](docs/08_SEMANTIC_MODEL_SPEC.md) and [Semantic Clarification](flows/04_SEMANTIC_CLARIFICATION.md).
+Before a join, IPSP must validate entity grain, aggregation grain, cardinality, and measure multiplication risk. It must never directly aggregate a one-side measure after a one-to-many join without a safe transformation. Ordered journeys are not forced into strict monotonic funnels when cohorts, units, re-entry, or measurement semantics do not justify it. See [Relationships, Hierarchy and Lineage](docs/09_RELATIONSHIPS_HIERARCHY_LINEAGE_SPEC.md), [Relationship Discovery](flows/05_RELATIONSHIP_DISCOVERY.md), and [Prediction Horizon and Leakage](flows/17_PREDICTION_HORIZON_LEAKAGE.md).
 
-## Relationships, hierarchy, lineage, and KPI dependency — target v0.3–v0.4
+## Metric & Formula Registry
 
-IPSP distinguishes structural one-to-one/one-to-many/many-to-many relationships, exact or normalized identity links, temporal joins, ordered journeys, lifecycle/state transitions, measure dependencies, plan-versus-actual relationships, commercial flows, strict/soft hierarchies, and cross-classifications.
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** F-002 expands the predecessor Metric Dependency Graph into a provider-neutral **Metric & Formula Registry**. Domain Experiences request semantic metric IDs; the registry validates prerequisites; a generic compute engine evaluates formulas; the result retains complete lineage.
 
-Every proposed multi-table analytical view must establish key cardinality, output grain, and which measures would multiply. Unsafe direct aggregation is blocked or transformed to the correct grain. Ordered journeys are measurement-aware and are not forced into a monotonic funnel when units, cohorting, or re-entry semantics do not support it.
+A metric definition conceptually contains metric ID, version, semantic inputs, formula, aggregation and time semantics, units/currencies, null behavior, required grain, validation tests, and source/provenance. Arithmetic compatibility, denominator meaning, safe division, filters, state qualifications, and observed stored values are validated where applicable.
 
-Feature lineage records derivation, binning, transformation, aggregation, canonicalization, and redundant representations. KPI definitions form a validated dependency graph with approved fields/functions, unit compatibility, explicit filters/states, safe division, and evidence that formulas match stored derived values where applicable. See [Relationships, Hierarchy and Lineage](docs/09_RELATIONSHIPS_HIERARCHY_LINEAGE_SPEC.md), [KPI Dependency](docs/10_KPI_METRIC_DEPENDENCY_SPEC.md), and [Relationship Discovery](flows/05_RELATIONSHIP_DISCOVERY.md).
+> **Domain Pack ≠ Formula Engine.** Domain knowledge may request a metric; it does not own numerical truth.
 
-## Capability Discovery — target v0.5
+The existing [KPI and Metric Dependency Specification](docs/10_KPI_METRIC_DEPENDENCY_SPEC.md) describes the predecessor validation and dependency representation. It should not be read as the complete F-002 registry contract.
 
-Capability discovery asks: **What can responsibly be calculated, diagnosed, predicted, simulated, explained, or refused?** Candidate families include descriptive and diagnostic analysis, regression, classification, count prediction, forecasting, similarity/look-alike, carefully qualified propensity, clustering/segment profiling, deterministic what-if, benchmark scenarios, sensitivity analysis, Monte Carlo uncertainty, synthetic context, journey simulation, and risk/anomaly analysis.
+## Domain Experience architecture
 
-Every candidate passes four gates:
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** IPSP Core remains domain-neutral and composes with registered **Domain Experience Packs**. Frozen domain families are:
 
-1. **Semantic gate:** the concept is meaningful and temporal roles are valid.
-2. **Data gate:** required fields, variation, labels, support, and grain exist.
-3. **Model/engine gate:** baseline comparison or deterministic validation is acceptable.
-4. **Trust gate:** support, extrapolation, constraints, privacy, and lineage checks pass.
+- Marketing
+- Product
+- Sales
+- Customer Experience
+- Finance
+- Operations / Demand
+- Generic / Custom
+- Composite / Cross-Domain
 
-The lifecycle is `DISCOVERED → VALIDATING → VALIDATED → ENABLED`, with `LIMITED`, `DISABLED`, or `BLOCKED` outcomes carrying reason codes. Refusing unsupported ROI, causal lift, optimization, individual propensity, or other requests is a feature, not a failure. See [Capability Discovery](docs/11_CAPABILITY_DISCOVERY_SPEC.md) and its [flow](flows/06_CAPABILITY_DISCOVERY.md).
+A dataset may activate one domain, several domains, or a Composite/Cross-Domain capability. Packs may provide terminology, objective taxonomy, semantic concepts, metric requests, control templates, UI metadata, recommended analysis sections, comparison views, explanation vocabulary, optional benchmark knowledge, and semantic/capability prerequisites.
 
-## Modelling and model lifecycle — target v0.5
+Packs do not own generic numerical truth, mandatory physical columns, hardcoded model choices, guaranteed responses, or arbitrary domain-specific production branching. Catalog precedence is:
 
-Candidate routing follows target semantics and evidence: regression families for suitable numeric outcomes, classification for binary/multiclass labels, count-aware models where target semantics warrant them, forecasting with time-aware baselines and backtesting, and similarity/look-alike methods with sensitive-feature governance.
+1. organization-configured;
+2. observed or confirmed dataset values;
+3. curated Domain Experience Pack;
+4. explicit custom user assumption.
 
-Every predictive path starts with a simple or naive baseline. Validation strategy follows the data: chronological splits, group/entity/geographic separation, standard holdout/cross-validation, or backtesting. Leakage checks exclude post-outcome fields, future/test aggregates, target-derived same-period personas, high-cardinality memorization, and duplicate derived concepts. A complex model that does not meaningfully justify itself over its baseline does not enable the capability.
+The architecture permits future independent pack versions without claiming that packaging exists today—for example IPSP Core 1.x with independently versioned Marketing, Product, Sales, CX, Finance, and Operations experiences.
 
-The target registry records dataset, semantic, capability, feature, target, split, metric, artifact, version, seed, and parent/challenger lineage. Candidates move through `TRAINING`, `CANDIDATE`, `CHALLENGER`, `CHAMPION`, `REJECTED`, and `ARCHIVED`; controlled promotion and shadow evaluation replace silent self-rewriting. See [Modelling Engine](docs/12_MODELING_ENGINE_SPEC.md), [Model Registry](docs/13_MODEL_REGISTRY_LIFECYCLE_SPEC.md), and [Model Lifecycle](flows/07_MODEL_LIFECYCLE.md).
+## CrossDomainSemanticGraph
 
-## Simulation engines — target v0.6
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** The **CrossDomainSemanticGraph** describes validated relationships across concepts. Each link records source and target concepts, entity relationship, time relationship, grain relationship, units, currency, transformation, evidence, and support status.
 
-The target supports several engines when their gates pass:
+Cross-domain inference follows infer → validate → confirm if ambiguous → persist. Composition must reconcile entity and aggregation grain, time zones, calendar and fiscal periods, currencies, and units. IPSP never invents an arbitrary join merely to make a composite scenario possible.
 
-- **Predictive ML scenario:** vary validated controls/context and score with a validated model; results describe predictive association, not causal effect.
-- **Deterministic what-if:** evaluate confirmed KPI identities or business formulas without ML.
-- **Benchmark scenario:** evaluate an explicit assumption that a segment reaches an approved reference level.
-- **Monte Carlo:** propagate validated distribution or residual uncertainty and show intervals only when calibrated and meaningful.
-- **Synthetic context:** use SDV where validated to generate plausible context; SDV does not determine outcomes, which remain governed by a validated response model or rule.
+## Capability Discovery
 
-Only fields marked as controls—or explicitly permitted as user-defined assumptions—can become scenario controls. Identifiers, outcomes, post-outcome variables, and unsafe sensitive fields are excluded. Each run checks historical range, combination support, extrapolation, observation maturity, missing context, and confirmed constraints. See [Simulation Engine](docs/14_SIMULATION_ENGINE_SPEC.md) and [Simulation Execution](flows/08_SIMULATION_EXECUTION.md).
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Capability discovery determines whether the evidence responsibly supports:
 
-## Trust & Validation Engine — target v0.6
+- descriptive and diagnostic analysis;
+- forecasting, regression, classification, and count prediction;
+- similarity/look-alike and clustering/segmentation;
+- deterministic what-if and sensitivity analysis;
+- Monte Carlo and risk/stress analysis;
+- synthetic-assisted analysis;
+- optimization or causal analysis where independently supported;
+- Cross-Domain Composite simulation where supported.
 
-Trust is an independent product layer, not a confidence badge produced by the model or LLM it evaluates.
+Every candidate passes semantic, data, model/engine, and Trust gates. The existence of a target-like column does not enable a predictive model. Unsupported capabilities remain visible when useful but are limited, disabled, blocked, or refused with reason codes. See [Capability Discovery](docs/11_CAPABILITY_DISCOVERY_SPEC.md) and [Capability Flow](flows/06_CAPABILITY_DISCOVERY.md).
 
-> **AI proposes. Evidence validates. Rules constrain. Models compete. Humans arbitrate exceptions. The system remembers the outcome.**
+## Engine and license architecture
 
-Trust synthesizes data quality, semantic confidence, model/engine validation, sample and historical support, drift/extrapolation, constraint compliance, and privacy/governance. It distinguishes:
-
-1. intrinsic constraints that are mathematically unavoidable;
-2. confirmed semantic constraints established from meaning;
-3. explicit business/process constraints;
-4. empirical expectations that normally warn rather than block.
-
-Negative financial values are not universally invalid. They are blocked only when intrinsically impossible or contrary to a confirmed semantic/business rule; otherwise evidence determines whether they are valid observations or warnings.
-
-Green permits continuation, Amber communicates limited evidence or review-worthy novelty, and Red blocks critical ambiguity, leakage, invalid models, unsupported capabilities, policy failures, or constraint violations. See [Trust and Validation](docs/15_TRUST_AND_VALIDATION_SPEC.md) and [Trust Flow](flows/09_TRUST_VALIDATION.md).
-
-## ML versus LLM authority — target v0.8–v0.9
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** F-002 introduces three complementary authorities:
 
 ```text
-ML/statistics = numerical and statistical authority
-Local LLM     = optional semantic intelligence
-Remote LLM    = optional policy-controlled escalation
+EngineRegistry + LicenseRegistry + EngineResolver
 ```
 
-The target modes are `ML_ONLY`, `LOCAL_LLM`, `REMOTE_LLM`, and `HYBRID_LLM`. Deterministic profiling and rules run first. When they are insufficient, a compact Data Intelligence Packet may be passed through a structured provider contract for schema classification, relationship proposals, clarification questions, KPI candidates, capability review, or human-facing explanations. Every operational response must validate against Pydantic/JSON schemas and deterministic evidence.
+Application services depend on IPSP interfaces. Candidate adapters may include a SyntheticDataProvider with SynthcityProvider and an optional SDVProvider; an OptimizerProvider with OSQPProvider, SCSProvider, and optional commercial providers; and an LLMProvider with local llama.cpp, remote, and hybrid adapters. Vendor libraries are implementations, not the architecture.
 
-Raw datasets are never transmitted wholesale. Remote access requires feature availability, backend outbound permission, provider allowlisting, dataset/column classification, and an allowed transmission level. Restricted datasets default to local-only unless an Admin explicitly changes policy. See [LLM Architecture](docs/16_LLM_ARCHITECTURE.md), [Remote Privacy Policy](docs/17_PRIVACY_REMOTE_LLM_POLICY.md), [LLM Routing](flows/10_LLM_ROUTING.md), and [Remote Privacy Flow](flows/16_PRIVACY_REMOTE_LLM.md).
+Synthetic capability is provider-neutral. Synthcity is the preferred permissive default candidate; SDV is optional and subject to current licensing policy. SDV is not assumed to be automatically open source.
 
-## Security, RBAC, privacy, and outbound policy
+License metadata conceptually includes engine ID, library and version, provider, license identifier/class, commercial-use and redistribution/service restrictions, model-weight license, approved use, installed status, capabilities, hardware needs, and security status. Frozen classes are:
 
-### Implemented now — v0.1.0
+- PERMISSIVE_OPEN_SOURCE
+- PUBLIC_DOMAIN
+- COPYLEFT_OPEN_SOURCE
+- SOURCE_AVAILABLE
+- COMMERCIAL
+- CUSTOM_MODEL_LICENSE
+- UNKNOWN/BLOCKED
 
-Authorization resolves from `User → Role → RolePermission → Permission`; role name alone grants nothing, and no persisted `is_admin` bypass exists. The built-in Admin and User roles are backed by these 13 canonical permissions:
+Organization modes are OPEN_SOURCE_ONLY, OPEN_SOURCE_PREFERRED, and COMMERCIAL_ALLOWED. The default is **OPEN_SOURCE_PREFERRED**. Resolution priority is capability validity → license policy → Trust/validation → data suitability → performance → available resources → organization preference.
 
-| Domain | Permissions |
+A dependency license and a model-weight license are separate governance decisions. Approval of one never silently approves the other.
+
+## Modelling and model lifecycle
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** There is no universal best model. Selection depends on target semantics, size and grain, horizon, class balance, temporal structure, explainability and uncertainty requirements, compute, license policy, benchmark evidence, and Trust gates. Every candidate set includes a meaningful baseline.
+
+Compact candidate families include linear/logistic and regularized models, trees, Random Forest, ExtraTrees, and gradient boosting such as LightGBM, XGBoost, or CatBoost. Time-series candidates include naive and seasonal-naive baselines, rolling/statistical methods, ETS/state-space, ARIMA/SARIMAX, VAR/VECM where justified, lag-feature ML, Bayesian models where justified, and ARCH/GARCH only when volatility semantics support them. Temporal problems must not use inappropriate random splits.
+
+Candidate models enter a controlled TRAINING → CANDIDATE → CHALLENGER → CHAMPION or REJECTED/ARCHIVED lifecycle. Promotion depends on validation, calibration, temporal/entity holdout, stability, robustness, explainability, constraints, resources, and baseline comparison. See [Modelling Engine](docs/12_MODELING_ENGINE_SPEC.md), [Model Registry](docs/13_MODEL_REGISTRY_LIFECYCLE_SPEC.md), and [Model Lifecycle](flows/07_MODEL_LIFECYCLE.md).
+
+### Causal boundary
+
+**Correlation ≠ prediction ≠ attribution ≠ causation.** Causal capability activates only when treatment, outcome, confounders, identification assumptions, and validation/refutation evidence are sufficient. Observational predictive association is never described as causal impact. Production causal workflows are not implemented today.
+
+## Simulation architecture
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** The frozen simulation basis has exactly three values:
+
+| Basis | Meaning |
 |---|---|
-| Simulation | `simulation.run`, `simulation.export` |
-| Dataset | `dataset.view`, `dataset.upload`, `dataset.configure`, `dataset.assign` |
-| Models | `model.train`, `model.promote` |
-| AI/outbound | `llm.configure`, `internet.configure` |
-| Administration | `user.manage`, `logs.view`, `system.configure` |
+| DATA_BASED | Primarily supported by observed/derived first-party data and validated models or formulas |
+| MIXED | Combines empirical evidence with explicit assumptions, analogs, benchmarks, synthetic support, or external evidence |
+| INTENT_BASED | Starts from an objective where empirical support may be incomplete; limitations and assumptions remain explicit |
 
-The foundation implements Argon2id password hashing; privacy-preserving authentication failures; temporary failed-login lockout; opaque random server sessions; hash-only session and CSRF persistence; expiry, login rotation, logout/password/role-change invalidation; HttpOnly/Secure/SameSite cookies; session-bound CSRF for browser mutations; disabled-user enforcement; required-password-change behavior; and a one-time first-Admin CLI.
+There is no fourth basis. Intent-based output never silently masquerades as observed truth.
 
-Secrets are referenced through `SecretProvider`; values are not ordinary Settings fields or SQLite configuration. The implemented provider reads explicitly requested environment entries into redacted values and fails closed when a required secret is missing. Internet, remote LLM, model download, update check, provider allowlisting, and transmission levels are enforced by a deny-by-default backend policy. A feature flag cannot bypass an outbound denial.
+### ScenarioIntentManifest
 
-### Target v1.0
+The planned **ScenarioIntentManifest** records domains, objective, outcome, horizon, geography, population/entity, resources, goals, controls, constraints, assumptions, comparison basis, uncertainty preference, evidence access, and consent snapshot.
 
-Project/dataset ACLs and column policies will govern view, simulation, export, modelling, and remote transmission after the dataset subsystem exists. They are specified but are not executable in v0.1.0. See [Security/RBAC](docs/18_SECURITY_RBAC_SPEC.md), [Outbound, Secrets and Configuration](docs/19_OUTBOUND_SECRETS_CONFIG_SPEC.md), and [Auth/RBAC Flow](flows/11_AUTH_RBAC.md).
+### CompositeSimulationGraph
+
+The planned **CompositeSimulationGraph** is the universal execution abstraction. Nodes may represent deterministic formulas, statistical/ML/time-series/causal models, Monte Carlo, optimizers, synthetic support, benchmarks, analogs, external-evidence transforms, user assumptions, or constraints.
+
+Edges explicitly identify deterministic relation, observed association, predictive relation, causal estimate, assumption, external prior, analog prior, or constraint. If no defensible relationship exists, IPSP constrains or refuses the path; it does not fabricate an edge.
+
+### Five-step simulation experience
+
+The canonical experience has exactly five steps:
+
+1. Define
+2. Configure
+3. Enrich & Validate
+4. Run
+5. Results & Compare
+
+The predecessor [Simulation Specification](docs/14_SIMULATION_ENGINE_SPEC.md) and [Simulation Flow](flows/08_SIMULATION_EXECUTION.md) remain useful for support checks, control eligibility, Trust routing, and reproducibility, but their older engine classification is superseded here by F-002.
+
+## Cross-Domain Composite simulation
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Composite/Cross-Domain is a first-class capability, not a guarantee that unrelated datasets can be joined. Representative—not hardcoded—paths include:
+
+- Marketing: spend → response → leads → opportunities → orders → revenue → margin → cash.
+- Product/Operations: price or launch → demand → inventory → fulfilment → cost → margin → working capital.
+- Customer Experience: service/experience → satisfaction or sentiment → retention/churn → renewal → revenue/customer value.
+
+Every node and edge still requires semantic, grain, time, unit/currency, evidence, model/engine, and Trust validation. Missing relationships are clarified, constrained, or refused.
+
+## Finance Domain Experience
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Finance is a first-class dynamically activated Domain Experience, not one mandatory schema and not a branch inside generic core.
+
+- **Corporate Performance / FP&A:** actual/budget/forecast, variance, revenue, cost, margin, profitability, contribution, operating leverage, unit economics, scenario budgets, rolling forecasts, targets.
+- **Forecasting:** revenue, expense, gross margin, opex, cash, AR/AP, inventory/working capital, liquidity, and business-unit or ratio forecasts.
+- **Treasury & Liquidity:** cash, runway, receivable/payable timing, working capital, funding, debt schedules, interest, FX, and cash conversion cycle.
+- **Three-statement relationships:** Income Statement ↔ Balance Sheet ↔ Cash Flow only when semantics are sufficient and accounting constraints reconcile.
+- **Risk & Stress:** deterministic stress, historical replay, Monte Carlo, volatility, sensitivity, revenue/cost/rate/FX/liquidity shocks, and appropriate VaR-style analysis.
+- **Credit / Collections:** payment, lateness, delinquency, default, collection, and delay where supported.
+- **Valuation / Capital Investment:** NPV, IRR, DCF, payback, project comparison, discount-rate sensitivity, and terminal-value sensitivity.
+
+QuantLib-based instrument pricing is an optional future Finance subpack. It does not contaminate ordinary FP&A architecture and does not block v1.0.
+
+## Other Domain Experiences
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Curated packs provide optional vocabulary and prerequisites:
+
+- **Product:** lifecycle, launch performance, adoption, demand, price, orders, returns, inventory, and product performance.
+- **Sales:** account, opportunity, pipeline, stage, territory, target, quota, forecast, won/lost, orders, and revenue.
+- **Customer Experience:** customer, service interaction, CSAT, NPS, CES, issue, resolution, complaint, churn, retention, and structured sentiment-derived signals. This is not a promise of universal raw text processing.
+- **Operations / Demand:** demand, inventory, capacity, backlog, lead time, fulfilment, supplier, production, service level, and stockout.
+- **Generic / Custom:** evidence-led operation when no curated pack fits; this proves the core remains domain-neutral.
+
+## Trust and Evidence Profiles
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Trust is independent of model or LLM confidence. It evaluates data quality, semantic confidence, relationship validity, model validation, temporal leakage, support and extrapolation, constraints, accounting reconciliation, unit/currency/time consistency, simulation support, optimization feasibility, privacy, outbound policy, licensing, and reproducibility.
+
+Green means required checks pass; Amber means limited evidence, novelty, extrapolation, or review; Red blocks a critical ambiguity or violation. Intrinsic constraints, confirmed semantic constraints, explicit business constraints, and empirical expectations remain distinct. A negative financial value is not universally invalid.
+
+An **Evidence Profile** is separate from Trust, not folded into one score. It describes dependence on first-party history, observed outcomes, assumptions, synthetic data, analogs, external evidence, extrapolation, evidence freshness, and evidence coverage.
+
+The governing principle remains: **AI proposes. Evidence validates. Rules constrain. Models compete. Humans arbitrate exceptions. The system remembers the outcome.** See [Trust and Validation](docs/15_TRUST_AND_VALIDATION_SPEC.md) and [Trust Flow](flows/09_TRUST_VALIDATION.md).
+
+## Results, history, comparison, and reproducibility
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.** Persisted result objects support history, comparison, report generation, and exact lineage.
+
+- **RE-RUN:** execute the same scenario intent using currently eligible models and evidence; newer evidence may apply.
+- **REPRODUCE:** reconstruct the historical original using its evidence snapshot, dataset version, semantic version, metric version, model version, engine/provider version, assumptions, seed, configuration, graph version, and applicable policy context.
+
+PDF and Excel are generated from persisted results, not browser screenshots, and remain subject to dataset and column policy. See [Reporting and Export](docs/25_REPORTING_EXPORT_SPEC.md), [History and Reproducibility](docs/26_SIMULATION_HISTORY_REPRODUCIBILITY.md), and [Report Flow](flows/14_REPORT_EXPORT.md).
+
+## Governed learning and SimulationLearningStore
+
+**FROZEN ARCHITECTURE / PLANNED — NOT IMPLEMENTED.**
+
+> Every simulation becomes a learning experience; not every simulation becomes empirical truth.
+
+Evidence authority is tiered. Observed actual outcomes are highest; derived observed data with lineage is high; data-based simulations, mixed simulations, intent-based simulations, and LLM proposals remain lower or non-empirical.
+
+The planned **SimulationLearningStore** retains scenario intent, basis, domains, inputs, controls, constraints, assumptions, evidence, models, graph, outputs, uncertainty, Trust, Evidence Profile, user corrections/actions, and later observed outcomes. It is conceptually separate from empirical analytical data so simulation records cannot contaminate observed truth.
+
+### Outcome Reconciliation
+
+```mermaid
+flowchart LR
+  T0[Simulation at T0] --> EXEC[Real-world execution]
+  EXEC --> T1[Observed actual at T1]
+  T1 --> COMP[Prediction vs actual]
+  COMP --> ATTR[Error attribution]
+  ATTR --> EVAL[Model / assumption / evidence evaluation]
+  EVAL --> CAND[Learning candidate]
+```
+
+Reconciliation does not immediately retrain after every run. Eligible outcomes enter a governed path:
+
+```text
+New Data / Reconciled Outcomes
+  → Learning Eligibility Gate
+  → Training Dataset Builder
+  → Leakage + Provenance Validation
+  → Challenger
+  → Validation + Trust
+  → Champion Comparison
+  → Promote or Reject
+```
+
+Governed batch retraining is the default. River-style incremental learning is considered only where true streaming semantics justify it.
+
+## ML, LLM, and local-AI authority
+
+Numerical authority remains with **ML, statistics, and deterministic engines**. LLMs assist with semantics, intent interpretation, clarification, domain reasoning, capability explanation, analog ranking, evidence planning, result explanation, and organization terminology.
+
+The frozen modes remain ML_ONLY, LOCAL_LLM, REMOTE_LLM, and HYBRID_LLM. Deterministic profiling produces a compact Dataset Intelligence Packet; structured LLM output is validated against schemas and evidence. Raw datasets are not wholesale transmitted to remote providers.
+
+Local-AI learning prefers:
+
+1. continuous governed retrieval and memory;
+2. optional periodic PEFT/LoRA adaptation after review.
+
+Confirmed mappings, corrections, interpretations, clarification outcomes, intent parsing, validated controls, capability reasoning, analog ranking, evidence plans, approved explanations, and organization vocabulary may become learning material. Intent-based results, mixed assumptions, synthetic records, unverified external claims, LLM-proposed numbers, or decontextualized failed predictions never become empirical facts. Fine-tuning does not grant numerical authority.
+
+Evidence-access modes are OFF, INTERNAL_ONLY, PUBLIC_WEB, and APPROVED_CONNECTORS. Effective access is the intersection of Admin policy, project/dataset policy, and runtime user consent. PUBLIC_WEB and APPROVED_CONNECTORS are **NOT IMPLEMENTED** today. See [LLM Architecture](docs/16_LLM_ARCHITECTURE.md), [Remote Privacy Policy](docs/17_PRIVACY_REMOTE_LLM_POLICY.md), [LLM Routing](flows/10_LLM_ROUTING.md), and [Remote Privacy Flow](flows/16_PRIVACY_REMOTE_LLM.md).
+
+## Security, RBAC, privacy, and outbound governance
+
+### Implemented — v0.1.0
+
+Authorization follows User → Role → RolePermission → Permission. There is no persisted or name-based Admin bypass. The canonical permission set is:
+
+- simulation.run
+- simulation.export
+- dataset.view
+- dataset.upload
+- dataset.configure
+- dataset.assign
+- model.train
+- model.promote
+- llm.configure
+- internet.configure
+- user.manage
+- logs.view
+- system.configure
+
+Passwords use Argon2id. Browser authentication uses rotated opaque server-side sessions with hash-only persistence, HttpOnly/Secure/SameSite cookies, CSRF on state-changing operations, expiry, logout/password/privilege invalidation, failed-login lockout, and a one-time first-Admin CLI. Secrets are references resolved by SecretProvider; production does not store ordinary plaintext credentials. OutboundPolicy is backend-enforced and deny-by-default.
+
+### F-002 target — planned
+
+Future governance adds engine-license and model-weight gates, evidence policy, runtime consent, dataset/project/column policy, provenance, and learning eligibility. It does not weaken existing outbound defaults. See [Security and RBAC](docs/18_SECURITY_RBAC_SPEC.md), [Outbound, Secrets and Configuration](docs/19_OUTBOUND_SECRETS_CONFIG_SPEC.md), and [Auth/RBAC Flow](flows/11_AUTH_RBAC.md).
 
 ## Background jobs
 
-### Implemented now — v0.1.0
+### Implemented — v0.1.0
 
-Jobs persist in SQLite before execution. Exact statuses are `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`, and `CANCELLED`. The nine generic job families are `UPLOAD_PROCESSING`, `PROFILING`, `RELATIONSHIP_ANALYSIS`, `MODEL_TRAINING`, `SYNTHETIC_FITTING`, `SIMULATION`, `REPORT_GENERATION`, `BACKUP`, and `RESTORE`; the enum defines durable orchestration vocabulary, not proof that every corresponding engine is implemented.
+The durable generic vocabulary contains QUEUED, RUNNING, SUCCEEDED, FAILED, and CANCELLED states and nine dataset-agnostic job types. Job metadata supports progress, owner and trace correlation, cancellation, retry, safe artifact references, and sanitized errors. There is no public generic submit endpoint; registered trusted handlers own execution.
 
-The owner-scoped API supports list, detail, cancel, and retry. Records contain progress, phase/message, timestamps, trace/request context, retryability, cancellation state, safe errors, and artifact references. The local backend provides cooperative cancellation, startup recovery, interrupted-job failure, bounded shutdown, and stale-worker authority revocation.
+LocalJobBackend is deliberately a **single-process execution provider**. **Do not run multiple active local worker processes** against one SQLite control-plane database. Future distributed execution requires another JobBackend provider with ownership and leases. Redis and Celery are not current dependencies and are not mandatory for v1.0. See [Job Processing](docs/24_JOB_PROCESSING_SPEC.md) and [Background Job Flow](flows/15_BACKGROUND_JOBS.md).
 
-`LocalJobBackend` is deliberately a single-process execution provider. Do not run multiple active local worker processes against one SQLite control-plane database. A future provider may introduce leases and distributed coordination, but Redis and Celery are not present today. See [Job Processing](docs/24_JOB_PROCESSING_SPEC.md) and [Job State Flow](flows/15_BACKGROUND_JOBS.md).
+## Observability, errors, and health
 
-## Observability, audit, errors, and health
+### Implemented — v0.1.0
 
-### Implemented now — v0.1.0
+Meaningful operations carry structured event, trace, request, component, action, status, and severity fields, plus safe contextual identifiers where available. Runtime volume goes to console and rotating UTF-8 JSONL; selected audit/security events persist in SQLite. Passwords, hashes, cookies, bearer and CSRF tokens, authorization headers, request bodies, raw sensitive records, and unsafe exception values are excluded.
 
-Meaningful operations use structured event fields including `timestamp_utc`, `event_id`, `trace_id`, `request_id`, component, action, status, and severity. Context may add a non-secret `session_correlation_id`, user/resolved-role, duration, stable error code, and resource identifiers. High-volume runtime events go to console and a rotating UTF-8 JSONL file; durable audit/security events are selected into SQLite. SQLite is not used as a complete runtime-log warehouse.
+Clients receive stable safe error codes, messages, trace IDs, and recoverability hints; production API/UI responses never expose raw stack traces. Current health surfaces are:
 
-Redaction excludes passwords, hashes, bearer tokens, cookies, CSRF values, authorization headers, API keys, request bodies, and unsafe exception data. Client errors use stable codes, safe messages, trace IDs, and recoverability hints while internal diagnostics remain in sanitized logs. Raw stack traces never appear in production API/UI responses.
+- GET /health/live — minimal process liveness;
+- GET /health/ready — safe application/database/migration/runtime readiness;
+- GET /api/v1/admin/system/health — sanitized rich diagnostics protected by system.configure.
 
-Current health surfaces are intentionally separate:
+Rich diagnostics do not perform unapproved remote probes and report deferred or never-run capabilities honestly. See [Observability](docs/22_OBSERVABILITY_AUDIT_SPEC.md), [Error Handling](docs/23_ERROR_HANDLING_SPEC.md), [System Health](docs/37_SYSTEM_HEALTH_SPEC.md), and [Trace Flow](flows/13_OBSERVABILITY_TRACE.md).
 
-- `GET /health/live` — minimal process-only liveness;
-- `GET /health/ready` — safe readiness for application, configuration, database, foreign keys, migrations, runtime logs, and job worker; analytical storage is explicitly deferred;
-- `GET /api/v1/admin/system/health` — sanitized rich diagnostics protected by `system.configure`.
+## UI and experience architecture
 
-Rich health performs no unapproved remote reachability probe and reports unimplemented or never-run capabilities honestly. See [Observability](docs/22_OBSERVABILITY_AUDIT_SPEC.md), [Error Handling](docs/23_ERROR_HANDLING_SPEC.md), [System Health](docs/37_SYSTEM_HEALTH_SPEC.md), and [Trace Flow](flows/13_OBSERVABILITY_TRACE.md).
+### Implemented — v0.1.0
 
-## Results, history, and export — target v0.6+
+The current offline frontend uses semantic HTML, modular CSS, and Vanilla JavaScript ES modules with no npm build, public CDN, remote font, analytics, or frontend framework. It includes Login, forced password change, Overview, owner-visible Jobs, Profile, authorized System Health, safe loading/empty/error/permission states, responsive layouts, reduced-motion support, print styles, and System/Dark/Light themes. Identity stays in memory; only theme preference uses localStorage.
 
-The target Run Result Object persists the user/time, exact dataset/semantic/capability/model versions, baseline and scenario inputs, predictions, intervals, trust decomposition, warnings, explanations, historical support, seed, effective non-secret configuration, and artifact references.
+### F-002 target — planned
 
-History distinguishes **re-run**—the same scenario intent using the current eligible champion—from **reproduce**, which resolves the exact original versions, seed, and configuration. Results can be opened, compared, re-run, reproduced, and exported. PDF and Excel are generated from the persisted object, not by screenshotting the browser, and always enforce dataset/column policy. None of this is implemented in v0.1.0. See [Reporting and Export](docs/25_REPORTING_EXPORT_SPEC.md), [History and Reproducibility](docs/26_SIMULATION_HISTORY_REPRODUCIBILITY.md), and [Report Flow](flows/14_REPORT_EXPORT.md).
+The neutral IPSP navigation target includes Home/Overview, Projects/Workspaces, Data, Scenario Library, Compare, Models & Learning, Jobs, Administration, and Profile. Analysis & Simulation may activate Marketing, Product, Sales, Customer Experience, Finance, Operations, Generic/Custom, and Composite/Cross-Domain entries. Domain pages are dynamically exposed only when supported.
 
-## UI/UX vision
+A standard experience may expose Overview, Data Fit, Analyze, Diagnose/Drivers, Simulate, Compare, and History. Finance may expose Overview, Data Fit, Performance, Forecast, Drivers, Cash & Liquidity, Risk & Stress, Valuation, Optimize, Simulate, Compare, and History. Composite may expose Scope, Domain Graph, Data Fit, Analyze, Drivers, Simulate, Cascade Results, Optimize, Compare, and History. These are templates, not guaranteed static pages.
 
-### Implemented now — v0.1.0
+The visual reference contributes style and interaction patterns only. See [UI/UX Specification](docs/05_UI_UX_SPEC.md), [Design System](docs/06_UI_DESIGN_SYSTEM.md), and [Reference Rules](reference/README.md).
 
-The production frontend is static semantic HTML, modular CSS, and Vanilla JavaScript ES modules. It has no React, Vue, Angular, Svelte, Streamlit, npm build, public CDN, remote font, or runtime analytics dependency. CampaignSim — Powered by IPSP is the initial branding over a generic IPSP backend.
+## Anti-contamination
 
-The responsive authenticated shell includes Login, forced password change, Overview, owner-visible Jobs, read-only Profile, authorized System Health, logout, safe loading/empty/error/permission states, keyboard/focus foundations, reduced-motion handling, print styles for Jobs and System Health, and System/Dark/Light semantic themes. Identity stays in memory; only theme preference uses localStorage; the browser does not read the HttpOnly session token.
+Generic production core must not contain benchmark, prototype, or business-domain special cases. Domain knowledge belongs in registered Domain Experience Packs, Metric/Formula Registry definitions, explicit organization configuration, or benchmark fixtures/tests/reference documentation.
 
-### Target v0.7+
+Core services must not accumulate hardcoded branching for Marketing, Finance, Product, or any other business family. Generic registry/provider dispatch may resolve registered capabilities; it may not embed source schemas, KPIs, stages, controls, formulas, or preferred models. CampaignSim terms do not define generic application identity.
 
-Dataset onboarding and simulation each become five-step workflows. Controls and results are derived from validated semantic/capability metadata—numeric range controls, categories, booleans, dates, hierarchies, assumptions, result cards, charts, and trust states—not fixed campaign fields. The supplied reference HTML contributes dark layered surfaces, indigo/violet accents, cards, stepper, metrics, alerts, progress, tabs, tables, and responsive patterns only; its demo KPIs, controls, model names, and behavior are not implementation authority.
+The seven benchmark families test discovery across scale, multi-table grain, identity and event attribution, customer journeys, fiscal/finance measures, wide sensitive household data, and ecommerce personas/leakage. They are tests of generic behavior, not product schemas. See [Benchmark Catalog](docs/39_BENCHMARK_CATALOG.md) and [Anti-Contamination Rules](docs/40_ANTI_CONTAMINATION.md).
 
-See [UI/UX Specification](docs/05_UI_UX_SPEC.md), [Design System](docs/06_UI_DESIGN_SYSTEM.md), and [Reference Material](reference/README.md).
+## Technical direction
 
-## Anti-contamination and benchmark strategy
+The technology view distinguishes what is active, what F-002 approves as a candidate, and what remains optional:
 
-Benchmarks test whether generic discovery works; they never define production schemas or branches. The seven benchmark families stress:
+| Area | Active in v0.1.0 | FROZEN/approved candidate direction | Optional later provider |
+|---|---|---|---|
+| Runtime/API | Python 3.11+, FastAPI, Uvicorn, Pydantic | Existing typed service/API direction | — |
+| Control plane | SQLAlchemy, SQLite, Alembic | Portable repository boundary | PostgreSQL after v1.0 if needed |
+| Analytical data | None | Polars, Apache Arrow/PyArrow, Parquet; Pandas where required; Plotly.js for charts | — |
+| ML | None | scikit-learn, LightGBM, XGBoost, CatBoost | Provider expansion under registry policy |
+| Statistics/econometrics | None | Statsmodels, arch; PyMC where Bayesian modelling is justified | — |
+| Causal | None | DoWhy, EconML | causal-learn where justified |
+| Explainability/tuning | None | SHAP, Optuna | — |
+| Synthetic | None | Provider-neutral interface; Synthcity preferred permissive candidate | SDV subject to licensing policy |
+| Optimization | None | CVXPY abstraction, OSQP, SCS | Commercial solvers under policy |
+| Finance | None | arch where appropriate | QuantLib for specialized instrument/quant use cases |
+| Incremental learning | None | Governed batch learning | River only for genuine streaming semantics |
+| Local AI | None | llama.cpp, Transformers | PEFT/LoRA and optional MLflow |
+| Frontend | HTML/CSS/Vanilla JS, local assets | Capability-driven UI and locally vendored Plotly.js | — |
 
-1. large aggregated panels and scale;
-2. multi-table launch/order/unit grain and join multiplication;
-3. event sequence, identity normalization, attribution, and qualified measures;
-4. hospitality/customer-experience journeys, hierarchies, and narrative conflicts;
-5. sales/finance measure families, fiscal time, inventory, sentinels, and valid negatives;
-6. wide customer/household data, geography, sensitivity, look-alike, ambiguous labels, and units;
-7. ecommerce experience/persona data, mixed-unit journeys, re-entry, clusters, leakage, and prediction horizons.
+Names in the candidate columns do not mean packages are installed, approved for every deployment, or operational. Direct current dependencies are in [pyproject.toml](pyproject.toml) and [requirements.lock](requirements.lock).
 
-Benchmark source names, KPIs, fixed stages, model choices, controls, and output assumptions are prohibited from generic production logic. Benchmark knowledge belongs in fixtures, expected manifests, tests, or benchmark documentation. See [Benchmark Catalog](docs/39_BENCHMARK_CATALOG.md) and [Anti-Contamination Rules](docs/40_ANTI_CONTAMINATION.md).
+## Repository structure
 
-## Technical stack
-
-| Layer | Active in v0.1.0 | Target architecture—not yet installed/exercised unless added by its milestone |
-|---|---|---|
-| Runtime/API | Python 3.11+, FastAPI, Uvicorn, Pydantic | Same typed API/service direction |
-| Control plane | SQLAlchemy 2.x, SQLite, Alembic | Portable repositories; PostgreSQL architecture-ready, not v1.0 runtime scope |
-| Security | pwdlib with Argon2 | Dataset/column governance extensions |
-| Analytical data | None | Polars, PyArrow, Parquet; Pandas where a library requires it; OpenPyXL for XLSX |
-| Models/statistics | None | scikit-learn, LightGBM, CatBoost, Statsmodels, NumPy/SciPy, SHAP, Optuna |
-| Synthetic context | None | SDV when capability validation permits it |
-| Frontend | HTML/CSS/Vanilla JS ES modules, local assets | Locally vendored Plotly.js when dynamic charts require it |
-| Quality | pytest, Ruff, mypy | Benchmark and full-product acceptance layers added by milestones |
-
-Direct and resolved current dependencies are declared in [pyproject.toml](pyproject.toml) and [requirements.lock](requirements.lock). Target library names express architecture direction, not present functionality.
-
-## Repository structure and ownership
+The current repository contains the accepted foundation:
 
 ```text
 IPSP/
 ├── backend/ipsp/
-│   ├── api/{routes,schemas,dependencies}/   # HTTP ownership and Pydantic contracts
-│   ├── auth/ and security/                 # identity, RBAC, sessions, secrets, policy
-│   ├── database/models/                    # sole SQLAlchemy ORM ownership
-│   ├── repositories/ and services/         # persistence and application policy
-│   ├── jobs/ and observability/            # local execution, traces, logs, audit
-│   └── ingestion/.../trust/                # target engine packages, added by milestones
-├── database/migrations/                    # sole Alembic history
-├── frontend/                               # offline application shell and design system
-├── tests/{unit,integration,security,architecture}/
-├── docs/                                   # authoritative specifications and progress
-├── flows/                                  # Mermaid behavior and architecture flows
-├── prompts/                                # reviewed implementation/audit prompts
-├── reference/                              # visual reference only
-├── config/                                 # configuration guidance
-├── AGENTS.md                               # repository-wide agent rules
-└── FILE_INDEX.md                           # exhaustive documentation index
+│   ├── api/{routes,schemas,dependencies}
+│   ├── auth/ and security/
+│   ├── database/models/
+│   ├── repositories/ and services/
+│   ├── jobs/ and observability/
+│   └── errors/, config/, cli/
+├── database/migrations/
+├── frontend/
+├── tests/{unit,integration,security,architecture}
+├── docs/
+├── flows/
+├── prompts/
+├── reference/
+└── config/
 ```
 
-ORM entities live exactly once in `backend/ipsp/database/models/`; API schemas in `backend/ipsp/api/schemas/`; routes in `backend/ipsp/api/routes/`; migrations in `database/migrations/`; SQL/database work goes through repositories rather than being scattered through endpoints. Target engine directories are created only when their milestones begin. See [Project Structure](docs/04_PROJECT_STRUCTURE.md).
+F-002 target structure remains provider-neutral. Future packages may group engines under synthetic, optimization, ML, statistics, and finance interfaces. Artifacts may be grouped as models, manifests, reports, simulations, synthetic, and evidence—not around one vendor. These directories are conceptual and have not been created by this README task.
 
-## Current API surface — implemented v0.1.0 only
+Canonical ownership remains: ORM under backend/ipsp/database/models, API schemas under backend/ipsp/api/schemas, routes under backend/ipsp/api/routes, migrations under database/migrations, and SQL access through repositories. See [Project Structure](docs/04_PROJECT_STRUCTURE.md).
+
+## Current API surface
+
+Only these v0.1.0 runtime routes are implemented:
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/` | Static offline frontend |
-| GET | `/api/v1` and `/api/v1/` | Safe foundation/browser bootstrap metadata |
-| POST | `/api/v1/auth/login` | Authenticate and rotate an opaque session |
-| GET | `/api/v1/auth/me` | Current safe identity |
-| POST | `/api/v1/auth/logout` | CSRF-protected logout and invalidation |
-| POST | `/api/v1/auth/change-password` | CSRF-protected password change and session invalidation |
-| GET | `/api/v1/jobs` | Owner-scoped bounded job list |
-| GET | `/api/v1/jobs/{job_id}` | Owner-scoped job detail |
-| POST | `/api/v1/jobs/{job_id}/cancel` | Owner/CSRF-protected cancellation |
-| POST | `/api/v1/jobs/{job_id}/retry` | Owner/CSRF-protected retry |
-| GET | `/health/live` | Minimal liveness |
-| GET | `/health/ready` | Minimal readiness |
-| GET | `/api/v1/admin/system/health` | Permission-protected rich diagnostics |
+| GET | / | Static offline frontend |
+| GET | /api/v1 and /api/v1/ | Safe application/browser bootstrap metadata |
+| POST | /api/v1/auth/login | Authenticate and rotate an opaque session |
+| GET | /api/v1/auth/me | Return current safe identity |
+| POST | /api/v1/auth/logout | CSRF-protected logout |
+| POST | /api/v1/auth/change-password | CSRF-protected password change |
+| GET | /api/v1/jobs | Owner-scoped bounded job list |
+| GET | /api/v1/jobs/{job_id} | Owner-scoped job detail |
+| POST | /api/v1/jobs/{job_id}/cancel | Owner/CSRF-protected cancellation |
+| POST | /api/v1/jobs/{job_id}/retry | Owner/CSRF-protected retry |
+| GET | /health/live | Minimal liveness |
+| GET | /health/ready | Minimal readiness |
+| GET | /api/v1/admin/system/health | Permission-protected rich diagnostics |
 
-Future `/projects`, `/datasets`, `/models`, `/simulations`, reports, AI configuration, policy, and logs families in [REST API Contract](docs/28_REST_API_CONTRACT.md) are architectural reservations, not registered v0.1.0 routes. FastAPI also exposes its standard OpenAPI/documentation endpoints in development unless deployment configuration changes them.
+Future project, dataset, model, simulation, evidence, learning, report, and provider routes are architectural reservations, not implemented endpoints. See [REST API Contract](docs/28_REST_API_CONTRACT.md).
 
 ## Local development
 
-Python 3.11 or newer is required. The commands below use PowerShell from the repository root.
+Python 3.11 or newer is required. From the repository root in PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-```
-
-Apply the canonical migrations before starting an authenticated workspace:
-
-```powershell
 python -m alembic upgrade head
 python -m alembic current
-```
-
-Create the first administrator against an empty, migrated database. The CLI reads passwords without echoing them and permanently refuses a second bootstrap once a user exists.
-
-```powershell
 ipsp-create-admin
 ```
 
-For existing installations, `ipsp-sync-rbac` additively ensures the Admin/User roles, 13 core permissions, and missing Admin mappings without deleting custom catalog entries.
+For existing installations, ipsp-sync-rbac additively ensures the Admin/User roles, the 13 core permissions, and missing Admin mappings without deleting custom entries.
 
 Authentication cookies are Secure by default, and production requires HTTPS. For plain-HTTP localhost development only:
 
@@ -404,20 +588,18 @@ $env:IPSP_AUTH__COOKIE_SECURE = "false"
 python -m uvicorn ipsp.main:create_app --factory --reload
 ```
 
-Open `http://127.0.0.1:8000`. Never use the insecure-cookie override in production. The implemented UI/API foundation operates without Internet access.
+Open http://127.0.0.1:8000. Never use the insecure-cookie override in production. The implemented foundation operates offline. Copy .env.example to an ignored .env only for non-secret overrides; secrets remain separate process entries resolved through SecretRef. See [Configuration](config/README.md).
 
-Copy `.env.example` to a local ignored `.env` only when overrides are needed. Nested environment settings use `__`, such as `IPSP_OUTBOUND__INTERNET_ENABLED=false`. Secret values are separate process entries resolved through `SecretRef`, never ordinary Settings. See [Configuration](config/README.md).
-
-For the exact locked environment:
+For the exact lock:
 
 ```powershell
 python -m pip install -r requirements.lock
 python -m pip install -e . --no-deps
 ```
 
-## Quality and testing
+## Quality and historical acceptance evidence
 
-Testing is layered: unit contracts, integration/database/API behavior, security and privacy, architecture conformance, semantic benchmarks as later engines arrive, and milestone acceptance. Tests include negative behavior—denied permissions/outbound access, invalid state, unsafe content, privacy markers, migration mismatch, route containment, job lifecycle races, and architecture contamination—not only happy paths.
+Repository quality is layered across unit, integration, security/privacy, architecture conformance, future semantic benchmarks, and milestone acceptance:
 
 ```powershell
 python -m compileall -q backend tests
@@ -429,85 +611,144 @@ python -m pip check
 git diff --check
 ```
 
-The Phase 1L.1 acceptance audit recorded two clean planned full-suite runs of 216 tests, focused job/process-lifecycle stability, strict quality gates, isolated migrations, a disposable locked installation, security/privacy checks, and live responsive browser acceptance. Read the concise evidence in [Phase 1 Acceptance Report](docs/PHASE_1_ACCEPTANCE_REPORT.md); the repository-wide strategy and eventual v1 criteria are in [Test Strategy](docs/29_TEST_STRATEGY.md) and [Acceptance Criteria](docs/30_ACCEPTANCE_CRITERIA.md).
+**Historical acceptance evidence—not a new test run:** the Phase 1L.1 audit recorded two clean planned 216-test full-suite runs, focused job/process-lifecycle stability, architecture/security checks, isolated migration validation, a disposable locked installation, and responsive browser QA. This README-only task does not claim that the suite was rerun. See [Test Strategy](docs/29_TEST_STRATEGY.md), [Acceptance Criteria](docs/30_ACCEPTANCE_CRITERIA.md), and [Phase 1 Acceptance Report](docs/PHASE_1_ACCEPTANCE_REPORT.md).
 
-## Version roadmap
+## Versioning philosophy
+
+Application versions follow semantic versioning; version numbers are not decimal fractions. v0.10.0 validly follows v0.9.0. Architecture freezes, application releases, work packages, and individual contract versions advance independently.
+
+Domain Experience Packs may eventually carry versions independently of IPSP Core, but that packaging is **FROZEN ARCHITECTURE / PLANNED**, not current functionality.
+
+## Revised pre-v1.0 roadmap
+
+This F-002 roadmap replaces the old compressed v0.2–v0.9 schedule in this README:
 
 | Version | Milestone | Status |
 |---|---|---|
-| v0.1.0 | Foundation/security/repository shell | **FORMALLY ACCEPTED — independent Phase 1L.1 final review PASS** |
-| v0.2.0 | Ingestion/storage/provenance | **AUTHORIZED — NOT STARTED** |
-| v0.3.0 | Data understanding/relationships | Not started |
-| v0.4.0 | Semantic manifest/clarification | Not started |
-| v0.5.0 | Capability/model validation | Not started |
-| v0.6.0 | Simulation/trust/history | Not started |
-| v0.7.0 | Dynamic frontend | Not started; extends the existing theme/shell foundation |
-| v0.8.0 | Local LLM | Not started |
-| v0.9.0 | Remote/hybrid LLM | Not started |
-| v1.0.0 | Production-ready integration | Not started |
+| v0.1.0 | Foundation / Security / Repository Shell | **FORMALLY ACCEPTED** |
+| v0.1.1 | F-002 Architecture Reconciliation | **PLANNED — NOT STARTED** |
+| v0.2.0 | Data Ingestion, Storage & Provenance | **NOT STARTED** |
+| v0.3.0 | Deterministic Data Understanding & Relationships | **NOT STARTED** |
+| v0.4.0 | Semantic Intelligence & Dataset Semantic Manifest | **NOT STARTED** |
+| v0.5.0 | Metric / Formula Registry + Domain Experience Foundation | **NOT STARTED** |
+| v0.6.0 | Capability Discovery + Engine/License Registry | **NOT STARTED** |
+| v0.7.0 | Core Modelling + Model Lifecycle | **NOT STARTED** |
+| v0.8.0 | Simulation Core: three bases, ScenarioIntentManifest, CompositeSimulationGraph foundation | **NOT STARTED** |
+| v0.9.0 | Trust + Evidence + History + Comparison | **NOT STARTED** |
+| v0.10.0 | Cross-Domain Composite Intelligence | **NOT STARTED** |
+| v0.11.0 | Domain Intelligence Completion | **NOT STARTED** |
+| v0.12.0 | Learning + Outcome Reconciliation Foundation | **NOT STARTED** |
+| v0.13.0 | Local AI | **NOT STARTED** |
+| v0.14.0 | Full Dynamic Product UI | **NOT STARTED** |
+| v0.15.0 | v1.0 Release Candidate / Hardening | **NOT STARTED** |
+| v1.0.0 | First General Availability release | **TARGET — NOT RELEASED** |
 
-See [Implementation Progress](docs/31_IMPLEMENTATION_PROGRESS.md) for phase evidence and the current gate.
+v0.1.1 aligns accepted foundation documentation and contracts with F-002: authority, neutral branding, provider-neutral synthetic naming, Domain Experience, Metric Registry, Engine/License, Composite/Cross-Domain, learning, anti-contamination, flow, license-governance, and regression contracts. It is not described as complete. v0.2 must not begin until reconciliation is complete.
 
-## Parallel development workflow
+## What v1.0 means
 
-IPSP parallelizes the same milestone across different modules, not different versions across speculative dependencies. `main` contains accepted milestones. Kedar creates and owns `integration/vX.Y.Z`, which combines reviewed workstreams. Contributors implement one explicit workstream on `feature/<owner>/<milestone>-<workstream>` and push only their own branch; Kedar alone merges, resolves semantic conflicts, finalizes integration, and promotes accepted milestones.
+v1.0 is the first complete, production-usable expression of the IPSP architecture—not every capability IPSP may ever support.
 
-Every workstream declares its exact base SHA, merge target, owner, owned/shared/forbidden paths, frozen input/output contracts, migration owner, dependency owner, stop conditions, and branch gate. There is one migration owner per milestone. Shared contracts and files cannot be independently reinterpreted; contributors stop with a structured coordination reason when authority is missing. Passing a branch gate is not milestone acceptance:
+Expected v1.0 scope includes:
 
-```text
-BRANCH GATE → POST-MERGE INTEGRATION GATE → MILESTONE ACCEPTANCE GATE → main
+- secure local-first projects/workspaces;
+- structured ingestion, dataset versioning, and provenance;
+- deterministic understanding, relationship/grain validation, and Dataset Semantic Manifest;
+- Metric & Formula Registry and Domain Experience framework;
+- baseline Marketing, Product, Sales, Customer Experience, Finance, Operations/Demand, and Generic/Custom experiences;
+- capability discovery and responsible refusal;
+- core statistical/ML modelling, forecasting, explainability, and champion/challenger lifecycle;
+- EngineRegistry, LicenseRegistry, and open-source-preferred resolution;
+- DATA_BASED, MIXED, and INTENT_BASED simulation;
+- CompositeSimulationGraph and basic defensible Cross-Domain simulation;
+- Monte Carlo where valid;
+- Trust and separate Evidence Profiles;
+- Scenario Library, Compare, Re-run, and Reproduce;
+- SimulationLearningStore and Outcome Reconciliation foundation;
+- governed learning;
+- optional local LLM assistance;
+- PDF/Excel export and full capability-driven UI.
+
+## Capabilities deferred beyond v1.0
+
+The following do not block v1.0:
+
+- production-mature advanced causal workflows using DoWhy/EconML;
+- full solver-backed decision optimization with CVXPY/OSQP/SCS or commercial solvers;
+- automated PEFT/LoRA lifecycle;
+- Remote or Hybrid LLM operation;
+- PUBLIC_WEB evidence and APPROVED_CONNECTORS;
+- enterprise connectors such as business systems and warehouses;
+- enterprise identity and advanced organization policy;
+- PostgreSQL, Redis, Celery, Kubernetes, object storage, multi-node workers, or horizontal scaling;
+- specialized QuantLib instrument pricing.
+
+## Tentative post-v1.0 direction
+
+This strategy is **TENTATIVE POST-v1.0**, not an immutable commitment:
+
+| Version | Direction | Examples |
+|---|---|---|
+| v1.1 | Advanced Learning & Decision Intelligence | stronger reconciliation, drift, governed retraining, local semantic memory, optional PEFT/LoRA evaluation |
+| v1.2 | Causal & Optimization Intelligence | DoWhy, EconML, CVXPY, OSQP/SCS, resource and capacity optimization |
+| v1.3 | External Intelligence | PUBLIC_WEB evidence, approved evidence providers, Remote/Hybrid LLM, research flows |
+| v1.4 | Enterprise Integrations | warehouse/business connectors, enterprise identity, organization policy |
+| v1.5 | Enterprise Scale | optional PostgreSQL, distributed workers, object-like storage, horizontal scaling |
+
+v2.0 is not pre-assigned. It remains reserved for a meaningful breaking compatibility change.
+
+## Development and parallel-integration workflow
+
+The repository uses same-version, different-module parallel development with Kedar as integration owner and final merge authority:
+
+```mermaid
+flowchart TD
+  AUTH[Architecture Authority] --> SCOPE[Milestone Scope]
+  SCOPE --> CONTRACT[Contract Freeze]
+  CONTRACT --> LICENSE[Dependency / License Review]
+  LICENSE --> SPLIT[Workstream Split]
+  SPLIT --> FEATURE[Feature Branches]
+  FEATURE --> BRANCH[Unit / Security / Contract Tests]
+  BRANCH --> INTEGRATION[Integration Branch]
+  INTEGRATION --> TEST[Integration Tests]
+  TEST --> CONFORM[Architecture Conformance]
+  CONFORM --> REVIEW[Independent Review]
+  REVIEW --> RC[Release Candidate]
+  RC --> GATE[Acceptance Gate]
+  GATE --> MAIN[main]
+  MAIN --> TAG[Version Tag]
 ```
 
-The v0.2 workstreams are currently planned, not active; their contract-freeze fields remain unresolved. See [Parallel Development Workflow](docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md), [Active Workstreams](docs/42_ACTIVE_WORKSTREAMS.md), [Workstream Contract Template](docs/43_WORKSTREAM_CONTRACT_TEMPLATE.md), and [Parallel Development Flow](flows/21_PARALLEL_DEVELOPMENT.md).
+Before implementation, each milestone freezes functional, data/schema, API/interface, acceptance, and dependency/license contracts. Workstreams declare branch, base SHA, merge target, owner, path authority, migration owner, shared contracts, and gates. Contributors push only their assigned branches; Kedar resolves semantic conflicts and integrates. Branch PASS is not milestone PASS.
+
+The existing v0.2 workstream documents predate the F-002 sequencing change and must be reconciled during v0.1.1 before v0.2 begins. See [Parallel Development Workflow](docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md), [Active Workstreams](docs/42_ACTIVE_WORKSTREAMS.md), [Workstream Contract Template](docs/43_WORKSTREAM_CONTRACT_TEMPLATE.md), and [Parallel Flow](flows/21_PARALLEL_DEVELOPMENT.md).
 
 ## Documentation map
 
-| Category | Key entry points |
+| Area | Entry points |
 |---|---|
-| Start here | [Agent Rules](AGENTS.md), [Copilot Instructions](.github/copilot-instructions.md), [File Index](FILE_INDEX.md), this README |
-| Product/scope | [Scope Freeze](docs/00_SCOPE_FREEZE.md), [Project Specification](docs/01_PROJECT_SPEC.md), [Product Requirements](docs/02_PRODUCT_REQUIREMENTS.md) |
-| Architecture | [Architecture](docs/03_ARCHITECTURE.md), [Project Structure](docs/04_PROJECT_STRUCTURE.md), [Decision Log](docs/32_DECISION_LOG.md), [System Flow](flows/01_SYSTEM_ARCHITECTURE.md) |
-| UI | [UI/UX](docs/05_UI_UX_SPEC.md), [Design System](docs/06_UI_DESIGN_SYSTEM.md), [Visual Reference Rules](reference/README.md) |
-| Data/semantics | [Data Understanding](docs/07_DATA_UNDERSTANDING_SPEC.md), [Semantic Model](docs/08_SEMANTIC_MODEL_SPEC.md), [Relationships](docs/09_RELATIONSHIPS_HIERARCHY_LINEAGE_SPEC.md), [Ingestion](docs/20_INGESTION_STORAGE_SPEC.md), [Sampling](docs/21_SAMPLING_PROVENANCE_SPEC.md) |
-| Capability/models/simulation/trust | [Capability Discovery](docs/11_CAPABILITY_DISCOVERY_SPEC.md), [Modelling](docs/12_MODELING_ENGINE_SPEC.md), [Model Registry](docs/13_MODEL_REGISTRY_LIFECYCLE_SPEC.md), [Simulation](docs/14_SIMULATION_ENGINE_SPEC.md), [Trust](docs/15_TRUST_AND_VALIDATION_SPEC.md) |
-| LLM/privacy/security | [LLM Architecture](docs/16_LLM_ARCHITECTURE.md), [Remote Privacy](docs/17_PRIVACY_REMOTE_LLM_POLICY.md), [Security/RBAC](docs/18_SECURITY_RBAC_SPEC.md), [Outbound/Secrets](docs/19_OUTBOUND_SECRETS_CONFIG_SPEC.md) |
-| Operations | [Observability](docs/22_OBSERVABILITY_AUDIT_SPEC.md), [Errors](docs/23_ERROR_HANDLING_SPEC.md), [Jobs](docs/24_JOB_PROCESSING_SPEC.md), [SQLite](docs/27_SQLITE_SCHEMA_SPEC.md), [REST API](docs/28_REST_API_CONTRACT.md), [Health](docs/37_SYSTEM_HEALTH_SPEC.md) |
-| Testing/release | [Test Strategy](docs/29_TEST_STRATEGY.md), [Acceptance Criteria](docs/30_ACCEPTANCE_CRITERIA.md), [Progress](docs/31_IMPLEMENTATION_PROGRESS.md), [Phase 1 Report](docs/PHASE_1_ACCEPTANCE_REPORT.md) |
-| Development workflow | [Coding Standards](docs/34_CODING_STANDARDS.md), [Parallel Workflow](docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md), [Active Workstreams](docs/42_ACTIVE_WORKSTREAMS.md), [Contract Template](docs/43_WORKSTREAM_CONTRACT_TEMPLATE.md) |
-| Flows/reference | [Flow Index](flows/README.md), [End-to-End Flow](flows/20_END_TO_END_LIFECYCLE.md), [Benchmark Catalog](docs/39_BENCHMARK_CATALOG.md), [Anti-Contamination](docs/40_ANTI_CONTAMINATION.md) |
+| Product and scope | [Scope Freeze](docs/00_SCOPE_FREEZE.md), [Project Specification](docs/01_PROJECT_SPEC.md), [Product Requirements](docs/02_PRODUCT_REQUIREMENTS.md) |
+| Architecture and ownership | [Architecture](docs/03_ARCHITECTURE.md), [Project Structure](docs/04_PROJECT_STRUCTURE.md), [Decision Log](docs/32_DECISION_LOG.md) |
+| UI and reference | [UI/UX](docs/05_UI_UX_SPEC.md), [Design System](docs/06_UI_DESIGN_SYSTEM.md), [Reference Rules](reference/README.md) |
+| Data and semantics | [Data Understanding](docs/07_DATA_UNDERSTANDING_SPEC.md), [Semantic Model](docs/08_SEMANTIC_MODEL_SPEC.md), [Relationships](docs/09_RELATIONSHIPS_HIERARCHY_LINEAGE_SPEC.md), [Metric Predecessor](docs/10_KPI_METRIC_DEPENDENCY_SPEC.md) |
+| Capabilities and models | [Capability Discovery](docs/11_CAPABILITY_DISCOVERY_SPEC.md), [Modelling](docs/12_MODELING_ENGINE_SPEC.md), [Model Lifecycle](docs/13_MODEL_REGISTRY_LIFECYCLE_SPEC.md) |
+| Simulation and Trust | [Simulation Predecessor](docs/14_SIMULATION_ENGINE_SPEC.md), [Trust](docs/15_TRUST_AND_VALIDATION_SPEC.md), [History](docs/26_SIMULATION_HISTORY_REPRODUCIBILITY.md) |
+| LLM, privacy, security | [LLM](docs/16_LLM_ARCHITECTURE.md), [Remote Privacy](docs/17_PRIVACY_REMOTE_LLM_POLICY.md), [RBAC](docs/18_SECURITY_RBAC_SPEC.md), [Outbound and Secrets](docs/19_OUTBOUND_SECRETS_CONFIG_SPEC.md) |
+| Data lifecycle | [Ingestion](docs/20_INGESTION_STORAGE_SPEC.md), [Sampling](docs/21_SAMPLING_PROVENANCE_SPEC.md) |
+| Operations | [Observability](docs/22_OBSERVABILITY_AUDIT_SPEC.md), [Errors](docs/23_ERROR_HANDLING_SPEC.md), [Jobs](docs/24_JOB_PROCESSING_SPEC.md), [Reporting](docs/25_REPORTING_EXPORT_SPEC.md), [Health](docs/37_SYSTEM_HEALTH_SPEC.md) |
+| Quality and release | [Test Strategy](docs/29_TEST_STRATEGY.md), [Acceptance Criteria](docs/30_ACCEPTANCE_CRITERIA.md), [Progress](docs/31_IMPLEMENTATION_PROGRESS.md), [Phase 1 Report](docs/PHASE_1_ACCEPTANCE_REPORT.md) |
+| Governance and workflow | [Coding Standards](docs/34_CODING_STANDARDS.md), [Parallel Workflow](docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md), [Active Workstreams](docs/42_ACTIVE_WORKSTREAMS.md) |
+| Benchmarks and contamination | [Benchmark Catalog](docs/39_BENCHMARK_CATALOG.md), [Anti-Contamination](docs/40_ANTI_CONTAMINATION.md) |
+| Flows and exhaustive index | [Flow Index](flows/README.md), [File Index](FILE_INDEX.md) |
 
-[FILE_INDEX.md](FILE_INDEX.md) is the exhaustive Markdown documentation index.
+## Current release summary
 
-## Key glossary
+- **ACCEPTED:** IPSP application v0.1.0, Phase 1 foundation, independent Phase 1L.1 final review PASS.
+- **IMPLEMENTED:** secure local-first foundation, current API, offline frontend, generic job provider, observability/audit, and health.
+- **FROZEN ARCHITECTURE / PLANNED:** F-002 domain, metric, engine/license, simulation, evidence, cross-domain, Finance, and governed-learning architecture.
+- **NEXT PLANNED:** v0.1.1 F-002 Architecture Reconciliation; not started.
+- **NOT STARTED:** v0.2.0 ingestion/storage/provenance and every later capability milestone.
+- **TARGET:** v1.0.0 first General Availability release; not released.
+- **DEFERRED:** advanced causal, optimization, remote/hybrid intelligence, enterprise connectors, distributed scale, and specialized quant capabilities as described above.
 
-| Term | Meaning |
-|---|---|
-| Capability | An analytical, predictive, or simulation function supportable for a particular dataset |
-| Dataset Semantic Manifest | Versioned contract for grain, fields, semantics, relationships, constraints, KPIs, capabilities, and provenance |
-| Control plane | SQLite metadata, knowledge, governance, and operational state |
-| Analytical data plane | Source/Parquet data referenced for profiling and computation |
-| Prediction horizon | The time a prediction is made relative to when features and outcomes become available |
-| Feature lineage | How a feature is derived, transformed, or aggregated from other data |
-| Attribution | Assignment under a declared rule; not evidence of causality |
-| Look-alike | Similarity to a seed cohort, distinct from calibrated response propensity |
-| Trust Score | Evidence-based decomposition across data, semantics, model, support, drift, constraints, and governance |
-| Champion/Challenger | Controlled lifecycle where candidates compete before promotion |
-
-See the complete [Glossary](docs/38_GLOSSARY.md).
-
-## Current limitations and intentional boundaries
-
-Do not infer implemented behavior from target specifications. At v0.1.0:
-
-- IPSP is an accepted foundation, not the completed v1.0 product.
-- SQLite is the local control plane; analytical storage orchestration is deferred.
-- `LocalJobBackend` is single-process; there is no Redis/Celery/distributed worker provider.
-- There is no upload, ingestion, canonical Parquet, or dataset-version runtime yet.
-- There are no runtime dataset ACLs or column policies because no dataset subsystem exists yet.
-- There is no profiling, semantic manifest, relationship, capability, model, simulation, trust, or explainability engine yet.
-- There is no local or remote LLM provider execution yet.
-- There is no run history, exact reproduction, PDF/Excel export, or executable backup/restore workflow yet.
-- There is no full metadata-driven dataset/simulation UI yet.
-- No tag or production-ready v1.0 claim follows from the v0.1.0 foundation acceptance.
-
-These are scheduled roadmap boundaries, not hidden features and not permission to skip milestone gates.
+Do not infer operational functionality from an architecture section or linked predecessor specification. Capability claims become current only after their milestone is implemented, tested, independently reviewed, accepted, and promoted.
