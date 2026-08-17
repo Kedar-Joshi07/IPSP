@@ -83,8 +83,21 @@ records checksum/source, compatibility, security/isolation, resources, evaluatio
 uses. Presence on disk is not installation approval or license approval.
 
 Download/update permission is separately governed from inference permission. No download is performed
-by F2-F, and no later implementation may download or update a model merely because Local LLM mode or
+by F2-G, and no later implementation may download or update a model merely because Local LLM mode or
 a feature flag is enabled.
+
+## License, evidence, and learning gates
+
+Outbound and provider execution require current `EngineResolver` and `LicenseRegistry` decisions for
+the specific engine/provider, dependency, model weights or adapter, connector, evidence/data source,
+and intended use. An `ALLOW` or conditional `WARN` cannot waive a privacy, consent, permission,
+security, Trust, or capability failure; `BLOCK` fails closed.
+
+Project/dataset evidence policy and runtime consent are evaluated again when a background job starts
+and before each material retrieval/transmission, because queued authority may have expired or changed.
+Learning and adaptation artifacts additionally require a passed LearningEligibilityGate and approved
+training purpose. A provider configuration, credential reference, prior retrieval, or existing
+artifact never bypasses those checks.
 
 ## Feature flags
 

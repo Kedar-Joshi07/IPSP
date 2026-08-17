@@ -11,8 +11,10 @@ engine, license, and modelling reconciliation was independently accepted at SHA
 `1791041904d5531eb1fb2c7beb1969baf4853dee`; F2-E simulation, Composite/Cross-Domain, Finance,
 Trust, Evidence, and reproducibility contract reconciliation was independently accepted at SHA
 `697a55567919e13c3087b0334ef14d89a5220055`; F2-F governed learning, outcome reconciliation, LLM,
-and evidence-access contract reconciliation is complete pending independent review. No F-002 runtime
-capability is implemented by these documentation work packages.
+and evidence-access contract reconciliation was independently accepted at SHA
+`81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-G platform-contract reconciliation is complete
+pending independent review. No F-002 runtime capability is implemented by these documentation work
+packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -22,7 +24,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-F COMPLETE, INDEPENDENT REVIEW PENDING** | F2-E accepted at `697a55567919e13c3087b0334ef14d89a5220055`; F2-G must not begin before F2-F review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-G COMPLETE, INDEPENDENT REVIEW PENDING** | F2-F accepted at `81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-H must not begin before F2-G review |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -39,10 +41,40 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
-## F2-F — Governed Learning / Outcome Reconciliation / LLM / Evidence Access Contract Freeze
+## F2-G — UI / API / Storage / Jobs / Security / Configuration / Operations Reconciliation
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
 - **Status:** COMPLETE (2026-08-17), awaiting independent review
+- **Starting and accepted F2-F SHA:** `81df9fedf84c7c02b837d5ca1509c81c34648fcd`
+- **Scope:** IPSP target UI/navigation/five-step composition, conceptual SQLite homes and future API
+  resource families, provider-neutral jobs, security/outbound/license/evidence/learning gates,
+  provider-neutral configuration, observability/error/health/backup operations, and v0.2 ingestion/
+  provenance compatibility
+- **Current/target boundary:** documentation contracts only; no target page, API route, table,
+  migration, job type/backend, provider, engine, probe, backup service, feature flag, or v0.2 runtime
+  is implemented by F2-G
+- **Change boundary:** documentation only; no production code, tests, migrations, schemas,
+  dependencies, lockfiles, or production feature flags changed
+- **Validation evidence:** `git diff --check` PASS; 12 relative Markdown links resolve; tables and
+  fences PASS; no changed-file Mermaid block; exact fourteen-file documentation scope PASS; IPSP
+  identity, frozen navigation and five simulation steps, manifest-driven/capability-driven UI,
+  conceptual-only persistence homes and API resource families, current LocalJobBackend/synthetic-job
+  boundaries, provider/license/evidence/consent/learning gates, provider-neutral configuration,
+  target observability/error/health/backup representation, optional-service readiness boundary, and
+  v0.2 provenance deferral verified; Ruff PASS; mypy 67 source files PASS; architecture conformance
+  13/13 PASS; complete test coverage PASS in split execution (215/215 unaffected tests plus 1/1
+  timing-sensitive recovery test). Two monolithic Windows runs reached the recovery test's hardcoded
+  10-second child-exit deadline after the child emitted the expected `JOB-WORKER-INTERRUPTED` payload;
+  the unchanged isolated test passed twice with above-normal test-process scheduling. No production
+  or test change was made for this environment timing behavior.
+- **Following milestone:** v0.2.0 remains NOT STARTED
+- **Next gate:** independent review of F2-G before any F2-H work
+
+## F2-F — Governed Learning / Outcome Reconciliation / LLM / Evidence Access Contract Freeze
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** ACCEPTED (2026-08-17) — independent review PASS
+- **Accepted F2-F SHA:** `81df9fedf84c7c02b837d5ca1509c81c34648fcd`
 - **Starting and accepted F2-E SHA:** `697a55567919e13c3087b0334ef14d89a5220055`
 - **Scope:** SimulationLearningStore and empirical-data separation, evidence-authority tiers,
   OutcomeReconciliation and actual matching, LearningEligibilityGate, governed Training Dataset
@@ -64,7 +96,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   model-weight license metadata verified; Ruff PASS; mypy 67 source files PASS; architecture
   conformance 13/13 PASS; full unit/integration/security regression suite 216/216 PASS
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent review of F2-F before any F2-G work
+- **Gate outcome:** F2-G authorized from accepted F2-F SHA
 
 ## F2-E — Simulation / Composite / Finance / Trust / Evidence Contract Freeze
 

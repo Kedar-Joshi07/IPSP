@@ -2,67 +2,91 @@
 
 ## Status boundary
 
-This document is a target control-plane domain map, not a claim that all listed tables exist. The
-accepted v0.1.0 database contains only its seven foundation tables. F-002 analytical, registry,
-scenario, evidence, and learning persistence remains planned. Exact table names, columns,
-normalization, keys, indexes, retention, and migrations are deferred to F2-G and the owning
-milestone contract freezes.
+This document is a target **control-plane conceptual domain map**, not a proposed migration and not a
+claim that every domain exists. The accepted v0.1.0 database contains exactly seven foundation tables:
+`roles`, `permissions`, `role_permissions`, `users`, `user_sessions`, `audit_events`, and `jobs`.
 
-## Major table groups
+F2-G adds no tables, columns, indexes, foreign keys, ORM models, repositories, or migration revisions.
+Each future persistence contract and migration arrives only in its owning accepted application
+milestone. Exact names, normalization, keys, indexes, retention, archival, and compatibility are
+deferred to those freezes.
 
-### Security
-users, roles, permissions, role_permissions, user_sessions, user_preferences. V1.0 `users.role_id` resolves the user's single role; role-to-permission mapping is the only authorization authority. `users` contains `id`, unique `username`, `display_name`, nullable `email`, `password_hash`, `role_id`, `is_active`, `must_change_password`, `failed_login_count`, `locked_until`, `last_login_at`, `password_changed_at`, `created_at`, `created_by`, and `updated_at`; it has no persisted `is_admin`.
+## Plane and ownership boundary
 
-`user_sessions` stores a token hash, non-secret correlation ID, user reference, created/last-seen/expiry/invalidation timestamps, and lifecycle metadata. Raw bearer tokens are never stored or logged. Security timestamps use timezone-aware UTC semantics.
+SQLite is the control, governance, knowledge/registry, security, and operational metadata plane.
+Immutable source files and processed Parquet remain the analytical data plane. SQLite is not the
+mandatory large analytical warehouse, and SimulationLearningStore experience is not silently joined
+or unioned into empirical analytical data.
 
-### Workspace/data
-projects, project_memberships, datasets, dataset_versions, dataset_tables, dataset_columns, dataset_permissions, column_policies, upload_artifacts.
+Repositories own data access. Application/API services do not scatter SQL or expose ORM objects.
+Provider libraries, Domain Experiences, and benchmark schemas never own generic persistence.
 
-`datasets` represents logical identity; `dataset_versions` contains immutable versions. Multi-table status is derived from related `dataset_tables`, never from a persisted `is_multi_table` flag.
+## Accepted foundation schema
 
-### Semantics
-semantic_manifests, column_semantics, relationships, hierarchies, feature_lineage, semantic_conflicts, clarification_questions, user_confirmations, kpi_definitions, business_rules.
+The seven implemented tables support:
 
-Under F-002, future semantic persistence must also support versioned Metric & Formula Registry
-definitions, Domain Experience Manifests and activation, and CrossDomainSemanticGraph evidence.
-`kpi_definitions` is predecessor vocabulary, not the complete registry architecture.
+- role-to-permission authorization without a persisted `is_admin` authority;
+- user identity and Argon2 password hashes;
+- server-side session token hashes and non-secret correlation IDs;
+- durable sanitized audit/security events;
+- durable local job metadata and lifecycle.
 
-### Capabilities/models
-capabilities, capability_validations, models, model_metrics, model_promotions, drift_metrics.
+Their exact current columns and constraints are defined by the accepted Alembic history and code,
+not retroactively changed by this target map.
 
-Future registry persistence must represent EngineRegistry, LicenseRegistry, and EngineResolver
-decisions without making a provider library the schema owner.
+## Future conceptual persistence homes
 
-### Simulation
-simulation_runs, simulation_inputs, simulation_outputs, simulation_artifacts, run_warnings, trust_scores.
+The following are conceptual ownership domains. They intentionally do not specify table names.
 
-Future simulation persistence must preserve ScenarioIntentManifest and CompositeSimulationGraph
-versions and keep Trust records distinct from Evidence Profiles.
+| Conceptual home | Future contract must be able to represent |
+|---|---|
+| Workspace, data, and provenance | Project/membership/policy; dataset/source/table/field identities; immutable dataset versions; upload/artifact, sampling, classification, retention, and provenance lineage |
+| Semantic and relationships | Dataset Semantic Manifest versions; concepts/roles/grain/time/unit/currency; confirmations/conflicts; relationships, hierarchies, feature lineage, and CrossDomainSemanticGraph metadata/evidence |
+| Metric & Formula Registry | Metric/definition identity and versions; typed formulas/dependencies; aggregation, grain, time, unit/currency, null/safe-division behavior; validation and lineage |
+| Domain Experience activation | Pack/manifest/provider versions, compatibility, prerequisite evidence, activation/limitation/refusal, organization precedence, and UI/terminology metadata references |
+| Capability, engine, and license governance | Capability decisions; EngineRegistry and Runtime Engine Inventory; EngineResolver candidates/result; LicenseRegistry dependency, model-weight, solver, dataset/evidence, connector, and provider metadata/decisions |
+| Models and evaluation | Model/artifact/feature versions; libraries/providers/resources; baselines, candidates/challengers/champions; metrics, calibration, stability/drift/robustness, promotion/rejection, Trust, license, and reproducibility |
+| Scenario Intent and assumptions | Versioned ScenarioIntentManifest; exact basis, objective/scope, controls, constraints, assumptions, comparison/evidence/consent snapshots, validation, and supersession |
+| Composite simulation | CompositeSimulationGraph identity/version, nodes/edges/plan, CrossDomainSemanticGraph references, provider/metric/model dependencies, reconciliation, support, partial/refused paths, and result lineage |
+| Trust and Evidence | Dimension/check versions/outcomes/reasons plus separate Evidence Profiles/snapshots, composition/dependence, provenance, freshness, policy/consent/license, and immutable result references |
+| Simulation history/results | Run/result identity and versions; inputs/outputs/uncertainty, artifacts, compare/re-run/reproduce manifest, warnings/refusals, seeds/configuration, trace, and retention |
+| Governed learning | SimulationLearningStore experience kept logically separate from empirical data; observed-outcome references/matches, OutcomeReconciliation, LearningEligibilityGate, Training Dataset Builder, evaluation and promotion/rejection decisions |
+| Local AI and evidence access | LLM/evidence provider metadata; local model/base weight/adapter/evaluation versions; retrieval/memory/training snapshots; dependency/model-weight licenses; policy/consent and provenance without secret values |
+| Operations | Jobs/attempts/artifacts, audit/observability references, notifications, health snapshots as appropriate, backup/restore manifests, and retention/deletion decisions |
 
-### Governed learning
+This map gives future migrations a coherent home without requiring a one-table-per-concept design or
+prejudging resource nesting.
 
-Future persistence must keep SimulationLearningStore experience logically separate from empirical
-analytical data and represent observed outcomes, OutcomeReconciliation, learning eligibility, and
-promotion/rejection decisions with provenance.
+## Versioning, lineage, and provenance rules
 
-### AI/configuration
-llm_providers, llm_usage, outbound_policies, feature_flags, system_settings, secret_references.
+- Versioned contracts become immutable once referenced by a completed result, model, evidence,
+  learning decision, export, or reproduction manifest; corrections create a new version.
+- References use stable identities and exact versions rather than mutable labels.
+- Provenance classes remain distinct. Synthetic data, assumptions, LLM proposals, prior simulations,
+  external evidence, derived observations, and observed outcomes are never collapsed into one truth
+  flag or empirical table.
+- Evidence Profile remains separate from Trust. SimulationLearningStore remains separate from source/
+  Parquet analytical data and governed training-dataset artifacts.
+- Secrets are references only. Raw bearer tokens, credentials, model/license keys, and auth cookies
+  are never stored in ordinary control-plane fields.
+- Large payloads/artifacts remain in approved artifact/data storage with checksums and metadata
+  references where appropriate.
 
-Future configuration metadata must represent evidence-access policy and consent snapshots while
-preserving SecretProvider references and deny-by-default outbound enforcement.
+## Security and operational rules
 
-### Operations
-jobs, audit_events, notifications, backups.
-
-The foundation `jobs` schema supports `JobRepository` and records job type/status, progress, owner, trace ID, timestamps, retryability, cancellation, artifact references, and sanitized error details. Audit events use `session_correlation_id`, not a bearer session identifier.
-
-## Rules
-- Versioned objects are immutable once referenced by a completed run; create a new version instead of overwriting history.
-- Semantic manifests, capabilities, and model versions/artifacts are immutable once referenced. Simulation runs use exact foreign-key references to dataset, semantic, capability, and model version records and persist seeds plus an effective non-secret configuration snapshot/hash.
-- Foreign keys enabled.
-- Repositories own data access.
-- Migration history is mandatory.
+- Foreign keys are enabled and migration history is mandatory.
 - `database/migrations/` is the single Alembic history.
-- The SQLite control plane uses synchronous SQLAlchemy 2.x repositories with `select()`/`Session.execute()`/`Session.scalars()`; legacy `Session.query()` and synchronous Session work hidden inside `async def` are prohibited.
-- Synthetic data, assumptions, LLM proposals, simulations, and observed outcomes retain distinct
-  provenance and cannot be silently collapsed into one empirical-data authority.
+- The SQLite control plane uses synchronous SQLAlchemy 2.x repositories with `select()`,
+  `Session.execute()`, and `Session.scalars()`; legacy `Session.query()` and synchronous Session work
+  hidden inside `async def` are prohibited.
+- Authorization, project/dataset policy, privacy, consent, outbound, learning eligibility, and
+  license/provider gates are service authorities; schema presence never grants permission.
+- Audit metadata uses non-secret correlation and immutable resource/version references.
+- Retention/deletion/backup is dependency-aware and records loss of reproducibility honestly.
+
+## Migration ownership and sequencing
+
+A conceptual home is not migration authorization. Metric, Domain Experience, engine/license, model,
+scenario, graph, Trust/Evidence, learning/reconciliation, Local AI, evidence-provider, and operations
+records are introduced only by their owning milestone's accepted functional, schema, API, acceptance,
+and dependency/license contracts. F2-G creates no migration and does not reserve physical names.
