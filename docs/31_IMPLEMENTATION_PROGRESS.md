@@ -7,8 +7,10 @@ Active reconciliation milestone: **v0.1.1: F-002 Architecture Reconciliation —
 was independently accepted at SHA `2605325a357b372057bbf57fbab90be0f83ace1e`; F2-B was
 independently accepted at SHA `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`; F2-C was
 independently accepted at SHA `262909194568f40e9ca384479dfbbca9ebb06e20`; F2-D capability,
-engine, license, and modelling reconciliation is complete pending independent review. No F-002
-runtime capability is implemented by these documentation work packages.
+engine, license, and modelling reconciliation was independently accepted at SHA
+`1791041904d5531eb1fb2c7beb1969baf4853dee`; F2-E simulation, Composite/Cross-Domain, Finance,
+Trust, Evidence, and reproducibility contract reconciliation is complete pending independent review.
+No F-002 runtime capability is implemented by these documentation work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -18,7 +20,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-D COMPLETE, INDEPENDENT REVIEW PENDING** | F2-C accepted at `262909194568f40e9ca384479dfbbca9ebb06e20`; F2-E must not begin before F2-D review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-E COMPLETE, INDEPENDENT REVIEW PENDING** | F2-D accepted at `1791041904d5531eb1fb2c7beb1969baf4853dee`; F2-F must not begin before F2-E review |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -35,10 +37,36 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
-## F2-D — Capability / Engine / License / Modelling Architecture Reconciliation
+## F2-E — Simulation / Composite / Finance / Trust / Evidence Contract Freeze
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
 - **Status:** COMPLETE (2026-08-14), awaiting independent review
+- **Starting and accepted F2-D SHA:** `1791041904d5531eb1fb2c7beb1969baf4853dee`
+- **Scope:** exact simulation bases, versioned ScenarioIntentManifest, CompositeSimulationGraph,
+  Composite/Cross-Domain execution, Finance Domain Experience, expanded Trust, separate Evidence
+  Profile, complete provenance/synthetic boundary, reproducibility, and result/export contracts
+- **New specifications:**
+  [`49_COMPOSITE_CROSS_DOMAIN_SIMULATION_SPEC.md`](49_COMPOSITE_CROSS_DOMAIN_SIMULATION_SPEC.md) and
+  [`50_FINANCE_DOMAIN_EXPERIENCE_SPEC.md`](50_FINANCE_DOMAIN_EXPERIENCE_SPEC.md)
+- **Current/target boundary:** documentation contracts only; simulation, Composite/Cross-Domain,
+  Finance, Trust/Evidence, synthetic, history/reproduction, and export runtimes remain NOT IMPLEMENTED
+- **Change boundary:** documentation only; no production code, tests, migrations, schemas,
+  dependencies, or lockfiles changed
+- **Validation evidence:** `git diff --check` PASS; 20 relative Markdown links resolve; tables and
+  fences PASS; no changed-file Mermaid block; exact nine-file documentation scope PASS; exactly
+  three canonical simulation bases, ScenarioIntentManifest fields/lifecycle, graph node/edge and
+  reconciliation contracts, Finance capability families/schema-agnostic boundary, expanded Trust
+  and separate Evidence Profile, all 12 provenance classes and synthetic metadata, and re-run/
+  reproduce distinction verified; Ruff PASS; mypy 67 source files PASS; architecture conformance
+  13/13 PASS; full unit/integration/security regression suite 216/216 PASS
+- **Following milestone:** v0.2.0 remains NOT STARTED
+- **Next gate:** independent review of F2-E before any F2-F work
+
+## F2-D — Capability / Engine / License / Modelling Architecture Reconciliation
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** ACCEPTED (2026-08-14) — independent review PASS
+- **Accepted F2-D SHA:** `1791041904d5531eb1fb2c7beb1969baf4853dee`
 - **Starting and accepted F2-C SHA:** `262909194568f40e9ca384479dfbbca9ebb06e20`
 - **Scope:** evidence-first Capability Discovery, baseline-first modelling, expanded model registry,
   EngineRegistry, LicenseRegistry, EngineResolver, Runtime Engine Inventory, organization policy,
@@ -58,7 +86,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   lifecycle statuses verified; SDV inventory completed; architecture conformance 13/13 PASS; full
   unit/integration/security regression suite 216/216 PASS
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent review of F2-D before any F2-E work
+- **Gate outcome:** F2-E authorized from accepted F2-D SHA
 
 ## F2-C — Data / Semantics / Metric & Formula / Domain Experience Contract Freeze
 
