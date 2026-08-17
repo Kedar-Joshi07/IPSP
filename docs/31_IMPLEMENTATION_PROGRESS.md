@@ -9,8 +9,10 @@ independently accepted at SHA `1f2422f74a5a9f5c6b26a218db0ab68a026d561d`; F2-C w
 independently accepted at SHA `262909194568f40e9ca384479dfbbca9ebb06e20`; F2-D capability,
 engine, license, and modelling reconciliation was independently accepted at SHA
 `1791041904d5531eb1fb2c7beb1969baf4853dee`; F2-E simulation, Composite/Cross-Domain, Finance,
-Trust, Evidence, and reproducibility contract reconciliation is complete pending independent review.
-No F-002 runtime capability is implemented by these documentation work packages.
+Trust, Evidence, and reproducibility contract reconciliation was independently accepted at SHA
+`697a55567919e13c3087b0334ef14d89a5220055`; F2-F governed learning, outcome reconciliation, LLM,
+and evidence-access contract reconciliation is complete pending independent review. No F-002 runtime
+capability is implemented by these documentation work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -20,7 +22,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-E COMPLETE, INDEPENDENT REVIEW PENDING** | F2-D accepted at `1791041904d5531eb1fb2c7beb1969baf4853dee`; F2-F must not begin before F2-E review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-F COMPLETE, INDEPENDENT REVIEW PENDING** | F2-E accepted at `697a55567919e13c3087b0334ef14d89a5220055`; F2-G must not begin before F2-F review |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -37,10 +39,38 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
+## F2-F — Governed Learning / Outcome Reconciliation / LLM / Evidence Access Contract Freeze
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** COMPLETE (2026-08-17), awaiting independent review
+- **Starting and accepted F2-E SHA:** `697a55567919e13c3087b0334ef14d89a5220055`
+- **Scope:** SimulationLearningStore and empirical-data separation, evidence-authority tiers,
+  OutcomeReconciliation and actual matching, LearningEligibilityGate, governed Training Dataset
+  Builder, challenger/champion learning, exact LLM and evidence-access modes, Local AI registry/
+  model-weight licensing, governed retrieval/memory and optional PEFT/LoRA boundaries
+- **New specification:**
+  [`51_SIMULATION_LEARNING_OUTCOME_RECONCILIATION_SPEC.md`](51_SIMULATION_LEARNING_OUTCOME_RECONCILIATION_SPEC.md)
+- **Current/target boundary:** documentation contracts only; learning/reconciliation, LLM providers,
+  evidence retrieval/connectors, model downloads, training/adaptation, and Internet access remain NOT
+  IMPLEMENTED
+- **Change boundary:** documentation only; no production code, tests, migrations, schemas,
+  dependencies, or lockfiles changed
+- **Validation evidence:** `git diff --check` PASS; 14 relative Markdown links resolve; tables and
+  fences PASS; no changed-file Mermaid block; exact six-file documentation scope PASS; exact four
+  LLM modes and four evidence-access modes, effective three-way permission intersection, six ordered
+  evidence-authority tiers, SimulationLearningStore empirical separation, OutcomeReconciliation/
+  actual matching, learning eligibility/training builder/leakage gates, all five explicit prohibited
+  direct promotions, batch-default/River boundary, Local AI adaptation order, privacy/provenance and
+  model-weight license metadata verified; Ruff PASS; mypy 67 source files PASS; architecture
+  conformance 13/13 PASS; full unit/integration/security regression suite 216/216 PASS
+- **Following milestone:** v0.2.0 remains NOT STARTED
+- **Next gate:** independent review of F2-F before any F2-G work
+
 ## F2-E — Simulation / Composite / Finance / Trust / Evidence Contract Freeze
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
-- **Status:** COMPLETE (2026-08-14), awaiting independent review
+- **Status:** ACCEPTED (2026-08-17) — independent review PASS
+- **Accepted F2-E SHA:** `697a55567919e13c3087b0334ef14d89a5220055`
 - **Starting and accepted F2-D SHA:** `1791041904d5531eb1fb2c7beb1969baf4853dee`
 - **Scope:** exact simulation bases, versioned ScenarioIntentManifest, CompositeSimulationGraph,
   Composite/Cross-Domain execution, Finance Domain Experience, expanded Trust, separate Evidence
@@ -60,7 +90,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   reproduce distinction verified; Ruff PASS; mypy 67 source files PASS; architecture conformance
   13/13 PASS; full unit/integration/security regression suite 216/216 PASS
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent review of F2-E before any F2-F work
+- **Gate outcome:** F2-F authorized from accepted F2-E SHA
 
 ## F2-D — Capability / Engine / License / Modelling Architecture Reconciliation
 
