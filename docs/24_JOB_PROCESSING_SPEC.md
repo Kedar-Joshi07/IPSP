@@ -1,5 +1,9 @@
 # Background Job Processing Specification
 
+Future job purposes and provider boundaries follow the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md); listing a purpose does not implement or
+schedule it.
+
 ## Status and current boundary
 
 The v0.1.0 foundation defines `JobBackend`, `LocalJobBackend`, `JobService`, `JobRepository`,

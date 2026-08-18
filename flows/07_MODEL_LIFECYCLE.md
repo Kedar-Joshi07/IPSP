@@ -1,15 +1,18 @@
 # Flow 07 — Model Lifecycle
 ```mermaid
 flowchart TD
-  DATA[New/updated data] --> TRAIN[Train candidates]
-  TRAIN --> BASE[Compare with baseline]
-  BASE --> V[Validation + calibration + segment stability]
-  V -->|fail| REJ[Rejected]
+  EVENT[Eligible learning candidates] --> BUILD[Governed Training Dataset Builder]
+  BUILD --> TRAIN[Train immutable candidate]
+  TRAIN --> BASE[Compare with meaningful baselines]
+  BASE --> V[Leakage / calibration / stability / Trust / license validation]
+  V -->|fail| REJ[Reject with evidence]
   V -->|pass| CH[Challenger]
-  CH --> SH[Shadow / holdout evaluation]
-  SH --> BET{Better and safe?}
-  BET -- yes --> PRO[Promote champion]
-  BET -- no --> ARC[Archive]
-  PRO --> MON[Monitor drift + actual outcomes]
-  MON --> DATA
+  CH --> SH[Shadow / holdout / mature-outcome evaluation]
+  SH --> BET{Materially better and safe?}
+  BET -- yes --> DEC[Authorized promotion decision]
+  BET -- no or inconclusive --> ARC[Retain or archive; champion unchanged]
+  DEC --> PRO[Promote immutable champion]
+  PRO --> MON[Monitor drift + reconciled outcomes]
+  MON --> EVENT
+  PRO --> ROLL[Preserve rollback eligibility and lineage]
 ```

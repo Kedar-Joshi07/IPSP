@@ -1,22 +1,17 @@
-# Flow 20 — End-to-End Lifecycle
+# Flow 20 — F-002 Canonical End-to-End Lifecycle
 ```mermaid
 flowchart TD
-  L[Login] --> W[Workspace]
-  W --> U[Upload]
-  U --> SEC[File security]
-  SEC --> PROF[Profile]
-  PROF --> SEM[Semantics]
-  SEM --> Q{Clarification?}
-  Q -- yes --> CONF[Confirm]
-  Q -- no --> MAN[Manifest]
-  CONF --> MAN
-  MAN --> CAP[Discover capabilities]
-  CAP --> MOD[Validate model/engine]
-  MOD --> READY[Dataset ready]
-  READY --> SCEN[Scenario]
-  SCEN --> RUN[Run job]
-  RUN --> TRUST[Trust gate]
-  TRUST --> RES[Results]
-  RES --> HIST[History]
-  RES --> EXP[PDF/Excel]
+  DATA[Data] --> UNDER[Understanding]
+  UNDER --> SEM[Versioned Semantic Contract]
+  SEM --> DOM[Domain / Cross-Domain Activation]
+  DOM --> CAP[Capability Discovery]
+  CAP -->|unsupported| REFUSE[Limit / disable / block / refuse + reason]
+  CAP --> ANA[Analysis / Diagnosis]
+  ANA --> SEL[Model + Engine Selection]
+  SEL --> SIM[Simulation / Optimization where valid]
+  SIM --> TE[Trust + separate Evidence Profile]
+  TE --> RES[Results / Comparison]
+  RES --> MEM[Scenario & Experience Memory]
+  MEM --> LEARN[Governed Learning]
+  LEARN --> FUTURE[Better Future Models / Local AI]
 ```

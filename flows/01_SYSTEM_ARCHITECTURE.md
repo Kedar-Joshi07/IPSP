@@ -1,26 +1,31 @@
 # Flow 01 — System Architecture
 ```mermaid
 flowchart TD
-  UI[HTML/CSS/JS UI] --> API[FastAPI API]
-  API --> AUTH[Auth + RBAC + Dataset Policy]
-  AUTH --> APP[Application Services]
-  APP --> JOB[Job Manager]
-  APP --> DU[Data Understanding]
-  DU --> SEM[Semantic Engine]
-  SEM --> CAP[Capability Discovery]
-  CAP --> MOD[Model Engine]
-  MOD --> SIM[Simulation Engine]
-  SIM --> TRUST[Trust & Validation]
-  TRUST --> RES[Results / History]
-  RES --> REP[PDF / Excel]
-  DB[(SQLite Control Plane)] --- AUTH
+  UI[Adaptive IPSP frontend] --> API[FastAPI API]
+  API --> AUTH[Authentication / RBAC / Policy / Consent]
+  AUTH --> ING[Ingestion / Storage]
+  ING --> DU[Data Understanding]
+  DU --> SEM[Semantic + Metric Layer]
+  SEM --> DOM[Domain Experience Activation]
+  DOM --> CROSS[Cross-Domain Composition]
+  CROSS --> CAP[Capability Discovery]
+  CAP --> INTENT[Scenario + Evidence]
+  INTENT --> RESOLVE[Engine + License Resolver]
+  RESOLVE --> GRAPH[Composite Simulation Graph]
+  GRAPH --> TE[Trust + Evidence Profile]
+  TE --> RESULT[Results / Compare / History / Export]
+  RESULT --> LEARN[Learning / Reconciliation]
+  LEARN --> IMPROVE[Model + Local-AI Improvement]
+
+  DB[(SQLite control / governance / knowledge plane)] --- AUTH
   DB --- SEM
-  DB --- CAP
-  DB --- MOD
-  DB --- RES
-  DATA[(Source + Parquet Data Plane)] --- DU
-  DATA --- MOD
-  OBS[Observability / Trace IDs] -.cross-cutting.-> API
-  OBS -.-> DU
-  OBS -.-> SIM
+  DB --- RESOLVE
+  DB --- RESULT
+  DB --- LEARN
+  DATA[(Source + Parquet analytical plane)] --- ING
+  DATA --- DU
+  DATA --- GRAPH
+  X[Security / privacy / outbound / secrets / jobs / observability / provenance / licensing / reproducibility] -. cross-cutting .-> API
+  X -.-> GRAPH
+  X -.-> LEARN
 ```

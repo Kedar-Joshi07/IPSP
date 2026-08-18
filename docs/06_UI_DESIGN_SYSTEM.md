@@ -1,5 +1,9 @@
 # UI Design System
 
+Target identity and capability-driven presentation follow the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md). Historical visual references do not
+override that authority.
+
 ## Design contract
 
 All user-facing and administrative interfaces use the IPSP product identity and extend one shared

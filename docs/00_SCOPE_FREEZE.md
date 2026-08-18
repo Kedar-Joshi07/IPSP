@@ -29,23 +29,28 @@ IPSP v1.0 is a **structured-data understanding, predictive modelling, what-if si
 - Grain/key/entity/dimension/measure/time/unit/hierarchy/relationship inference
 - Semantic conflict and clarification workflow
 - Feature lineage and derived-field detection
-- KPI/metric dependency proposals and validation
+- Versioned Metric & Formula Registry with dependency, grain, time, unit, currency, null, validation, and lineage contracts
+- Evidence-driven registered Domain Experience activation without domain-specific core forks
 - Capability discovery and responsible refusal
 - Regression, classification, count prediction, forecasting candidates, similarity/look-alike, diagnostic opportunities where supported
-- Deterministic what-if and benchmark scenarios
+- Exactly `DATA_BASED`, `MIXED`, and `INTENT_BASED` scenarios through ScenarioIntentManifest
+- Deterministic, predictive, uncertainty, and composite execution through validated CompositeSimulationGraph nodes and edges
 - Monte Carlo uncertainty where valid
-- SDV contextual/synthetic simulation where valid
+- Provider-neutral synthetic-assisted analysis where valid, with `SYNTHETIC_DATA` provenance and license/privacy/quality gates
+- Basic defensible Composite/Cross-Domain simulation with entity/grain/time/unit/currency/evidence reconciliation
 - Model registry and champion/challenger foundation
-- Local/remote/hybrid/no-LLM modes
+- `ML_ONLY` plus optional Local LLM assistance; remote/hybrid execution remains post-v1.0 deferred
 - Trust & Validation Engine
+- Separate Evidence Profile
 - Simulation history, re-run, reproduce, compare
+- SimulationLearningStore, OutcomeReconciliation, and governed learning foundation
 - PDF and Excel exports
 - Detailed audit/security/application/data/ML/LLM/simulation/export/error logging
 - Dark + light UI derived from the supplied HTML design
 - Background job abstraction
 - Feature flags, system health, basic backup/restore
 
-### Architecture-ready but not full v1 functionality
+### Architecture-ready but intentionally deferred post-v1.0
 
 - MFA and enterprise SSO
 - LDAP/AD
@@ -53,13 +58,15 @@ IPSP v1.0 is a **structured-data understanding, predictive modelling, what-if si
 - Distributed workers / Redis / Celery
 - Fully automatic model promotion
 - Scheduled retraining
-- Advanced RAG/fine-tuning
-- Full causal inference engine
-- Mathematical optimization engine
+- Automatic Local LLM PEFT/LoRA lifecycle
+- Remote/Hybrid LLM execution and `PUBLIC_WEB` evidence access
+- Advanced production causal workflows
+- Full solver-backed optimization
 - External business connectors
 - Slack/Teams/email/webhook notifications
 - Enterprise vault integrations
 - Multi-node deployment
+- Specialized Quant Finance and instrument pricing
 
 ### Out of scope
 

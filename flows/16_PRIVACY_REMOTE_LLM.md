@@ -1,15 +1,18 @@
-# Flow 16 — Privacy / Remote LLM
+# Flow 16 — Evidence Access / Consent / Remote LLM
 ```mermaid
 flowchart TD
-  REQ[Remote semantic request] --> POL{Outbound allowed?}
-  POL -- no --> DENY[REMOTE_ACCESS_DENIED]
-  POL -- yes --> CLASS[Dataset + column classification]
-  CLASS --> MODE{Transmission mode}
-  MODE -->|sanitized schema| SAN[Rename/redact sensitive concepts]
-  MODE -->|aggregates| AGG[Approved aggregate packet]
-  MODE -->|approved samples| SMP[Explicit approved sample]
-  SAN --> SEND[Remote provider]
-  AGG --> SEND
-  SMP --> SEND
-  SEND --> VAL[Validate structured response]
+  REQ[Evidence / LLM request] --> MODE{Evidence-access mode}
+  MODE -->|OFF| DENY[No external access]
+  MODE -->|INTERNAL_ONLY| INTERNAL[Approved local knowledge / evidence]
+  MODE -->|PUBLIC_WEB| EXT[External-access candidate]
+  MODE -->|APPROVED_CONNECTORS| EXT
+  EXT --> POL{Admin policy ∩ project/dataset policy ∩ runtime consent}
+  POL -- denied --> DENY2[Safe denial + reason]
+  POL -- allowed --> CLASS[Classify data + requested transmission]
+  CLASS --> SAN[Minimize / redact / aggregate as approved]
+  SAN --> SEC[SecretProvider + outbound allowlist]
+  SEC --> SEND[Eligible remote evidence or LLM provider]
+  SEND --> VAL[Schema + deterministic/evidence validation]
+  INTERNAL --> VAL
+  VAL --> AUD[Provenance + consent/policy snapshot + audit]
 ```

@@ -12,9 +12,10 @@ engine, license, and modelling reconciliation was independently accepted at SHA
 Trust, Evidence, and reproducibility contract reconciliation was independently accepted at SHA
 `697a55567919e13c3087b0334ef14d89a5220055`; F2-F governed learning, outcome reconciliation, LLM,
 and evidence-access contract reconciliation was independently accepted at SHA
-`81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-G platform-contract reconciliation is complete
-pending independent review. No F-002 runtime capability is implemented by these documentation work
-packages.
+`81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-G platform-contract reconciliation was
+independently accepted at SHA `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`; F2-H flows, tests,
+acceptance, benchmark, governance, and agent-instruction reconciliation is complete pending
+independent review. No F-002 runtime capability is implemented by these documentation work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -24,7 +25,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-G COMPLETE, INDEPENDENT REVIEW PENDING** | F2-F accepted at `81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-H must not begin before F2-G review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-H COMPLETE, INDEPENDENT REVIEW PENDING** | F2-G independently accepted at `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`; F2-I remains blocked pending independent F2-H review |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -41,10 +42,46 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
+## F2-H — Flows / Tests / Acceptance / Benchmark / Governance / Agent Instructions
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** COMPLETE (2026-08-18), awaiting independent review
+- **Starting and accepted F2-G SHA:** `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`
+- **Scope:** canonical F-002 lifecycle and authority flows; future test strategy; bounded-v1.0
+  acceptance and explicit post-v1 deferrals; multi-domain/Cross-Domain benchmark strategy;
+  milestone/workstream contract governance; repository and scoped agent instructions; revised
+  v0.2.0–v1.0.0 prompt map; current-workstream state and documentation completeness audit
+- **Flow reconciliation:** flows 01, 06–09, 16, and 20 now express the applicable F-002 boundaries;
+  new numbered flows 22–30 cover Domain Experience activation, Metric & Formula resolution,
+  Engine/License resolution, Scenario Intent and exactly three bases, CompositeSimulationGraph,
+  Cross-Domain reconciliation, Finance reconciliation/stress, SimulationLearningStore/
+  OutcomeReconciliation, and Local AI memory/adaptation governance. Existing flow numbering and
+  historical files were preserved.
+- **Current/target boundary:** documentation/governance only; no F-002 runtime capability was
+  implemented, and v0.2.0 remains NOT STARTED with contract freeze not started
+- **Change boundary:** no production code, tests, migrations, schemas, dependencies, lockfiles, or
+  feature flags changed
+- **Documentation validation:** 44 changed/new Markdown files have balanced fences/tables and 45
+  valid relative links; repository-wide validation resolved 202 relative links across 128 Markdown
+  files; all 30 numbered flows contain one structurally valid Mermaid block and sequence 01–30 is
+  complete; stale identity/provider/roadmap/basis/metric occurrences were classified, with retained
+  occurrences limited to authoritative optional boundaries or clearly historical evidence/prompts
+- **Quality evidence:** `git diff --check` PASS; compileall PASS; Ruff lint PASS; Ruff format check
+  PASS for 95 files; strict mypy PASS for 67 source files; `pip check` PASS; architecture conformance
+  13/13 PASS
+- **Regression evidence:** complete suite PASS in split execution: 215/215 unaffected tests plus the
+  unchanged timing-sensitive recovery test 1/1. The isolated recovery test first exceeded its
+  hardcoded 10-second Windows child-exit deadline, then passed on a clean rerun with the previously
+  documented above-normal test-process scheduling. No production or test change was made for this
+  environment timing behavior.
+- **Following milestone:** v0.2.0 remains NOT STARTED
+- **Next gate:** independent F2-H review; F2-I must not begin before PASS on the reviewed SHA
+
 ## F2-G — UI / API / Storage / Jobs / Security / Configuration / Operations Reconciliation
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
-- **Status:** COMPLETE (2026-08-17), awaiting independent review
+- **Status:** ACCEPTED (2026-08-18) — independent review PASS
+- **Accepted F2-G SHA:** `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`
 - **Starting and accepted F2-F SHA:** `81df9fedf84c7c02b837d5ca1509c81c34648fcd`
 - **Scope:** IPSP target UI/navigation/five-step composition, conceptual SQLite homes and future API
   resource families, provider-neutral jobs, security/outbound/license/evidence/learning gates,
@@ -68,7 +105,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   the unchanged isolated test passed twice with above-normal test-process scheduling. No production
   or test change was made for this environment timing behavior.
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent review of F2-G before any F2-H work
+- **Gate outcome:** F2-H authorized from accepted F2-G SHA
 
 ## F2-F — Governed Learning / Outcome Reconciliation / LLM / Evidence Access Contract Freeze
 

@@ -14,25 +14,29 @@ You are assisting with a production-oriented, dataset-agnostic predictive simula
   authorize v0.2 implementation or make a future capability operational.
 - Do not redesign locked architecture during implementation unless explicitly asked.
 - The backend package namespace is `ipsp`, never `campaign_*`, `marketing_*`, or benchmark-specific naming.
-- The frontend may use **CampaignSim — Powered by IPSP** as branding, but all behavior must be metadata driven.
-- The supplied `reference/Campaign_simulator_UI.html` is the canonical visual reference. Reuse its design language, not its hardcoded campaign assumptions.
+- IPSP is the only top-level product identity. Historical prototype assets are visual references
+  only; reuse compatible interaction/design patterns without copying their branding, schema,
+  terminology, calculations, or assumptions into generic behavior.
 
-## Core stack
+## Current and target stack boundary
 
-- Python 3.11+
-- FastAPI + Uvicorn
-- SQLAlchemy
-- SQLite for control/knowledge metadata
-- Parquet/source files for analytical data
-- Polars + PyArrow; Pandas where a library requires it
-- scikit-learn, LightGBM, CatBoost, Statsmodels
-- SDV only where capability validation allows it
-- SHAP where supported
-- HTML/CSS/vanilla JavaScript + Plotly.js
+- Preserve the accepted Python/FastAPI/Uvicorn/SQLAlchemy/SQLite and vendored HTML/CSS/JavaScript
+  foundation unless the owning milestone authorizes change.
+- SQLite is the control/governance/knowledge plane; source and Parquet files are the analytical
+  plane. Do not turn SQLite into a mandatory analytical warehouse.
+- Future data, model, synthetic, optimizer, explainability, and LLM libraries are provider
+  candidates behind IPSP interfaces, not core architecture or permission to add dependencies.
+- Synthetic capability is provider-neutral; no library is the generic synthetic engine.
+- Do not modify `pyproject.toml` or `requirements.lock` without explicit Kedar authorization and an
+  accepted dependency/license contract.
 
 ## Mandatory architecture layers
 
-Authentication/RBAC → API → application services → ingestion/profiling/semantics → capability discovery → modelling/simulation → trust validation → reporting/history.
+Adaptive frontend → API → authentication/RBAC/policy/consent → ingestion/storage → Data
+Understanding → semantic/metric layer → Domain Experience activation → Cross-Domain composition →
+Capability Discovery → scenario/evidence → Engine/License resolution → CompositeSimulationGraph →
+Trust + separate Evidence Profile → results/compare/history/export → learning/reconciliation →
+model/Local-AI improvement.
 
 Cross-cutting: permissions, privacy, outbound policy, secrets, jobs, versioning, logging, trace IDs, feature flags, error taxonomy.
 
@@ -56,6 +60,18 @@ Cross-cutting: permissions, privacy, outbound policy, secrets, jobs, versioning,
 
 A capability is enabled only after semantic validity, data support, model/engine validation, and trust checks. Correctly refusing unsupported simulation is a product feature.
 
+- Domain Experience Packs contribute governed metadata and requests; they do not fork IPSP Core or
+  own formulas.
+- Numerical metric truth belongs to the Metric & Formula Registry.
+- Capability validity is decided before provider selection. EngineRegistry, Runtime Engine
+  Inventory, LicenseRegistry, and EngineResolver keep declared, installed, available, eligible, and
+  selected states distinct.
+- Scenario bases are exactly `DATA_BASED`, `MIXED`, and `INTENT_BASED`.
+- ScenarioIntentManifest states intent; CrossDomainSemanticGraph states supported semantic
+  relationships; CompositeSimulationGraph states validated execution.
+- SimulationLearningStore is separate from empirical data. Outcome reconciliation and learning
+  eligibility precede any training-dataset construction or challenger evaluation.
+
 ## Parallel workstream behavior
 
 IPSP uses same-version, different-module parallel development.
@@ -65,7 +81,9 @@ Before changing code:
 - read `docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md`;
 - read `docs/42_ACTIVE_WORKSTREAMS.md`;
 - obey the assigned workstream contract;
-- verify exact base SHA, branch, merge target, owned paths, shared paths, forbidden paths, migration owner, and dependency owner.
+- verify exact base SHA, branch, merge target, owned paths, shared paths, forbidden paths, migration owner, and dependency owner;
+- verify functional, data/schema, API/interface, acceptance, and dependency/license contracts;
+- verify branch, post-merge integration, and milestone acceptance gates.
 
 Do not broaden scope because another active branch is implementing adjacent functionality.
 

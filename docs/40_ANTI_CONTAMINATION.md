@@ -74,3 +74,11 @@ behavior.
   reviewed for contamination.
 - Documentation labels representative domain concepts as examples rather than mandatory fields.
 - Any proposed exception stops with a contract or architecture review; convenience is not authority.
+
+## Multi-domain and Composite/Cross-Domain testing
+
+Acceptance evidence must span multiple Domain Experience families and include both defensible and deliberately unsupported Composite/Cross-Domain fixture relationships. Tests assert semantic concepts, graph decisions, reconciliation evidence, limitations, and refusals—not benchmark story completion.
+
+Schema-renamed and structurally perturbed variants should prove that generic core behavior does not depend on familiar labels, column order, category values, or a single benchmark's topology. Cross-domain tests must fail safely for incompatible entity/grain/cardinality, time/calendar, unit/currency, transformation, or evidence states. They must not add a production shortcut merely to make a benchmark path pass.
+
+Synthetic fixture data is allowed for test construction only with explicit fixture scope and provenance. It does not establish empirical truth, a runtime catalog, a default formula, or a supported production relationship.

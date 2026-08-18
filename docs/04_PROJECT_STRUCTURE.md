@@ -1,5 +1,9 @@
 # Project Structure
 
+Post-v0.1.0 target structure is governed by the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md); this file does not independently
+authorize directories, dependencies, or runtime components.
+
 ## Status boundary
 
 This document distinguishes the accepted repository structure from provider-neutral target

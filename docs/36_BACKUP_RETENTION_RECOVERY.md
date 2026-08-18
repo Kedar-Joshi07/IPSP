@@ -1,5 +1,9 @@
 # Backup, Retention & Recovery
 
+Target artifact families and lifecycle boundaries follow the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md); only implemented, accepted artifacts
+enter an operational backup contract.
+
 ## Status and boundary
 
 This is a target lifecycle contract. F2-G does not implement a backup engine, storage provider,

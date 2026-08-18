@@ -1,5 +1,8 @@
 # Coding Standards
 
+Apply these standards within the authority boundaries of the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md) and the accepted workstream contract.
+
 ## Python
 - Type hints required on public interfaces.
 - Pydantic for API/structured provider contracts.
@@ -20,6 +23,21 @@
 ## API
 - FastAPI route modules live under `backend/ipsp/api/routes/` and remain thin.
 - Domain packages provide services and policies and do not define duplicate routers.
+- Versioned contracts keep Dataset Semantic Manifest, Domain Experience, Metric/Formula,
+  CrossDomainSemanticGraph, capability, engine/license, ScenarioIntentManifest,
+  CompositeSimulationGraph, Trust, Evidence Profile, learning, and outcome authorities distinct.
+- Safe limitation/refusal responses are first-class API behavior; providers may not silently alter
+  intent, basis, evidence class, formula, semantic relation, or license decision.
+
+## Providers and computation
+
+- Application services depend on typed IPSP interfaces; vendor libraries remain adapters.
+- Resolve semantic/data capability before engine family and provider eligibility.
+- Formula execution uses a constrained typed representation, never arbitrary Python/SQL/LLM code.
+- Synthetic, simulation, assumption, external, benchmark, and LLM values retain provenance and do
+  not enter observed data or empirical training sets through convenience paths.
+- Reproduce uses exact immutable versions and evidence snapshots; re-run with current eligible
+  versions is a distinct operation.
 
 ## JavaScript
 - ES modules.

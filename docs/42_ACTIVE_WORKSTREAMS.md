@@ -1,12 +1,12 @@
 # Active Parallel Workstreams
 
-## Purpose
+## Purpose and authority
 
-This is the coordination register for active or planned parallel implementation work.
-
-It is not an architecture specification. It records who owns each workstream, what exact SHA it started from, which branch it uses, what it may modify, what it depends on, and where it will eventually merge.
-
-Kedar is the integration owner and final merge authority.
+This is the coordination register for active or planned parallel implementation work. It is not an
+architecture specification or implementation authorization. The
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md) and
+[Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
+govern architecture and sequencing. Kedar is the integration owner and final merge authority.
 
 ## Status vocabulary
 
@@ -23,193 +23,96 @@ INTEGRATION_VALIDATED
 CLOSED
 ```
 
-## Current accepted milestone
+## Current state
 
 ```text
-Accepted version: v0.1.0
+Accepted application: v0.1.0
 Accepted foundation code baseline SHA: cd0dca48ded8d68f18e861f2427dfeb746d52ea7
-Parallel-governance baseline SHA: 362d1d5618bd6f72bb31f95ba81c592fa99f6fe7
-Next milestone: v0.2.0 — ingestion / storage / provenance
-Next milestone state: AUTHORIZED — workstreams still PLANNED; contract freeze not started
+Active milestone: v0.1.1 — F-002 Architecture Reconciliation
+Accepted F2-G input SHA: 0c621a9f70d5568d36a13193f8f14b96c6bd79ff
+Current work package: F2-H — documentation/governance reconciliation
+Current work-package state: COMPLETE — independent review pending
+Next work package: F2-I — NOT AUTHORIZED before independent F2-H PASS
+Following capability milestone: v0.2.0 — NOT STARTED
+v0.2 contract-freeze state: NOT STARTED
 ```
 
-## Planned v0.2 workstream split
+No parallel capability implementation workstream is `ACTIVE`. F2-H is documentation/governance-only.
+F2-I may reconcile only the minimal v0.1.1 production compatibility surface after F2-H is accepted.
+Only F2-J acceptance can complete v0.1.1; v0.2 contract-freeze preparation requires the subsequent
+explicit authorization described by the roadmap.
 
-The exact start SHA for feature branches should be filled in after the v0.2 contract freeze is committed to the milestone integration branch.
+## Current register
 
-| ID | Workstream | Owner | Planned branch | Merge target | Migration owner | Status |
+| ID | Milestone | Owner | Exact base SHA | Merge target | Scope | Status |
 |---|---|---|---|---|---|---|
-| V0.2-A | Dataset / Version / Provenance Control Plane | Kedar | `feature/kedar/v0.2-dataset-versioning` | `integration/v0.2.0` | Kedar | PLANNED |
-| V0.2-B | Secure File Ingestion / Validation / Parsing Pipeline | Contributor B | `feature/contributor/v0.2-ingestion-pipeline` | `integration/v0.2.0` | Kedar | PLANNED |
+| F2-H | v0.1.1 | Kedar / Codex work package | `0c621a9f70d5568d36a13193f8f14b96c6bd79ff` | `main` after review by Kedar | Flows, tests, acceptance, governance, instructions | READY_FOR_REVIEW |
+| F2-I | v0.1.1 | To be assigned | Accepted F2-H SHA | To be frozen | Minimal production reconciliation only | PLANNED — BLOCKED BY F2-H REVIEW |
+| F2-J | v0.1.1 | Independent reviewer | Accepted F2-I SHA | `main` acceptance baseline | Independent final acceptance audit | PLANNED — BLOCKED BY F2-I |
 
-## V0.2-A — Dataset / Version / Provenance Control Plane
+## Future milestone rule
 
-### Primary ownership
+The frozen pre-v1.0 sequence is v0.2.0 through v0.15.0 and then v1.0.0 as defined in the roadmap.
+Before any future milestone changes from `NOT STARTED` to `CONTRACT_FREEZE`, the integration owner
+must create a new milestone contract that records:
 
-Expected areas:
+- exact base SHA, owner, branch, and merge target;
+- owned, shared/integration-sensitive, and forbidden paths;
+- functional contract;
+- data/schema contract;
+- API/interface contract;
+- acceptance contract;
+- dependency/license contract;
+- migration owner and dependency owner;
+- stop conditions;
+- branch gate, post-merge integration gate, and milestone acceptance gate.
 
-```text
-dataset logical identity
-dataset version identity
-dataset table metadata
-provenance metadata
-version immutability semantics
-control-plane repositories
-control-plane services
-ORM/migrations assigned to Kedar
-related tests
-```
+Only after those contracts are accepted may concrete same-version/different-module workstreams become
+`ACTIVE`.
 
-### Likely shared dependencies
+## Superseded v0.2 candidate split
 
-- `docs/20_INGESTION_STORAGE_SPEC.md`
-- `docs/21_SAMPLING_PROVENANCE_SPEC.md`
-- `docs/27_SQLITE_SCHEMA_SPEC.md`
-- dataset/version contracts needed by V0.2-B
+Before F-002, this register listed `V0.2-A` dataset/version/provenance and `V0.2-B` secure-ingestion
+candidate workstreams. They were `PLANNED`; their contract freeze never started, and no branch was
+authorized. F-002 replaced the old roadmap authority. Those labels, owners, paths, and incomplete
+contract checklist are historical planning only and must not be copied into a new v0.2 contract
+without fresh review against accepted v0.1.1 and the frozen v0.2 milestone scope.
 
-### Integration-sensitive paths likely owned by this workstream
+## Branch handoff
 
-```text
-backend/ipsp/database/models/**
-database/migrations/**
-backend/ipsp/repositories/**
-backend/ipsp/config/providers.py
-```
-
-Exact path ownership must be frozen in the V0.2-A prompt before implementation.
-
-## V0.2-B — Secure File Ingestion / Validation / Parsing Pipeline
-
-### Primary ownership
-
-Expected areas:
-
-```text
-backend/ipsp/ingestion/**
-format detection
-CSV/TSV validation/parsing
-XLSX validation/parsing
-Parquet validation/parsing
-JSON/JSONL validation/parsing
-ZIP inspection
-archive/path traversal defense
-generated internal naming
-hash/checksum support
-staging/quarantine decisions
-parser validation
-canonicalization helpers
-source-file metadata
-ingestion-specific tests
-```
-
-### Default forbidden/integration-owned paths
-
-Unless Kedar explicitly changes the workstream contract:
-
-```text
-database/migrations/**
-backend/ipsp/database/models/**
-backend/ipsp/api/router.py
-backend/ipsp/config/providers.py
-pyproject.toml
-requirements.lock
-README.md
-AGENTS.md
-.github/copilot-instructions.md
-docs/31_IMPLEMENTATION_PROGRESS.md
-docs/32_DECISION_LOG.md
-docs/42_ACTIVE_WORKSTREAMS.md
-```
-
-### Shared contract dependency
-
-V0.2-B must consume the frozen dataset/version/storage-reference contracts. It must not invent a competing persistence model.
-
-If a shared contract is insufficient, report `CONTRACT CHANGE REQUIRED` and wait for Kedar's decision.
-
-## Contract freeze checklist before both branches become ACTIVE
-
-Fill these before implementation:
-
-```text
-integration branch:
-integration/v0.2.0
-
-integration base SHA:
-<TODO>
-
-contract freeze SHA:
-<TODO>
-
-dataset ID contract:
-<TODO>
-
-dataset version ID contract:
-<TODO>
-
-dataset table contract:
-<TODO>
-
-source/original artifact reference:
-<TODO>
-
-canonical analytical data reference:
-<TODO>
-
-hash/checksum semantics:
-<TODO>
-
-version immutability rule:
-<TODO>
-
-provenance object:
-<TODO>
-
-ingestion result contract:
-<TODO>
-
-validation/staging result contract:
-<TODO>
-```
-
-## Branch handoff template
-
-Each developer provides:
+Every workstream reports:
 
 ```text
 Workstream:
+Owner:
 Branch:
 Base SHA:
 Current SHA:
 Merge target:
-Files changed:
+Owned paths:
 Shared files changed:
-Migration files changed:
-Dependency files changed:
-Tests:
-Quality gates:
+Forbidden-path check:
+Functional contract:
+Data/schema contract:
+API/interface contract:
+Acceptance contract:
+Dependency/license contract:
+Migration state and owner:
+Dependency state and owner:
+Tests and branch gate:
+Post-merge gate responsibility:
+Milestone acceptance gate responsibility:
 Known deviations:
 Contract changes requested:
 Ready for review: YES/NO
 ```
 
-## Merge authority
-
-Contributor B pushes only to the contributor branch.
-
-Kedar decides:
-
-- review outcome;
-- synchronization/rebase requirement;
-- merge timing;
-- conflict resolution;
-- integration tests;
-- milestone finalization;
-- merge to `main`.
+Contributors push only to assigned feature branches. Kedar owns synchronization, merge timing,
+conflict resolution, integration tests, milestone finalization, and promotion to `main`.
 
 ## Historical register
 
-Do not delete completed rows. Move them here after the milestone is accepted so the repository retains implementation lineage.
+Completed workstreams are retained here after milestone acceptance.
 
 | ID | Milestone | Final branch SHA | Integration merge SHA | Result |
 |---|---|---|---|---|
@@ -219,4 +122,5 @@ Do not delete completed rows. Move them here after the milestone is accepted so 
 
 - [Parallel Development Workflow](41_PARALLEL_DEVELOPMENT_WORKFLOW.md)
 - [Workstream Contract Template](43_WORKSTREAM_CONTRACT_TEMPLATE.md)
+- [Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
 - [Implementation Progress](31_IMPLEMENTATION_PROGRESS.md)

@@ -1,5 +1,8 @@
 # IPSP Parallel Development Workflow
 
+Milestone sequencing and pre-implementation gates follow the
+[F-002 Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md).
+
 ## Purpose
 
 This document defines the repository-wide process for **same-version, different-module parallel development**.
@@ -76,8 +79,8 @@ One workstream per branch.
 Recommended naming:
 
 ```text
-feature/kedar/v0.2-dataset-versioning
-feature/contributor/v0.2-ingestion-pipeline
+feature/kedar/vX.Y-workstream-a
+feature/contributor/vX.Y-workstream-b
 ```
 
 A feature branch must have:
@@ -162,6 +165,18 @@ A contract freeze may include:
 - error contracts;
 - lifecycle/state values;
 - inputs/outputs expected between workstreams.
+
+Every future milestone freeze must explicitly approve five contract groups before implementation:
+
+1. functional contract;
+2. data/schema contract;
+3. API/interface contract;
+4. acceptance contract;
+5. dependency/license contract.
+
+It must also record the exact base SHA, owner, merge target, owned/shared/forbidden paths, migration
+owner, dependency owner, stop conditions, branch gate, post-merge integration gate, and milestone
+acceptance gate. An architecture or roadmap entry alone is not an implementation contract.
 
 A contract freeze is **not permission to over-design future milestones**. Freeze only what parallel branches actually need.
 
@@ -278,6 +293,11 @@ MERGE TARGET
 MILESTONE
 DEPENDENCIES
 FROZEN CONTRACTS
+FUNCTIONAL CONTRACT
+DATA / SCHEMA CONTRACT
+API / INTERFACE CONTRACT
+ACCEPTANCE CONTRACT
+DEPENDENCY / LICENSE CONTRACT
 OWNED PATHS
 SHARED / INTEGRATION-SENSITIVE PATHS
 FORBIDDEN PATHS
@@ -287,7 +307,9 @@ EXPECTED INPUT INTERFACES
 EXPECTED OUTPUT INTERFACES
 OTHER ACTIVE WORKSTREAMS
 STOP CONDITIONS
-TEST GATE
+BRANCH GATE
+POST-MERGE INTEGRATION GATE
+MILESTONE ACCEPTANCE GATE
 FINAL REPORT FORMAT
 ```
 
@@ -389,6 +411,9 @@ Tests combined behavior after all merged workstreams.
 
 Determines whether the milestone can become the new `main` baseline.
 
+These gates use distinct evidence. Branch evidence cannot be reused as proof of post-merge behavior,
+and post-merge validation cannot replace the independent milestone acceptance decision.
+
 ## Recommended GitHub protection
 
 When repository permissions allow:
@@ -417,6 +442,11 @@ cd0dca48ded8d68f18e861f2427dfeb746d52ea7
 ```
 
 Later documentation should update the active milestone/base without rewriting accepted history.
+
+The active application sequence and current work-package gate are maintained in the
+[Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md)
+and [Active Workstreams](42_ACTIVE_WORKSTREAMS.md). This workflow must not revive the superseded
+v0.2–v0.9 prompt map or pre-authorize a workstream merely because a candidate split once existed.
 
 ## Related documents
 

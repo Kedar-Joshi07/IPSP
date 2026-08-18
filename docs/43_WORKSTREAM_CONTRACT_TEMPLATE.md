@@ -1,5 +1,9 @@
 # IPSP Parallel Workstream Contract Template
 
+Use this template under the
+[F-002 Product Version and Development Roadmap Freeze](45_PRODUCT_VERSION_AND_DEVELOPMENT_ROADMAP_FREEZE.md);
+an architecture entry or planned milestone is not implementation authorization.
+
 Copy this template into the implementation prompt or workstream planning artifact for every parallel branch.
 
 Do not begin implementation until all required fields are resolved.
@@ -23,6 +27,60 @@ STATUS:
 # Objective
 
 Describe exactly one cohesive module/workstream outcome.
+
+# Required milestone contracts
+
+Implementation must not begin until each contract below has an exact owner, authoritative source,
+accepted version/SHA, and unambiguous workstream obligations.
+
+## Functional contract
+
+```text
+OWNER:
+SOURCE / VERSION / SHA:
+REQUIRED BEHAVIOR:
+LIMITATION / REFUSAL BEHAVIOR:
+```
+
+## Data / schema contract
+
+```text
+OWNER:
+SOURCE / VERSION / SHA:
+INPUT DATA / GRAIN / PROVENANCE:
+PERSISTENCE / IMMUTABILITY:
+MIGRATION IMPACT:
+```
+
+## API / interface contract
+
+```text
+OWNER:
+SOURCE / VERSION / SHA:
+INPUT INTERFACES:
+OUTPUT INTERFACES:
+ERROR / COMPATIBILITY CONTRACT:
+```
+
+## Acceptance contract
+
+```text
+OWNER:
+SOURCE / VERSION / SHA:
+REQUIRED TEST EVIDENCE:
+SECURITY / PRIVACY / ANTI-CONTAMINATION EVIDENCE:
+ACCEPTANCE DECISION AUTHORITY:
+```
+
+## Dependency / license contract
+
+```text
+OWNER:
+SOURCE / VERSION / SHA:
+APPROVED DEPENDENCIES / VERSIONS:
+DEPENDENCY / MODEL-WEIGHT / SOLVER LICENSE DECISIONS:
+OFFLINE / SECURITY / RESOURCE CONSTRAINTS:
+```
 
 # Scope
 
@@ -179,6 +237,24 @@ git diff --check
 
 Add Alembic checks only when relevant.
 
+# Three-gate contract
+
+## Branch gate
+
+State the exact workstream-local tests, quality checks, reviewer, and evidence required before a
+branch may be marked ready for Kedar review.
+
+## Post-merge integration gate
+
+State the integration-branch tests, cross-module checks, migration/dependency validation, owner, and
+evidence required after merge. Branch evidence does not substitute for this gate.
+
+## Milestone acceptance gate
+
+State the milestone-wide functional, security, privacy, architecture, anti-contamination,
+reproducibility, documentation, and independent-review evidence required before promotion to
+`main`. Integration validation alone does not establish milestone acceptance.
+
 # Synchronization rule
 
 Before final review, compare the feature branch against the latest milestone integration branch.
@@ -219,7 +295,9 @@ O. Runtime artifacts
 P. Git status
 Q. Contract changes requested
 R. Deviations/unresolved issues
-S. Gate result
+S. Branch gate result
+T. Post-merge gate owner/state
+U. Milestone acceptance gate owner/state
 ```
 
 End with exactly one:

@@ -5,6 +5,10 @@ This file is authoritative for coding agents working anywhere in this repository
 ## Mission
 Build the **Intelligent Predictive Simulation Platform (IPSP)** exactly as defined by the v1.0 specification set. The project must remain dataset/schema agnostic.
 
+IPSP is the only top-level product identity. Historical prototypes and benchmark narratives may
+inform tests or visual design, but they are not architecture authority, product shells, or generic
+runtime behavior.
+
 ## Non-negotiable rules
 
 - Never introduce a source-column name from a benchmark dataset into generic core logic unless the code is in a benchmark fixture/test.
@@ -20,6 +24,11 @@ Build the **Intelligent Predictive Simulation Platform (IPSP)** exactly as defin
 - Never force every ordered journey into a strict monotonic funnel.
 - Never use same-period derived persona/cluster features to predict outcomes from which those personas were derived.
 - Never directly aggregate a one-side measure after a one-to-many join without grain/cardinality validation.
+- Never let a Domain Experience Pack own generic numerical truth; metric definitions resolve through the versioned Metric & Formula Registry.
+- Never select an engine/provider before capability validity, license, Trust, data suitability, security, and resource gates pass.
+- Never invent a CrossDomainSemanticGraph or CompositeSimulationGraph edge to satisfy an intended outcome.
+- Never collapse Trust into Evidence Profile, or treat either as model/LLM confidence.
+- Never promote simulation, assumption, synthetic, benchmark, external, or LLM-proposed values directly to observed truth or empirical training data.
 
 ## Source of truth priority
 
@@ -37,7 +46,9 @@ Build the **Intelligent Predictive Simulation Platform (IPSP)** exactly as defin
 
 F-002 extends and supersedes conflicting older target-architecture wording. It does not make its
 planned capabilities implemented, does not rewrite the accepted v0.1.0 history, and does not
-authorize v0.2 implementation.
+authorize v0.2 implementation. Follow the frozen v0.1.1 → v0.2.0 → … → v0.15.0 → v1.0.0 roadmap;
+never revive the superseded v0.2–v0.9 prompt map or bundle simulation, Trust, history, and UI into
+an older milestone merely because a historical prompt did so.
 
 If documents conflict, stop and record the conflict in `docs/33_OPEN_QUESTIONS.md` rather than guessing.
 
@@ -61,7 +72,9 @@ Before coding on a parallel branch:
 1. read `docs/41_PARALLEL_DEVELOPMENT_WORKFLOW.md`;
 2. read `docs/42_ACTIVE_WORKSTREAMS.md`;
 3. read the assigned workstream contract;
-4. verify branch name, exact base SHA, merge target, owner, migration owner, owned paths, shared paths, and forbidden paths.
+4. verify branch name, exact base SHA, merge target, owner, migration owner, dependency owner, owned paths, shared paths, and forbidden paths;
+5. verify the functional, data/schema, API/interface, acceptance, and dependency/license contracts;
+6. verify branch, post-merge integration, and milestone acceptance gates.
 
 Rules:
 

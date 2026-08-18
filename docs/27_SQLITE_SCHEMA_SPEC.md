@@ -1,5 +1,8 @@
 # SQLite Schema Specification
 
+Post-foundation persistence ownership follows the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md) and its milestone contract gates.
+
 ## Status boundary
 
 This document is a target **control-plane conceptual domain map**, not a proposed migration and not a

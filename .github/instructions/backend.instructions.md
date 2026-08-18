@@ -10,3 +10,9 @@ applyTo: "backend/**/*.py"
 - Never return raw exceptions to clients.
 - Long-running profiling/training/simulation/reporting is a background job.
 - All model and simulation outputs go through Trust & Validation before presentation.
+- Keep Domain Experience, Metric/Formula, capability, engine/license, scenario, graph, Trust,
+  Evidence Profile, and learning authorities in separate typed services; a provider adapter must not
+  collapse or bypass them.
+- Scenario execution consumes versioned ScenarioIntentManifest and CompositeSimulationGraph
+  contracts. Unsupported paths return safe structured limitation/refusal reasons.
+- SimulationLearningStore access must not expose simulated experience as empirical analytical rows.

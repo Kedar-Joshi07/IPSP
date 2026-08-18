@@ -1,114 +1,171 @@
-# Phased GitHub Copilot Implementation Prompts
+# Phased GitHub Copilot Implementation Prompt Map
 
-## How to use
-Run one phase at a time. At the start of each phase tell Copilot to read `AGENTS.md`, `.github/copilot-instructions.md`, the referenced specifications, and the previous phase progress. Do not let it redesign locked architecture.
+## Authority and use
 
----
+This is a high-level map of the frozen application sequence. It is not an implementation prompt and
+does not authorize any milestone. Before coding, read `AGENTS.md`, scoped instructions, the F-002
+architecture and roadmap freezes, active-workstream governance, relevant specifications, and the
+previous accepted milestone evidence.
 
-## Phase 0 — Repository audit / plan only
+Every milestone requires a dedicated detailed prompt and accepted contract freeze that identifies:
 
-**Prompt**
+- exact base SHA, branch, owner, merge target, and other active workstreams;
+- owned, shared/integration-sensitive, and forbidden paths;
+- functional, data/schema, API/interface, acceptance, and dependency/license contracts;
+- migration owner, dependency owner, and stop conditions;
+- branch gate, post-merge integration gate, and milestone acceptance gate.
 
-> Read `AGENTS.md`, `.github/copilot-instructions.md`, `docs/00_SCOPE_FREEZE.md`, `docs/03_ARCHITECTURE.md`, `docs/04_PROJECT_STRUCTURE.md`, `docs/30_ACCEPTANCE_CRITERIA.md`, and every flow file. Do not write production code yet. Produce a concrete implementation plan for v0.1.0 including proposed modules/classes, dependencies, migrations, tests, and risks. Verify that no benchmark-specific fields or Streamlit assumptions enter the design. Update no locked decisions without asking.
+Do not infer missing ownership, install a planned provider, or begin a milestone because it appears
+below. A branch PASS is not a milestone PASS. Kedar owns integration and promotion.
 
-Gate: plan aligns with docs; no architecture drift.
+## Current gate — v0.1.1 F-002 architecture reconciliation
 
----
+F2-A through F2-H reconcile architecture and governance. F2-I is the minimal production
+compatibility reconciliation and may start only after independent F2-H PASS. F2-J is the independent
+v0.1.1 final acceptance audit. No v0.2 implementation begins within this sequence.
 
-## Phase 1 — v0.1.0 Foundation, security, configuration, observability
+Gate: accepted F2-J evidence is required before any separately authorized v0.2 contract-freeze
+preparation.
 
-Read: security/RBAC, configuration, observability, error, SQLite specs.
+## v0.2.0 — Data ingestion, storage, and provenance
 
-**Prompt**
+Freeze and implement secure structured ingestion, immutable originals, canonical analytical
+references, dataset/table/version identities, staging/quarantine, validation, and sampling/source
+provenance. Preserve the SQLite control plane and source/Parquet analytical plane. Do not begin
+business-semantic inference beyond this milestone's accepted structural contract.
 
-> Implement the v0.1.0 repository skeleton and foundation: FastAPI app factory/bootstrap, typed configuration, SQLAlchemy setup/migration framework, users/roles/permissions, secure password hashing, server-side session foundation, CSRF design for browser writes, Admin/User RBAC, repositories, error envelope/taxonomy, trace/request IDs, audit/application/security logging, feature flags, SecretProvider and OutboundPolicy interfaces, health endpoint, and CLI admin bootstrap. Keep routers thin. Add unit/integration/security tests. Update `docs/31_IMPLEMENTATION_PROGRESS.md` only after tests pass.
+Gate direction: safe supported formats, immutable/reproducible versions, traversal/archive defenses,
+provenance, and accepted persistence/API contracts.
 
-Gate: auth/RBAC/logging/config DB skeleton passes tests.
+## v0.3.0 — Deterministic Data Understanding and relationships
 
----
+Freeze and implement deterministic profiling, physical/semantic evidence candidates, grain, keys,
+entities, measures/dimensions/time/units, lineage, hierarchies, relationship/cardinality proposals,
+join-safety analysis, sensitivity candidates, and sampling-aware evidence. No LLM dependency and no
+benchmark special cases.
 
-## Phase 2 — v0.2.0 Ingestion, storage, versioning, provenance
+Gate direction: renamed and multi-domain fixtures produce generic evidence, unsafe joins refuse, and
+sample metadata is not mistaken for full-population sufficiency.
 
-**Prompt**
+## v0.4.0 — Semantic intelligence and Dataset Semantic Manifest
 
-> Implement secure structured uploads, staging/quarantine, supported-format parsing, immutable originals, canonical Parquet output, project/dataset/dataset-version tables and services, sampling/provenance metadata, multi-sheet/table registration, and background job status. Do not analyze business semantics yet beyond structural metadata. Add file type/size/path traversal/archive tests and versioning tests.
+Freeze and implement versioned semantic proposals, evidence/confidence, ambiguity/conflict,
+clarification and confirmation, relationship resolution, horizon/availability, units/currency/time,
+constraints, and Dataset Semantic Manifest persistence/API contracts. LLMs, if not yet implemented,
+remain replaceable proposal sources rather than requirements.
 
-Gate: uploads/versioning safe and reproducible.
+Gate direction: dependent capabilities remain blocked until material ambiguity is resolved and exact
+manifest versions are reproducible.
 
----
+## v0.5.0 — Metric & Formula Registry and Domain Experience foundation
 
-## Phase 3 — v0.3.0 Deterministic data understanding and relationships
+Freeze and implement provider-neutral Domain Experience manifests/registry/activation and the
+versioned Metric & Formula Registry, safe expression/dependency evaluation, precedence/conflicts,
+grain/time/unit/currency/null rules, lineage, and compatibility. Domain packs request semantic metric
+IDs; they never become formula engines or impose source columns.
 
-**Prompt**
+Gate direction: multi-domain activation is evidence-driven, formulas are deterministic and validated,
+and generic core contains no domain/benchmark branching.
 
-> Implement deterministic profiling: dtypes, missingness/sentinels, cardinality, examples, distributions, dates, candidate identifiers/grain/entities/dimensions/measures/helper fields, key/FD candidates, relationships, hierarchy candidates, join cardinality/multiplication warnings, units candidates, feature lineage/derived-field candidates, sampling-aware evidence, and privacy/sensitivity candidates. Use Polars/PyArrow first. Build Dataset Intelligence Packet contracts. No LLM dependency. Add semantic benchmark tests using generic expected concepts only.
+## v0.6.0 — Capability Discovery and Engine/License Registry
 
-Gate: benchmark schemas are understood without special cases.
+Freeze and implement evidence-first capability decisions, EngineRegistry, factual Runtime Engine
+Inventory, LicenseRegistry, organization modes, deterministic EngineResolver, explicit fallback,
+resource/security checks, and reasoned limitation/refusal. Do not install candidate libraries without
+the milestone dependency/license contract.
 
----
+Gate direction: capability validity precedes provider choice; unavailable, unlicensed, unsafe, or
+unsuitable providers cannot be selected or silently substituted.
 
-## Phase 4 — v0.4.0 Semantic manifest and clarification workflow
+## v0.7.0 — Core modelling and model lifecycle
 
-**Prompt**
+Freeze and implement meaningful baselines, eligible statistical/ML/forecast candidates, leakage-safe
+split strategy, calibration/uncertainty where valid, explainability, immutable artifacts, registry
+states, challenger/champion evaluation, monitoring, rollback, and refusal. Preserve prediction,
+attribution, and causal distinctions.
 
-> Implement semantic proposal models, evidence/confidence synthesis, semantic conflicts, clarification questions, user confirmations/corrections, versioned Dataset Semantic Manifest, KPI/metric dependency proposals and validation, relationship confirmation, prediction-horizon/feature-availability metadata, measurement-unit/entity-scope metadata, and manifest persistence. Build API contracts needed by the five-step dataset UI. Keep LLM provider as NullLLMProvider for now.
+Gate direction: no universal model winner, target/horizon/availability semantics are enforced, and
+promotion requires accepted comparative evidence.
 
-Gate: ambiguous semantics block dependent capabilities until confirmed.
+## v0.8.0 — Simulation core and universal scenario/execution contracts
 
----
+Freeze and implement exactly `DATA_BASED`, `MIXED`, and `INTENT_BASED`, versioned
+ScenarioIntentManifest, typed CompositeSimulationGraph foundation, deterministic/model/Monte Carlo/
+assumption/constraint nodes where eligible, jobs, safe partial/refusal behavior, and result lineage.
+Synthetic and optimizer nodes remain provider/license gated.
 
-## Phase 5 — v0.5.0 Capability discovery, modelling, registry
+Gate direction: graph execution cannot create semantic authority; intent and synthetic support never
+masquerade as observation.
 
-**Prompt**
+## v0.9.0 — Trust, Evidence, history, and comparison
 
-> Implement capability discovery and gates, baseline model routing, regression/classification/count/forecast candidate families, similarity/look-alike path where valid, validation split strategy selection, target-label validation, leakage checks, model registry, metrics, candidate/challenger/champion statuses, and deterministic capability validations. Do not enable a predictive capability merely because a target exists. Add model tests and benchmark refusal cases.
+Freeze and implement expanded Trust dimensions, separate Evidence Profile, result persistence,
+Scenario Library, compare, re-run, exact reproduce, and authorized PDF/Excel export. Preserve basis,
+evidence, consent, provider/license, seed, code, and non-secret configuration snapshots.
 
-Gate: valid capabilities enable; invalid/unsupported capabilities give reasoned refusal.
+Gate direction: no result bypasses Trust, Evidence Profile is not a duplicate score, and unavailable
+historical components are reported rather than silently replaced.
 
----
+## v0.10.0 — Cross-Domain Composite intelligence
 
-## Phase 6 — v0.6.0 Simulation, uncertainty, trust, history, exports
+Freeze and implement validated CrossDomainSemanticGraph composition and CompositeSimulationGraph
+execution across activated Domain Experiences. Reconcile entity/grain/cardinality, time/calendar,
+units/currencies, transformations, evidence, support, and provenance; refuse unsupported edges.
 
-**Prompt**
+Gate direction: defensible multi-domain fixture paths work generically and incompatible or fabricated
+relations fail safely.
 
-> Implement scenario metadata/controls, predictive and deterministic what-if engines, benchmark scenarios, Monte Carlo where calibrated, SDV provider boundary, Run Result Object, Trust & Validation Engine, constraint classes, support/extrapolation checks, reproducible seeds, simulation history, compare/re-run/reproduce, PDF and Excel generators from persisted results, export permissions, and background jobs. Add end-to-end run tests.
+## v0.11.0 — Domain intelligence completion
 
-Gate: no result bypasses trust; reproduce is deterministic for fixed versions/seeds.
+Freeze and complete the baseline Domain Experience families and capability-driven metadata, including
+Finance accounting, planning, three-statement, risk/stress, and other supported families without
+fixed schemas. Numerical truth remains in registries and generic compute services.
 
----
+Gate direction: domains activate dynamically, accounting/unit/currency/time relations reconcile, and
+specialized Quant Finance remains optional/deferred.
 
-## Phase 7 — v0.7.0 Dynamic frontend and design system
+## v0.12.0 — Learning and Outcome Reconciliation foundation
 
-**Prompt**
+Freeze and implement SimulationLearningStore separation, observed-actual matching,
+OutcomeReconciliation, LearningEligibilityGate, governed Training Dataset Builder, leakage/provenance
+validation, mature-outcome evaluation, and governed challenger/champion learning. Batch retraining is
+the default.
 
-> Refactor `reference/Campaign_simulator_UI.html` into modular production HTML/CSS/JS while preserving its visual language. Implement dark/light tokens, login, dashboard, project/workspace, five-step dataset onboarding, five-step simulation, dynamic controls, dynamic results, trust UI, history, Admin pages, errors, loading/jobs, and Plotly charts. Remove hardcoded marketing controls/values. Use secure session APIs, accessibility, and responsive behavior. Add frontend/API integration tests as practical.
+Gate direction: no simulation, assumption, synthetic, benchmark, external, correction, or LLM
+proposal directly becomes observed truth or an empirical training row.
 
-Gate: entire app feels like one coherent evolution of the reference HTML and is metadata driven.
+## v0.13.0 — Local AI
 
----
+Freeze and implement optional Local LLM structured semantic assistance, governed local knowledge/
+retrieval memory, provider/model-weight licenses, privacy/consent, evaluation, and only then optional
+adaptation challengers if justified. The product remains fully functional without Local AI.
 
-## Phase 8 — v0.8.0 Local LLM semantic provider
+Gate direction: deterministic/evidence validators retain authority; fine-tuning never grants
+numerical authority.
 
-**Prompt**
+## v0.14.0 — Full dynamic product UI
 
-> Implement LocalLLMProvider behind SemanticLLMProvider using an OpenAI-compatible local endpoint where possible. Require strict structured/Pydantic outputs. Implement semantic schema classification, relationship proposals, clarification generation, KPI proposal, capability explanation, and result narrative. Feed only Dataset Intelligence Packets/evidence tools, not bulk raw data. Validate every output. Add provider health/config Admin UI and tests with deterministic mocks.
+Freeze and implement the IPSP product identity, capability-driven navigation and domain experiences,
+dataset workflows, the exact five-step simulation flow, Trust/Evidence, history/compare, models/
+learning, jobs, administration, themes, accessibility, responsive behavior, and safe errors. Historical
+prototype material is design reference only.
 
-Gate: app remains fully functional when local LLM is disabled/unavailable.
+Gate direction: no domain-specific hardcoded pages/controls/results, no public-CDN runtime dependency,
+and UI cannot imply an unavailable capability.
 
----
+## v0.15.0 — v1.0 release candidate and hardening
 
-## Phase 9 — v0.9.0 Remote/hybrid LLM and privacy routing
+Integrate and harden all mandatory bounded-v1.0 behavior: security, privacy, licensing, provenance,
+performance, reliability, recovery, observability, accessibility, exports, scale appropriate to the
+accepted contract, architecture conformance, multi-domain benchmarks, and release documentation.
 
-**Prompt**
+Gate direction: a complete evidence map to `docs/30_ACCEPTANCE_CRITERIA.md`, independent review, and a
+formal v1.0.0 acceptance decision.
 
-> Implement RemoteLLMProvider and HybridLLMProvider, privacy sanitizer, dataset/column transmission policy, outbound-policy enforcement, secret references, provider/token/cost/latency usage tracking, escalation rules, and Admin controls. Never send raw data by default. Add policy-denial, redaction, invalid JSON, timeout/fallback, and budget tests.
+## v1.0.0 — First General Availability
 
-Gate: remote access cannot bypass policy, privacy, or structured validation.
-
----
-
-## Phase 10 — v1.0.0 Integration hardening
-
-**Prompt**
-
-> Run the full acceptance suite. Validate all seven benchmark families for semantic diversity, not source-specific branches. Run scale tests using the large benchmark where available. Fix security, performance, UI, reliability, export, backup/restore, logging, and documentation gaps. Produce a release readiness report mapping every criterion in `docs/30_ACCEPTANCE_CRITERIA.md` to test evidence. Do not call the release v1.0.0 until all critical criteria pass.
+Create a release/tag only after the accepted v0.15.0 candidate passes the independent milestone
+acceptance gate and Kedar authorizes promotion. Advanced production causal workflows, full
+solver-backed optimization, automatic LLM adaptation, Remote/Hybrid LLM, public-web evidence,
+enterprise connectors/distributed scale, and specialized Quant Finance are post-v1.0 deferrals when
+their foundation boundaries remain preserved.

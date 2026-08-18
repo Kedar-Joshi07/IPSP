@@ -17,9 +17,18 @@ These Mermaid flow files are implementation references for Copilot and reviewers
 13. Observability trace
 14. Report/export
 15. Background jobs
-16. Privacy/remote LLM
+16. Evidence access, consent, and remote LLM
 17. Prediction horizon/leakage
 18. Journey/stage metric graph
 19. Workspace hierarchy
-20. End-to-end lifecycle
+20. F-002 canonical end-to-end lifecycle
 21. Parallel development workflow
+22. Domain Experience activation
+23. Metric & Formula resolution
+24. Engine & License resolution
+25. Scenario Intent and the three canonical simulation bases
+26. CompositeSimulationGraph execution
+27. Cross-Domain semantic reconciliation
+28. Finance reconciliation and stress
+29. Simulation learning and outcome reconciliation
+30. Local AI memory and adaptation governance

@@ -1,5 +1,9 @@
 # REST API Contract — Domain Map
 
+Future resource-family ownership is governed by the
+[F-002 Architecture Freeze](44_F002_ARCHITECTURE_FREEZE.md); this map does not freeze endpoint
+shapes ahead of their owning milestones.
+
 ## Status and compatibility boundary
 
 Business, application, and Administration REST APIs preserve the `/api/v1` compatibility root.
