@@ -31,7 +31,7 @@ Accepted foundation code baseline SHA: cd0dca48ded8d68f18e861f2427dfeb746d52ea7
 Active milestone: v0.1.1 — F-002 Architecture Reconciliation
 Accepted F2-H input SHA: 64b64f32217e96428c8204de9e4c66b158fc2144
 Current work package: F2-I — minimal v0.1.1 production reconciliation
-Current work-package state: ACTIVE
+Current work-package state: READY_FOR_REVIEW
 Next work package: F2-J — independent acceptance audit after F2-I review handoff
 Following capability milestone: v0.2.0 — NOT STARTED
 v0.2 contract-freeze state: NOT STARTED
@@ -48,7 +48,7 @@ explicit authorization described by the roadmap.
 | ID | Milestone | Owner | Exact base SHA | Merge target | Scope | Status |
 |---|---|---|---|---|---|---|
 | F2-H | v0.1.1 | Kedar / Codex work package | `0c621a9f70d5568d36a13193f8f14b96c6bd79ff` | `main` after review by Kedar | Flows, tests, acceptance, governance, instructions | REVIEW_PASS |
-| F2-I | v0.1.1 | Kedar / Codex work package | `64b64f32217e96428c8204de9e4c66b158fc2144` | `main` after review by Kedar | Minimal production reconciliation only | ACTIVE |
+| F2-I | v0.1.1 | Kedar / Codex work package | `64b64f32217e96428c8204de9e4c66b158fc2144` | `main` after review by Kedar | Minimal production reconciliation only | READY_FOR_REVIEW |
 | F2-J | v0.1.1 | Independent reviewer | Accepted F2-I SHA | `main` acceptance baseline | Independent final acceptance audit | PLANNED — BLOCKED BY F2-I |
 
 ## Future milestone rule
