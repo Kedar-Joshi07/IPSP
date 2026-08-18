@@ -4,22 +4,23 @@ IPSP is a domain-adaptive, dataset-agnostic, evidence-aware platform for respons
 
 | Status dimension | Current state |
 |---|---|
-| Current application implementation | **v0.1.0 — FORMALLY ACCEPTED** |
-| Development phase | **Phase 1 foundation complete** |
-| Independent review | **Phase 1L.1 final review: PASS** |
+| Current application implementation | **v0.1.1 — F2-I IMPLEMENTED, F2-J ACCEPTANCE PENDING** |
+| Development phase | **F-002 Architecture Reconciliation — IN PROGRESS** |
+| Independent review | **v0.1.0 Phase 1L.1: PASS; v0.1.1 F2-J: PENDING** |
 | Accepted foundation code SHA | **cd0dca48ded8d68f18e861f2427dfeb746d52ea7** |
 | Latest architecture authority | **F-002 — FROZEN ARCHITECTURE / PLANNED, NOT IMPLEMENTED** |
-| Next planned application milestone | **v0.1.1 — F-002 Architecture Reconciliation, NOT STARTED** |
+| Next gate | **F2-J — independent v0.1.1 acceptance audit** |
 | Following capability milestone | **v0.2.0 — Data Ingestion, Storage & Provenance, NOT STARTED** |
 | Target first General Availability release | **v1.0.0 — NOT RELEASED** |
 
-> **Status boundary:** Labels such as **IMPLEMENTED** and **ACCEPTED** refer only to verified v0.1.0 foundation behavior. **FROZEN ARCHITECTURE / PLANNED** describes the owner-approved F-002 direction. It does not mean those capabilities exist in production. **DEFERRED** and **TENTATIVE POST-v1.0** identify work that is not required for the first General Availability release.
+> **Status boundary:** **ACCEPTED** still refers to the independently verified v0.1.0 foundation. **IMPLEMENTED** also identifies the narrow v0.1.1 F2-I reconciliation changes, which remain pending F2-J acceptance. **FROZEN ARCHITECTURE / PLANNED** describes the owner-approved F-002 direction; it does not mean those capabilities exist in production. **DEFERRED** and **TENTATIVE POST-v1.0** identify work that is not required for the first General Availability release.
 
 ## Product identity
 
 The product and generic application identity is **Intelligent Predictive Simulation Platform (IPSP)**. CampaignSim is the historical prototype and visual reference: its card language, badges, navigation patterns, stepper, dark/light treatment, responsive behavior, and interaction style remain useful design inputs. It is not the platform identity, a source of analytical truth, or an owner of the core architecture. A future Marketing Domain Experience may use suitable marketing terminology without turning IPSP into a marketing-specific product.
 
-The shipped v0.1.0 static frontend still contains prototype-origin branding in its markup. Neutral IPSP shell reconciliation is planned for v0.1.1; this README does not claim that code change has already occurred.
+The v0.1.1 reconciliation shell now uses neutral IPSP branding while preserving the accepted local,
+offline visual foundation. CampaignSim remains historical/reference material only.
 
 ## Architecture and versioning status
 
@@ -91,7 +92,7 @@ IPSP is not:
 
 ## Implemented today versus target v1.0
 
-| Area | Current v0.1.0 evidence | F-002 target |
+| Area | Current foundation evidence | F-002 target |
 |---|---|---|
 | Runtime/API | **IMPLEMENTED:** Python 3.11+, FastAPI factory, typed Pydantic settings, safe errors, static application | Full capability-driven API and application services |
 | Control plane | **IMPLEMENTED:** synchronous SQLAlchemy 2.x, SQLite, one Alembic history, seven application tables | Versioned project, dataset, semantic, metric, engine, model, run, evidence, and learning metadata |
@@ -100,7 +101,7 @@ IPSP is not:
 | Jobs | **IMPLEMENTED:** generic persistent jobs, JobBackend abstraction, LocalJobBackend | Alternative provider implementations when justified |
 | Observability/audit | **IMPLEMENTED:** structured rotating JSONL, trace/request/session correlation, durable audit | End-to-end data, model, engine, evidence, simulation, export, and learning traces |
 | Health | **IMPLEMENTED:** liveness, readiness, authorized rich diagnostics | Diagnostics for analytical storage and registered engines/providers |
-| Frontend foundation | **IMPLEMENTED:** offline HTML/CSS/Vanilla-JS shell, Login, Overview, Jobs, Profile, System Health, themes | Neutral IPSP identity and full capability-driven workspace |
+| Frontend foundation | **IMPLEMENTED:** neutral offline IPSP HTML/CSS/Vanilla-JS shell, Login, Overview, Jobs, Profile, System Health, themes | Full capability-driven workspace |
 | Ingestion/storage | **NOT IMPLEMENTED** | Structured upload, staging, validation, versioning, originals, canonical Parquet, provenance |
 | Understanding/semantics | **NOT IMPLEMENTED** | Deterministic profiling, Dataset Semantic Manifest, clarification, relationship/grain checks |
 | Metric & Formula Registry | **NOT IMPLEMENTED** | Versioned semantic metrics and formula computation with lineage |
@@ -626,7 +627,7 @@ This F-002 roadmap replaces the old compressed v0.2–v0.9 schedule in this READ
 | Version | Milestone | Status |
 |---|---|---|
 | v0.1.0 | Foundation / Security / Repository Shell | **FORMALLY ACCEPTED** |
-| v0.1.1 | F-002 Architecture Reconciliation | **PLANNED — NOT STARTED** |
+| v0.1.1 | F-002 Architecture Reconciliation | **IN PROGRESS — F2-I IMPLEMENTED; F2-J PENDING** |
 | v0.2.0 | Data Ingestion, Storage & Provenance | **NOT STARTED** |
 | v0.3.0 | Deterministic Data Understanding & Relationships | **NOT STARTED** |
 | v0.4.0 | Semantic Intelligence & Dataset Semantic Manifest | **NOT STARTED** |
@@ -643,7 +644,11 @@ This F-002 roadmap replaces the old compressed v0.2–v0.9 schedule in this READ
 | v0.15.0 | v1.0 Release Candidate / Hardening | **NOT STARTED** |
 | v1.0.0 | First General Availability release | **TARGET — NOT RELEASED** |
 
-v0.1.1 aligns accepted foundation documentation and contracts with F-002: authority, neutral branding, provider-neutral synthetic naming, Domain Experience, Metric Registry, Engine/License, Composite/Cross-Domain, learning, anti-contamination, flow, license-governance, and regression contracts. It is not described as complete. v0.2 must not begin until reconciliation is complete.
+v0.1.1 aligns the accepted foundation with F-002 through reconciled authority/contracts plus neutral
+branding, provider-neutral synthetic naming, anti-contamination enforcement, version metadata,
+license governance, and foundation CI. F2-I implementation is complete but v0.1.1 is not accepted
+until F2-J passes. No F-002 analytical capability is implemented, and v0.2 must not begin until
+reconciliation is accepted.
 
 ## What v1.0 means
 
@@ -744,9 +749,10 @@ The existing v0.2 workstream documents predate the F-002 sequencing change and m
 ## Current release summary
 
 - **ACCEPTED:** IPSP application v0.1.0, Phase 1 foundation, independent Phase 1L.1 final review PASS.
-- **IMPLEMENTED:** secure local-first foundation, current API, offline frontend, generic job provider, observability/audit, and health.
+- **IMPLEMENTED:** v0.1.1 F2-I foundation reconciliation, including neutral IPSP branding, provider-neutral synthetic availability naming, version/license governance, and CI enforcement; acceptance remains pending F2-J.
+- **FOUNDATION BEHAVIOR:** secure local-first current API, offline frontend, generic job provider, observability/audit, and health.
 - **FROZEN ARCHITECTURE / PLANNED:** F-002 domain, metric, engine/license, simulation, evidence, cross-domain, Finance, and governed-learning architecture.
-- **NEXT PLANNED:** v0.1.1 F-002 Architecture Reconciliation; not started.
+- **NEXT GATE:** independent F2-J acceptance audit for v0.1.1.
 - **NOT STARTED:** v0.2.0 ingestion/storage/provenance and every later capability milestone.
 - **TARGET:** v1.0.0 first General Availability release; not released.
 - **DEFERRED:** advanced causal, optimization, remote/hybrid intelligence, enterprise connectors, distributed scale, and specialized quant capabilities as described above.

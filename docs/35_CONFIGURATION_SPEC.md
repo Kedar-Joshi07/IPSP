@@ -2,7 +2,7 @@
 
 ## Status boundary
 
-The accepted v0.1.0 foundation implements typed application, database, authentication/session,
+The v0.1.1 reconciliation foundation implements typed application, database, authentication/session,
 logging, outbound, secret-reference, feature-flag, and local-job configuration. F-002 engine,
 license, evidence, analytical, and modelling configuration described below is planned and must not be
 advertised as current runtime inventory or installed capability.
@@ -39,7 +39,8 @@ advertised as current runtime inventory or installed capability.
 - Provider credentials remain SecretProvider references only.
 - A configured provider is not necessarily installed, available, licensed, healthy, or eligible.
 - Architecture-candidate lists never populate runtime facts.
-- F2-G changes target documentation only and does not edit production feature flags or settings.
+- F2-I changes only the existing foundation feature-flag name described below; it does not
+  implement a synthetic provider or capability runtime.
 
 ## Evidence access, consent, and policy composition
 
@@ -62,6 +63,12 @@ expired, withdrawn, or denied policy/consent fails closed. PUBLIC_WEB and APPROV
 planned and cannot be exposed as current v0.1.1 services.
 
 ## Provider-neutral synthetic configuration
+
+The canonical current foundation availability field is `synthetic_data_enabled`, configured by
+`IPSP_FEATURES__SYNTHETIC_DATA_ENABLED`. It defaults to `false`, grants no permission, installs no
+provider, and exposes no synthetic-data runtime. The former vendor-specific `sdv_enabled` /
+`IPSP_FEATURES__SDV_ENABLED` names are retired without an alias; setting the former environment
+variable is rejected and cannot enable the capability.
 
 Synthetic configuration targets a generic provider interface and may express capability enablement,
 purpose, schema/population scope, provider preference, resource limits, seed/determinism, quality and

@@ -5,7 +5,7 @@ import { button, clear, element } from "../dom.js";
 export function renderLogin(container, context) {
   clear(container);
   const panel = element("section", { className: "card login-panel", attributes: { "aria-labelledby": "login-title" } });
-  panel.append(element("div", { className: "brand" }, [element("span", { className: "brand__mark", text: "◇", attributes: { "aria-hidden": "true" } }), element("span", { text: "CampaignSim" }), element("span", { className: "brand__qualifier", text: "Powered by IPSP" })]));
+  panel.append(element("div", { className: "brand" }, [element("span", { className: "brand__mark", text: "◇", attributes: { "aria-hidden": "true" } }), element("span", { text: "IPSP" }), element("span", { className: "brand__qualifier", text: "Intelligent Predictive Simulation Platform" })]));
   panel.append(element("h1", { id: "login-title", text: "Sign in to the platform" }));
   panel.append(element("p", { text: "Access the secure local foundation workspace." }));
   const notices = element("div", { attributes: { "aria-live": "polite" } });

@@ -28,6 +28,7 @@ Nested settings use `__` as the environment delimiter. Canonical examples includ
 
 ```text
 IPSP_FEATURES__REMOTE_LLM_ENABLED=false
+IPSP_FEATURES__SYNTHETIC_DATA_ENABLED=false
 IPSP_OUTBOUND__INTERNET_ENABLED=false
 IPSP_OUTBOUND__REMOTE_LLM_ENABLED=false
 IPSP_OUTBOUND__ALLOWED_REMOTE_PROVIDERS=[]
@@ -38,6 +39,11 @@ IPSP_SECRETS__PROVIDER=environment
 The Phase 1A variables `IPSP_INTERNET_ENABLED` and `IPSP_REMOTE_LLM_ENABLED` are retired. Use the
 nested canonical variables above; remote feature availability and remote outbound permission must
 be configured independently.
+
+`IPSP_FEATURES__SYNTHETIC_DATA_ENABLED` is the provider-neutral, safe-off synthetic-capability
+availability flag. It does not install or select a provider and does not authorize synthetic-data
+execution. The vendor-specific `IPSP_FEATURES__SDV_ENABLED` name is retired and is not an alias.
+Startup rejects that retired nested field instead of silently enabling or translating it.
 
 ## Secrets
 

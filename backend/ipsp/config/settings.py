@@ -143,7 +143,7 @@ class Settings(BaseSettings):
 
     environment: Environment = Environment.DEVELOPMENT
     app_name: str = "IPSP"
-    app_version: str = "0.1.0"
+    app_version: str = "0.1.1"
     debug: bool = False
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)

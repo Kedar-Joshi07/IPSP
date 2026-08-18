@@ -10,7 +10,7 @@ class FeatureFlags(BaseModel):
 
     local_llm_enabled: bool = False
     remote_llm_enabled: bool = False
-    sdv_enabled: bool = False
+    synthetic_data_enabled: bool = False
     optimization_enabled: bool = False
     causal_engine_enabled: bool = False
     experimental_rag_enabled: bool = False

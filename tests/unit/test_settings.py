@@ -44,7 +44,7 @@ def test_settings_load_canonical_nested_environment(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("IPSP_APP_NAME", "Configured IPSP")
     monkeypatch.setenv("IPSP_PORT", "9010")
     monkeypatch.setenv("IPSP_FEATURES__REMOTE_LLM_ENABLED", "true")
-    monkeypatch.setenv("IPSP_FEATURES__SDV_ENABLED", "true")
+    monkeypatch.setenv("IPSP_FEATURES__SYNTHETIC_DATA_ENABLED", "true")
     monkeypatch.setenv("IPSP_OUTBOUND__INTERNET_ENABLED", "true")
     monkeypatch.setenv("IPSP_OUTBOUND__REMOTE_LLM_ENABLED", "true")
     monkeypatch.setenv("IPSP_OUTBOUND__ALLOWED_REMOTE_PROVIDERS", '["provider-a"]')
@@ -61,7 +61,7 @@ def test_settings_load_canonical_nested_environment(monkeypatch: pytest.MonkeyPa
     assert settings.app_name == "Configured IPSP"
     assert settings.port == 9010
     assert settings.features.remote_llm_enabled is True
-    assert settings.features.sdv_enabled is True
+    assert settings.features.synthetic_data_enabled is True
     assert settings.outbound.internet_enabled is True
     assert settings.outbound.remote_llm_enabled is True
     assert settings.outbound.allowed_remote_providers == ("provider-a",)
@@ -83,6 +83,15 @@ def test_remote_feature_does_not_enable_outbound_permission() -> None:
     assert settings.features.remote_llm_enabled is True
     assert settings.outbound.internet_enabled is False
     assert settings.outbound.remote_llm_enabled is False
+
+
+def test_retired_vendor_specific_synthetic_flag_does_not_enable_capability(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IPSP_FEATURES__SDV_ENABLED", "true")
+
+    with pytest.raises(ValidationError, match="sdv_enabled"):
+        Settings(_env_file=None)
 
 
 def test_malformed_provider_identifier_is_rejected() -> None:

@@ -291,6 +291,29 @@ def test_generic_core_has_no_benchmark_specific_output_terms() -> None:
         assert term not in backend_and_schema
 
 
+def test_generic_runtime_surfaces_are_identity_and_provider_neutral() -> None:
+    runtime_config = (PROJECT_ROOT / ".env.example").read_text(encoding="utf-8")
+    backend_frontend_and_schema = "\n".join(
+        path.read_text(encoding="utf-8")
+        for root in (BACKEND, FRONTEND, MIGRATIONS)
+        for path in root.rglob("*")
+        if path.suffix.lower() in {".py", ".html", ".css", ".js"}
+    )
+    generic_runtime = f"{backend_frontend_and_schema}\n{runtime_config}".lower()
+
+    for term in (
+        "campaignsim",
+        "sdv_enabled",
+        "ipsp_features__sdv_enabled",
+        "synthcity_enabled",
+        "ipsp_features__synthcity_enabled",
+    ):
+        assert term not in generic_runtime
+
+    assert "synthetic_data_enabled" in generic_runtime
+    assert "ipsp_features__synthetic_data_enabled" in generic_runtime
+
+
 def test_frontend_has_no_runtime_cdn_reference() -> None:
     frontend_source = "\n".join(
         path.read_text(encoding="utf-8")

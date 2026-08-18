@@ -90,7 +90,7 @@ function updateShell(route) {
   shell.dataset.mode = identity ? (identity.must_change_password ? "required-password" : "authenticated") : "login";
   identitySummary.textContent = identity?.display_name ?? "";
   contextLabel.textContent = route.title;
-  document.title = `${route.title} · CampaignSim · IPSP`;
+  document.title = `${route.title} · IPSP`;
   document.querySelectorAll("[data-route]").forEach((link) => {
     if (link.dataset.route === route.key) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");

@@ -24,7 +24,7 @@ def test_factory_builds_application_and_versioned_api(settings: Settings) -> Non
     assert response.status_code == 200
     assert response.json() == {
         "name": "IPSP",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "status": "foundation",
         "browser": {
             "default_theme": "system",
@@ -56,7 +56,7 @@ def test_api_root_returns_only_custom_safe_browser_configuration(tmp_path) -> No
     assert response.status_code == 200
     assert response.json() == {
         "name": "IPSP",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "status": "foundation",
         "browser": {
             "default_theme": "light",

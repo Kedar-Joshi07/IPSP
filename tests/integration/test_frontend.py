@@ -67,7 +67,9 @@ def test_index_is_accessible_semantic_local_shell() -> None:
     assert '<nav class="primary-navigation"' in html
     assert '<main class="main" id="main-content"' in html
     assert "<noscript>" in html
-    assert "CampaignSim" in html and "Powered by IPSP" in html
+    assert "CampaignSim" not in html
+    assert '<span class="brand__name">IPSP</span>' in html
+    assert "Intelligent Predictive Simulation Platform" in html
     assert "Intelligent Predictive Simulation Platform" in html
     assert 'aria-hidden="true"' in html
     assert "onclick=" not in html.lower()
@@ -431,4 +433,5 @@ def test_frontend_is_offline_framework_free_and_not_demo_contaminated() -> None:
         "bf8",
     ):
         assert demo_term not in lowered
-    assert "CampaignSim" in source
+    assert "CampaignSim" not in source
+    assert "Powered by IPSP" not in source

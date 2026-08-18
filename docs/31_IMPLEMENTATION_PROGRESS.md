@@ -14,9 +14,10 @@ Trust, Evidence, and reproducibility contract reconciliation was independently a
 and evidence-access contract reconciliation was independently accepted at SHA
 `81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-G platform-contract reconciliation was
 independently accepted at SHA `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`; F2-H flows, tests,
-acceptance, benchmark, governance, agent-instruction, and active-prompt reconciliation is complete
-after review correction and pending independent re-review. No F-002 runtime capability is
-implemented by these documentation work packages.
+acceptance, benchmark, governance, agent-instruction, and active-prompt reconciliation was
+independently accepted at SHA `64b64f32217e96428c8204de9e4c66b158fc2144`. F2-I minimal
+foundation production reconciliation is implemented and tested; independent F2-J acceptance is
+pending. No F-002 analytical runtime capability is implemented by these work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -26,7 +27,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-H REVIEW CORRECTION COMPLETE, INDEPENDENT RE-REVIEW PENDING** | Initial F2-H implementation at `6852e5a2487197602a0a4a07b89cac4109ce6141`; F2-I remains blocked pending independent review of the corrected SHA |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-I IMPLEMENTED/TESTED, F2-J ACCEPTANCE PENDING** | F2-H accepted at `64b64f32217e96428c8204de9e4c66b158fc2144`; F2-I is ready for independent acceptance audit |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -43,10 +44,61 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | v1.0 release candidate / hardening | v0.15.0 | NOT STARTED | Milestone contracts not frozen |
 | First General Availability release | v1.0.0 | TARGET — NOT RELEASED | Full v1.0 acceptance gate |
 
+## F2-I — v0.1.1 Production Reconciliation
+
+- **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
+- **Status:** IMPLEMENTED AND TESTED (2026-08-18), awaiting independent F2-J acceptance audit
+- **Starting and accepted F2-H SHA:** `64b64f32217e96428c8204de9e4c66b158fc2144`
+- **Scope:** neutral IPSP generic-shell branding; provider-neutral synthetic capability/config
+  availability naming; scoped anti-contamination enforcement; application/package version 0.1.1;
+  explicit proprietary and current third-party license governance; foundation GitHub Actions gates
+- **Branding reconciliation:** generic page metadata/title, shell and login brands, ARIA identity,
+  noscript text, router titles, and displayed foundation version now use neutral IPSP identity;
+  historical/reference CampaignSim material remains preserved outside generic production surfaces
+- **Synthetic configuration:** canonical safe-off field `synthetic_data_enabled` and environment
+  variable `IPSP_FEATURES__SYNTHETIC_DATA_ENABLED`; the former vendor-specific nested variable is
+  retired without an alias and fails closed; no provider was selected, installed, or implemented
+- **Version boundary:** package, runtime default, environment example, API-reported application
+  metadata, tests, and frontend foundation label agree on `0.1.1`; `/api/v1` is unchanged
+- **Licensing/CI:** added top-level proprietary `LICENSE`, exact current lock inventory in
+  `THIRD_PARTY_LICENSES.md`, and a Python-only least-privilege foundation workflow; no branch
+  protection setting was changed because that remains an integration-owner GitHub action
+- **Change scope:** 21 files — four created and seventeen modified. Production changes are limited
+  to three version strings, one provider-neutral feature-field rename, and three neutral frontend
+  identity files; documentation/config/tests/governance make up the remaining scope
+- **Focused tests:** 65/65 PASS in 6.81 seconds for settings, app/API, frontend, and architecture
+- **Complete regression:** 220/220 PASS in 63.49 seconds; zero failures, skips, or warnings,
+  including the timing-sensitive Windows noncooperative-daemon recovery case in the single run
+- **Quality evidence:** compileall PASS; Ruff lint PASS; Ruff format PASS for 96 files; strict mypy
+  PASS for 67 source files; `pip check` PASS; `git diff --check` PASS; architecture/conformance
+  16/16 PASS; editable project metadata updated to 0.1.1 with `--no-deps`
+- **Documentation validation:** all relative Markdown links and fences PASS across 137 files; 581
+  Markdown table rows structurally PASS
+- **Migration/schema evidence:** no migration change; isolated upgrade/heads/current/check PASS at
+  `20260812_05`; Alembic reported no new upgrade operations; the database and ORM both contain
+  exactly seven application tables
+- **Live shell QA:** disposable same-origin server PASS for neutral IPSP v0.1.1 shell, Admin login,
+  Overview/Jobs/Profile API paths, authorized System Health, ordinary-user 403 denial,
+  required-password identity gate, and 10/10 local assets; the disposable processes/database/logs
+  were removed
+- **Browser deviation:** viewport/theme interaction and browser console/network-panel inspection
+  could not run because the in-app browser controller requires a Node runtime and none is installed;
+  no Node dependency was introduced. Existing integration coverage still passes System/Dark/Light
+  theme contracts, desktop/390px responsiveness, local-only assets, frontend route lifecycle, and
+  application-error safeguards
+- **Production capability boundary:** no ingestion, dataset, Parquet, Semantic Manifest, Domain
+  Experience, Metric Registry, Engine Registry, modelling, simulation, Finance, learning, or LLM
+  runtime was introduced
+- **Dependency/migration/schema state:** no dependency or lockfile change; no migration or schema
+  change; no analytical/AI dependency installed
+- **Following milestone:** v0.2.0 remains NOT STARTED and blocked pending accepted v0.1.1
+- **Next gate:** independent F2-J acceptance audit; F2-J was not begun by this work package
+
 ## F2-H — Flows / Tests / Acceptance / Benchmark / Governance / Agent Instructions
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
-- **Status:** REVIEW CORRECTION COMPLETE (2026-08-18), awaiting independent re-review
+- **Status:** ACCEPTED (2026-08-18) — independent re-review PASS
+- **Accepted corrected F2-H SHA:** `64b64f32217e96428c8204de9e4c66b158fc2144`
 - **Starting and accepted F2-G SHA:** `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`
 - **Initial F2-H implementation SHA:** `6852e5a2487197602a0a4a07b89cac4109ce6141`
 - **Scope:** canonical F-002 lifecycle and authority flows; future test strategy; bounded-v1.0
@@ -90,8 +142,8 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   tests PASS and the isolated Windows recovery test passed 1/1 on its first correction-run attempt
   with the documented above-normal test-process scheduling
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Independent re-review state:** REQUIRED on the corrected committed SHA
-- **Next gate:** independent F2-H re-review; F2-I must not begin before PASS on the corrected SHA
+- **Independent re-review state:** PASS on corrected SHA
+- **Next gate outcome:** F2-I authorized from accepted corrected F2-H SHA
 
 ## F2-G — UI / API / Storage / Jobs / Security / Configuration / Operations Reconciliation
 
