@@ -14,8 +14,9 @@ Trust, Evidence, and reproducibility contract reconciliation was independently a
 and evidence-access contract reconciliation was independently accepted at SHA
 `81df9fedf84c7c02b837d5ca1509c81c34648fcd`; F2-G platform-contract reconciliation was
 independently accepted at SHA `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`; F2-H flows, tests,
-acceptance, benchmark, governance, and agent-instruction reconciliation is complete pending
-independent review. No F-002 runtime capability is implemented by these documentation work packages.
+acceptance, benchmark, governance, agent-instruction, and active-prompt reconciliation is complete
+after review correction and pending independent re-review. No F-002 runtime capability is
+implemented by these documentation work packages.
 
 Following capability milestone: **v0.2.0: NOT STARTED.** F-002 architecture approval does not
 authorize implementation start; the required v0.2 contract freeze has not started.
@@ -25,7 +26,7 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 | Specification & plan generation | — | PHASE 0 COMPLETE | 40+ numbered specs + implementation plan ready |
 | Architecture reconciliation | — | **PHASE 0.5 PASS** | 24 audit/completeness items resolved; all 20 gates verified |
 | Foundation/security/repo skeleton | v0.1.0 | **FORMALLY ACCEPTED — independent final review PASS** | Accepted foundation code SHA: `cd0dca48ded8d68f18e861f2427dfeb746d52ea7` |
-| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-H COMPLETE, INDEPENDENT REVIEW PENDING** | F2-G independently accepted at `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`; F2-I remains blocked pending independent F2-H review |
+| F-002 architecture/roadmap reconciliation | v0.1.1 | **IN PROGRESS — F2-H REVIEW CORRECTION COMPLETE, INDEPENDENT RE-REVIEW PENDING** | Initial F2-H implementation at `6852e5a2487197602a0a4a07b89cac4109ce6141`; F2-I remains blocked pending independent review of the corrected SHA |
 | Ingestion/storage/provenance | v0.2.0 | **NOT STARTED** | Contract freeze not started; F-002 does not authorize implementation start |
 | Deterministic data understanding & relationships | v0.3.0 | NOT STARTED | Milestone contracts not frozen |
 | Semantic intelligence & Dataset Semantic Manifest | v0.4.0 | NOT STARTED | Milestone contracts not frozen |
@@ -45,12 +46,14 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 ## F2-H — Flows / Tests / Acceptance / Benchmark / Governance / Agent Instructions
 
 - **Application milestone:** v0.1.1 — F-002 Architecture Reconciliation
-- **Status:** COMPLETE (2026-08-18), awaiting independent review
+- **Status:** REVIEW CORRECTION COMPLETE (2026-08-18), awaiting independent re-review
 - **Starting and accepted F2-G SHA:** `0c621a9f70d5568d36a13193f8f14b96c6bd79ff`
+- **Initial F2-H implementation SHA:** `6852e5a2487197602a0a4a07b89cac4109ce6141`
 - **Scope:** canonical F-002 lifecycle and authority flows; future test strategy; bounded-v1.0
   acceptance and explicit post-v1 deferrals; multi-domain/Cross-Domain benchmark strategy;
   milestone/workstream contract governance; repository and scoped agent instructions; revised
-  v0.2.0–v1.0.0 prompt map; current-workstream state and documentation completeness audit
+  v0.2.0–v1.0.0 prompt map; current-workstream state; active first-use, code-review, and testing
+  prompt entry points; documentation completeness audit
 - **Flow reconciliation:** flows 01, 06–09, 16, and 20 now express the applicable F-002 boundaries;
   new numbered flows 22–30 cover Domain Experience activation, Metric & Formula resolution,
   Engine/License resolution, Scenario Intent and exactly three bases, CompositeSimulationGraph,
@@ -61,7 +64,13 @@ authorize implementation start; the required v0.2 contract freeze has not starte
   implemented, and v0.2.0 remains NOT STARTED with contract freeze not started
 - **Change boundary:** no production code, tests, migrations, schemas, dependencies, lockfiles, or
   feature flags changed
-- **Documentation validation:** 44 changed/new Markdown files have balanced fences/tables and 45
+- **Review correction:** from SHA `6852e5a2487197602a0a4a07b89cac4109ce6141`, reconciled
+  `prompts/FIRST_COPILOT_PROMPT.md`, `prompts/CODE_REVIEW_PROMPTS.md`, and
+  `prompts/TESTING_PROMPTS.md` to the F-002 authority order, current gate, milestone-aware review,
+  and testing boundaries; this progress record is the only other correction file
+- **Cumulative changed-file scope:** 47 Markdown files relative to the accepted F2-G SHA; the review
+  correction itself changes exactly four Markdown files
+- **Documentation validation:** 47 changed Markdown files have balanced fences/tables and 45
   valid relative links; repository-wide validation resolved 202 relative links across 128 Markdown
   files; all 30 numbered flows contain one structurally valid Mermaid block and sequence 01–30 is
   complete; stale identity/provider/roadmap/basis/metric occurrences were classified, with retained
@@ -69,13 +78,20 @@ authorize implementation start; the required v0.2 contract freeze has not starte
 - **Quality evidence:** `git diff --check` PASS; compileall PASS; Ruff lint PASS; Ruff format check
   PASS for 95 files; strict mypy PASS for 67 source files; `pip check` PASS; architecture conformance
   13/13 PASS
-- **Regression evidence:** complete suite PASS in split execution: 215/215 unaffected tests plus the
+- **Initial regression evidence:** complete suite PASS in split execution: 215/215 unaffected tests plus the
   unchanged timing-sensitive recovery test 1/1. The isolated recovery test first exceeded its
   hardcoded 10-second Windows child-exit deadline, then passed on a clean rerun with the previously
   documented above-normal test-process scheduling. No production or test change was made for this
   environment timing behavior.
+- **Review-correction revalidation:** exact four-file documentation-only correction scope PASS;
+  repository Markdown links/tables/fences PASS; Mermaid structural validation 30/30 PASS;
+  `git diff --check`, compileall, Ruff lint, Ruff format for 95 files, strict mypy for 67 source
+  files, and `pip check` PASS; architecture conformance 13/13 PASS; 215/215 unaffected regression
+  tests PASS and the isolated Windows recovery test passed 1/1 on its first correction-run attempt
+  with the documented above-normal test-process scheduling
 - **Following milestone:** v0.2.0 remains NOT STARTED
-- **Next gate:** independent F2-H review; F2-I must not begin before PASS on the reviewed SHA
+- **Independent re-review state:** REQUIRED on the corrected committed SHA
+- **Next gate:** independent F2-H re-review; F2-I must not begin before PASS on the corrected SHA
 
 ## F2-G — UI / API / Storage / Jobs / Security / Configuration / Operations Reconciliation
 
